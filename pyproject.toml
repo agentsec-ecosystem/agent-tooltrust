@@ -42,6 +42,9 @@ dependencies = [
     "PyYAML>=6.0",
 ]
 
+[project.scripts]
+tooltrust = "agent_tooltrust.cli:main"
+
 [project.optional-dependencies]
 llm = [
     "openai>=1.30",

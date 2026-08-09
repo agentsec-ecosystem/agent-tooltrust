@@ -1,0 +1,52 @@
+version: 1.0.0
+posture: balanced
+environments:
+  development:
+    criticality: '0.0'
+  staging:
+    criticality: '0.1'
+  pre_prod:
+    criticality: '0.4'
+  production:
+    criticality: '0.7'
+data_classes:
+  public:
+    sensitivity: '0.0'
+  internal:
+    sensitivity: '0.2'
+  restricted:
+    sensitivity: '0.5'
+  customer_pii:
+    sensitivity: '1.0'
+risk_weights:
+  tool_category: '1.0'
+  action_class: '1.0'
+  environment: '1.0'
+  data_sensitivity: '1.0'
+  agent_class: '1.0'
+rules:
+- decision: deny
+  tool: '*'
+  action: delete
+  environment: production
+  data_class: '*'
+  reason: Deletes in production are blocked.
+- decision: deny
+  tool: '*'
+  action: grant
+  environment: '*'
+  data_class: '*'
+  reason: Grant operations always require review.
+- decision: escalate
+  tool: '*'
+  action: write
+  environment: production
+  data_class: '*'
+  reason: Write actions in production require approval.
+escalation:
+  threshold: '0.5'
+  ttl_seconds: '300'
+audit:
+  sink: jsonl
+  path: ~/.tooltrust/audit.jsonl
+  postgres_url: 'null'
