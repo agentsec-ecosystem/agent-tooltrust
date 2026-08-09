@@ -1,6 +1,6 @@
 # Database Schema Sketch — Agent ToolTrust
 
-**Version:** 0.1.0
+**Version:** 1.0 (Approved)
 **Date:** 2026-08-08
 
 ## Audit Log Tables

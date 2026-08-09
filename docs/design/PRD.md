@@ -1,8 +1,8 @@
 # Agent ToolTrust — Product Requirements Document (PRD)
 
-**Version:** 0.1 (Draft for scoping)
+**Version:** 1.0 (Approved)
 **Date:** 2026-08-08
-**Status:** Draft
+**Status:** Approved ✅
 **Owner:** Debashish Ghosal
 **Repo:** `deghosal-2026/agent-tooltrust` (private → OSS)
 **Package:** `agent-tooltrust`

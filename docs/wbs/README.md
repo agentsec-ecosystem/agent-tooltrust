@@ -13,6 +13,8 @@ Work Breakdown Structure — milestone plans and task breakdowns for all version
 
 ## v0.1.0 Milestone Summary
 
+> **Status: Approved ✅** — All 18 milestones mapped to PRD features.
+
 | M# | Name | Features | CUJs | Exit gate |
 |----|------|----------|------|-----------|
 | M1 | Core Engine | F-01-F-05, F-07, F-12, F-20-F-22, F-89(P0) | CUJ 1, 9, 11 | Code review, >95% coverage, lint strict, 40-cell matrix |

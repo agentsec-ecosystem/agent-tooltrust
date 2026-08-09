@@ -1,6 +1,6 @@
 # API Reference — Agent ToolTrust v0.1.0
 
-**Version:** 0.1.0 (draft)
+**Version:** 1.0 (Approved)
 **Date:** 2026-08-08
 
 ## Core API
