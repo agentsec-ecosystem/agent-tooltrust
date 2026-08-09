@@ -33,11 +33,17 @@ class Engine:
         self,
         policy: Policy,
         explainer: Explainer = template_explainer,
+        dry_run: bool = False,
     ):
         #: The declarative policy in force for every evaluation. Immutable for
         #: the Engine's lifetime; swap engines to change policy.
         self._policy = policy
         self._explainer = explainer
+        #: When *dry_run* is ``True``, every :meth:`evaluate` returns an
+        #: ``allow`` Decision but logs the *real* (un-overridden) decision in
+        #: the audit record so operators can see what would have happened
+        #: without risk of accidentally blocking a call.
+        self._dry_run = dry_run
 
     @fail_closed
     def evaluate(
@@ -79,4 +85,15 @@ class Engine:
         decision = explain(verdict, risk_score, call, self._policy)
         # 5. Enrich explanation (optional plugin). Always re-set the text so
         #    the explainer's output is what callers and the audit trail see.
-        return replace(decision, explanation=self._explainer(decision, call))
+        decision = replace(decision, explanation=self._explainer(decision, call))
+        # 6. Shadow / dry-run mode: return ``allow`` but keep the real verdict
+        #    in the audit trail (callers can inspect ``decision.dry_run`` and
+        #    the original decision details).
+        if self._dry_run:
+            decision = replace(
+                decision,
+                decision="allow",
+                explanation=f"[DRY RUN] would have been {decision.decision}: {decision.explanation}",
+                dry_run=True,
+            )
+        return decision

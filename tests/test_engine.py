@@ -145,3 +145,41 @@ class TestEngineWithExplainer:
             agent_id="release-bot",
         )
         assert decision.explanation == "LLM said: ok"
+
+
+class TestEngineDryRun:
+    def test_dry_run_returns_allow(self):
+        engine = Engine(default_policy("balanced"), dry_run=True)
+        decision = engine.evaluate(
+            tool_name="deploy_service",
+            action="delete",
+            environment="production",
+            data_class="customer_pii",
+            agent_id="release-bot",
+        )
+        assert decision.decision == "allow"
+        assert decision.dry_run is True
+
+    def test_dry_run_prefixes_explanation(self):
+        engine = Engine(default_policy("balanced"), dry_run=True)
+        decision = engine.evaluate(
+            tool_name="deploy_service",
+            action="delete",
+            environment="production",
+            data_class="customer_pii",
+            agent_id="release-bot",
+        )
+        assert "[DRY RUN]" in decision.explanation
+        assert "would have been deny" in decision.explanation
+
+    def test_normal_engine_without_dry_run(self):
+        engine = Engine(default_policy("balanced"))
+        decision = engine.evaluate(
+            tool_name="query_logs",
+            action="read",
+            environment="staging",
+            data_class="internal",
+            agent_id="release-bot",
+        )
+        assert decision.decision == "allow"
+        assert decision.dry_run is False
