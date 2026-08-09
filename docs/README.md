@@ -15,8 +15,10 @@
 
 ## Key Documents
 
-- **Architecture & Spec** → `architecture/`
-- **PRD** → `design/prd.md`
-- **User Guide** → `explanation/user-guide.md`
-- **Quickstart** → `reference/quickstart.md`
+- **Architecture & Spec** → `architecture/architecture-v0.1.0.md`
+- **PRD** → `design/PRD.md`
+- **Design Decisions** → `design/design-decisions.md`
+- **Demo Scenario** → `design/demo-scenario.md`
 - **API Reference** → `reference/api.md`
+- **Quickstart** → `reference/quickstart.md`
+- **WBS** → `wbs/` (6 files, 18 milestones across v0.1-v0.4)
