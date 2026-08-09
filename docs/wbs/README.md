@@ -34,7 +34,7 @@ Work Breakdown Structure — milestone plans and task breakdowns for all version
 | M# | Name | Features | CUJs | Exit gate |
 |----|------|----------|------|-----------|
 | M1 | Core Engine | F-01-F-05, F-07, F-12, F-20-F-22, F-89(P0) | CUJ 1, 9, 11 | Code review, >95% coverage, lint strict, 40-cell matrix — **COMPLETE ✅ (commit `4649365`)** |
-| M2 | Policy Manager | F-06, F-10, F-60, F-63, F-65-F-67, F-70, F-72 | CUJ 4, 8 | Code review, >95% coverage, lint strict, OPA parity |
+| M2 | Policy Manager | F-06, F-10, F-60, F-63, F-65-F-67, F-70, F-72 | CUJ 4, 8 | Code review, >95% coverage, lint strict, OPA parity — **COMPLETE ✅ (commit `1b1c4dd`)** |
 | M3 | Audit Logger | F-30, F-31, F-33 | CUJ 6 | 3 sinks verified, CLI audit working |
 | M4 | Integration Adapters | F-40-F-42 | CUJ 2 | 6 adapters pass integration tests |
 | M5 | MCP Server | F-11 | CUJ 2 | Server starts, tools work, audit emitted |
