@@ -65,6 +65,8 @@ This PRD defines **why** the product exists (business rationale), **who** it ser
 
 ### Design principle (from research)
 - **Deterministic by default; the model does not vote.** The policy engine decides. The LLM at most is an *optional* advisor that can narrow scope (flag "arguable," escalate), never widen it. This is the strongest shared conclusion across Permit0, NEXUS, ConLeash, MSFT AGT, and the OPA ecosystem.
+- **Context is not just the current call** — it includes what the session has done so far. Omnigent and ConLeash both show that accumulated risk, consent scope, and budgets make the *same* call behave differently early vs. late in a workflow ("the email your sales-org agent sends first thing is safe; the one it sends after reading a customer's confidential folder is not"). This session-state model (F-08 family) is a stated differentiator and a v0.2 commitment.
+- **An audit you can't prove is half an audit.** Signed/tamper-evident decision logs (the Permit0 pattern, F-34) turn "we log decisions" into "we can cryptographically show the log is unedited" — the difference that survives a compliance review.
 
 ### Terminal-state definition ("done")
 A working `v0.1.0` that can be installed with `pip install agent-tooltrust`, integrated into an agent loop in under ~15 lines, evaluate a matrix of realistic safe/risky/approval-needed tool calls with correct outcomes, emit explanations, and log a searchable audit trail.
@@ -167,7 +169,11 @@ As a compliance interviewer, given a `session_id`, I can reconstruct the full ch
 | F-05 | Default taxonomy of tools/categories with sane risk defaults | P0 | Seed a practical starter |
 | F-06 | Policy: per-category allow / deny lists, escalation threshold | P0 | JSON/YAML + Python configurable |
 | F-07 | LLM-based advisory explanations (optional, off by default) | P0 | Non-authoritative; never grant-widening |
-| F-08 | Session/context (accumulating risk, budgets) | P1 | Context-aware like ConLeash/Omnigent |
+| F-08 | Session/context state — accumulating risk score, budgets, consent scope | P1 | Databricks Omnigent + ConLeash pattern |
+| F-08a | Cumulative risk policy — actions auto-allow until session risk crosses a threshold, then escalate | P1 | Same email/send early vs late in session behaves differently |
+| F-08b | Per-session budgets — token, call-count, and wall-cost ceilings | P1 | "cap a task, not a day" |
+| F-08c | Consent scope / boundary tracking — auto-permit in-bounds, escalate on boundary crossing (project→other-project writes) | P1 | Directly from ConLeash's risk-lattice |
+| F-08d | Session state replayable from audit — `session_id` reconstructs consent+running state for review | P1 | ties into CUJ 6 |
 | F-09 | Approval workflow state (subject, artifact, expiry) — "approval is bound to an action identity" | P1-P2 | HITL; P2 full UI |
 | F-10 | OPA/Rego parity — evaluate a Rego policy as a peer backend to native rules | P0 | Same decision contract, dual authoring paths |
 | F-11 | ToolTrust MCP server exposing `evaluate` + `explain` tools | P0 | Agents query authorization through their own stack |
@@ -187,6 +193,7 @@ As a compliance interviewer, given a `session_id`, I can reconstruct the full ch
 | F-31 | Audit entries for allow/deny/escalate + policy + timestamp | P0 | |
 | F-32 | Export/search/filter (`tooltrust audit query ...`) | P1 | |
 | F-33 | Postgres sink integration | P0 | pluggable sink interface + working Postgres sink shipped |
+| F-34 | Tamper-evident hash chain over the decision log | P2 | each entry commits to the prior (hash-chain / Merkle); verification command proves unedited history (Permit0 ed25519 pattern) |
 
 ### 7.4 Integration & adapters
 | ID | Feature | Priority | Notes |
@@ -246,6 +253,10 @@ Product-level success (by v1.0 & T-1):
 5. **Performance:** <1 ms deterministic overhead per call (target <0.5ms).
 6. **Extensibility:** a contributor can add a new tool pack + test via one page of docs in one sitting (measure: docs `1 new pack` issue → PR cycle).
 
+v0.2 session-state success (when F-08 lands):
+- **A same-risk action that auto-`allow`s at session start escalates once the accumulated session risk crosses its threshold** (the Omnigent demo behavior, reproduced deterministically in a test).
+- **Consent boundaries:** a write inside a consented scope auto-permits; the same write outside it escalates (ConLeash pattern, 0 live approvals needed for the in-scope path).
+
 OSS community (post-launch):
 - stars and PRs, newcomer-friendly contribution paths; (target: 25+ stars, 3 external contributors).
 
@@ -271,14 +282,17 @@ OSS community (post-launch):
 - **Storage:** JSONL/SQLite default, Postgres sink shipped in v0.1.
 - **LLM explanations:** off by default, non-authoritative, never grant-widening; determinism preserved on the default path.
 - **How decisions are returned to the model for replanning** needs to be human-verifiable (see CUJ 2).
+- **Session-state scope:** the F-08 family (cumulative risk, budgets, consent boundaries) is the biggest live design question after the P0 engine. Decisions needed: where session state lives (in-process vs. passed-in), when it resets, and how much of it the default taxonomy seeds.
+- **Tamper-evident audit (F-34) is deliberately P2:** shipping a sound hash-chain correctly (rotation, key management, reader trust) is non-trivial, and a broken "proof" is worse than none. Keep it out of the P0 critical path — but keep the decision log structured so the chain can be retrofitted without a migration.
+- **Post-call observable fan-out:** a single tool call can batch into many operations the engine never sees (e.g. `call_aws` batch mode). The engine governs the *proposed* call; the residue endpoint / tool itself must hold the enforcement. Document as a known boundary in the explain layer.
 
 ---
 
 ## 12. Roadmap (Milestone Sketch)
 
 - **v0.1.0 (P0, per scoping):** core engine (`evaluate`, 4 decisions, fail-closed, taxonomy + defaults, risk scoring, JSON/YAML policy + OPA/Rego parity), audit JSON/SQLite/Postgres, CLI (`evaluate`/`explain`), Python package, **all adapters** (raw, MCP client, LangGraph, PydanticAI, OpenAI SDK, CrewAI), **ToolTrust MCP server**, dry-run/shadow mode, optional LLM explanations, docs; OpenSSF +90%, ruff/mypy strict. **`shipped` when the 15-line integration walk-through works and every CUJ 1-6 acceptance path passes.** (Sequenced internally: engine → policy/OPA → audit → adapters → MCP server → LLM explain → hardening.)
-- **v0.2.0 (P1):** `audit query`, policy packs + `validate/test`, custom policy functions, OTel spans, HTTP `/authorize` service, session-context scoring.
-- **v0.3.0 (P2):** approval artifacts & workflow, budget functions, policy packs catalog, plug into AgentControlPlane & MCP-Data.
+- **v0.2.0 (P1):** session/context state (F-08 family: cumulative risk, budgets, consent scope — the Omnigent/ConLeash differentiator), `audit query`, policy packs + `validate/test`, custom policy functions, OTel spans, HTTP `/authorize` service.
+- **v0.3.0 (P2):** approval artifacts & workflow, tamper-evident audit chain (F-34), policy packs catalog, plug into AgentControlPlane & MCP-Data.
 - **v0.4.0 (P3):** governance reports, distributed policy sync.
 
 ---
