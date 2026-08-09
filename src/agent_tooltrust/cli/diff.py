@@ -7,6 +7,7 @@ org overlay). Produces machine-parseable output for CI pipelines.
 from __future__ import annotations
 
 import argparse
+from typing import Any
 
 from agent_tooltrust.cli.errors import CliError
 from agent_tooltrust.errors import PolicyParseError
@@ -15,7 +16,12 @@ from agent_tooltrust.policy.models import default_policy
 from agent_tooltrust.policy.postures import available_postures
 
 
-def add_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+def add_parser(subparsers: Any) -> None:
+    """Register the ``tooltrust diff`` subcommand parser.
+
+    Args:
+        subparsers: The ``add_subparsers()`` action from the parent parser.
+    """
     parser = subparsers.add_parser(
         "diff",
         help="compare policy against the default posture preset",
@@ -59,4 +65,13 @@ def _run(args: argparse.Namespace) -> int:
                 f"{base.data_classes.get(dc_name, '-')} -> "
                 f"{org.data_classes.get(dc_name, '-')}"
             )
+    for dim in sorted(set(base.risk_weights) | set(org.risk_weights)):
+        if base.risk_weights.get(dim) != org.risk_weights.get(dim):
+            print(
+                f"  risk_weight {dim}: "
+                f"{base.risk_weights.get(dim, '-')} -> "
+                f"{org.risk_weights.get(dim, '-')}"
+            )
+    if org.rules != base.rules:
+        print(f"  rules: {len(base.rules)} -> {len(org.rules)} rules")
     return 0 if org == base else 1

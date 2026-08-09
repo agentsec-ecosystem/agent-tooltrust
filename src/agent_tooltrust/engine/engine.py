@@ -94,8 +94,7 @@ class Engine:
                 decision,
                 decision="allow",
                 explanation=(
-                    f"[DRY RUN] would have been {decision.decision}:"
-                    f" {decision.explanation}"
+                    f"[DRY RUN] would have been {decision.decision}: {decision.explanation}"
                 ),
                 dry_run=True,
             )

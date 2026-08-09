@@ -58,6 +58,18 @@ def _first_line_column(text: str, loc: tuple[str | int, ...]) -> tuple[int, int]
 
 
 def _schema_error_message(error: ValidationError, text: str) -> str:
+    """Build a human-readable error message from a pydantic ValidationError.
+
+    Resolves the offending field's YAML line/column and produces a single-line
+    message suitable for ``tooltrust check`` output.
+
+    Args:
+        error: Pydantic ``ValidationError`` caught during parsing.
+        text: Raw YAML text for line/column lookup.
+
+    Returns:
+        A string like ``"line 3, column 12: invalid environments.production.criticality: ..."``.
+    """
     first = error.errors(include_url=False)[0]
     line, column = _first_line_column(text, tuple(first["loc"]))
     where = ".".join(str(part) for part in first["loc"])
@@ -65,6 +77,19 @@ def _schema_error_message(error: ValidationError, text: str) -> str:
 
 
 def _build_policy(doc: PolicyDocument) -> Policy:
+    """Merge a validated :class:`PolicyDocument` onto the posture default.
+
+    Dict fields (environments, data_classes, risk_weights) are merged per-key
+    so the org only overrides what it declares. Rules are replaced wholesale
+    when the org declares any non-empty list. Agents always come from the
+    posture preset (schema has no agents field).
+
+    Args:
+        doc: The validated org ``tooltrust.yaml`` document.
+
+    Returns:
+        A fully resolved :class:`Policy` ready for the engine.
+    """
     base = default_policy(doc.posture)
     environments = base.environments | {
         name: env.criticality for name, env in doc.environments.items()
@@ -103,8 +128,16 @@ def _build_policy(doc: PolicyDocument) -> Policy:
 def load_policy_text(text: str) -> Policy:
     """Parse, validate, and merge the contents of a tooltrust.yaml document.
 
-    Raises :class:`PolicyParseError` on YAML syntax errors or schema
-    violations, with a line:column pointing at the offending content.
+    Args:
+        text: The raw YAML source of ``tooltrust.yaml``.
+
+    Returns:
+        A fully resolved :class:`Policy` with the org overlay merged onto the
+        posture default.
+
+    Raises:
+        PolicyParseError: YAML syntax errors or schema violations are converted
+            to this exception with the offending line:column.
     """
     try:
         doc = parse_tooltrust_yaml(text)
@@ -127,6 +160,16 @@ def load_policy(path: str | Path) -> Policy:
 
     A missing file or a directory is a :class:`PolicyParseError` — the engine
     must never run against a policy it could not read.
+
+    Args:
+        path: Filesystem path to ``tooltrust.yaml``.
+
+    Returns:
+        A fully resolved :class:`Policy`.
+
+    Raises:
+        PolicyParseError: The file does not exist, is a directory, is
+            unreadable, or contains invalid YAML/policy data.
     """
     file = Path(path)
     try:

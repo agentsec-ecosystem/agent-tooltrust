@@ -75,6 +75,8 @@ def opa_evaluate(
         raise OpaUnavailableError(f"OPA binary not found: {opa_binary!r}") from exc
     except OSError as exc:
         raise OpaUnavailableError(f"OPA subprocess error: {exc}") from exc
+    except subprocess.TimeoutExpired as exc:
+        raise OpaUnavailableError(f"OPA evaluation timed out after {timeout_seconds}s") from exc
 
     if result.returncode != 0:
         stderr = result.stderr.strip()
@@ -84,6 +86,20 @@ def opa_evaluate(
 
 
 def _parse_opa_output(raw: str, call: NormalizedCall) -> Decision:
+    """Parse the JSON stdout of ``opa eval`` into a native :class:`Decision`.
+
+    Args:
+        raw: Raw stdout from the OPA subprocess.
+        call: The original normalized call (used for context, currently unused
+            but reserved for future audit enrichment).
+
+    Returns:
+        A :class:`Decision` with fields mapped from the Rego output.
+
+    Raises:
+        :class:`OpaUnavailableError`: Output is unparseable or the Rego result
+            contains invalid decision/criticality values.
+    """
     try:
         data = json.loads(raw)
         results = data.get("result", [])
@@ -93,10 +109,13 @@ def _parse_opa_output(raw: str, call: NormalizedCall) -> Decision:
     except (json.JSONDecodeError, KeyError, IndexError, ValueError) as exc:
         raise OpaUnavailableError(f"unparseable OPA output: {exc}") from exc
 
-    decision_str = value.get("decision", "deny")
-    return Decision(
-        decision=decision_str,
-        reason_code=value.get("reason_code", "deny_opa_backend_down"),
-        explanation=value.get("explanation", "OPA decision (no explanation provided)"),
-        criticality=value.get("criticality", "low"),
-    )
+    try:
+        decision_str = value.get("decision", "deny")
+        return Decision(
+            decision=decision_str,
+            reason_code=value.get("reason_code", "deny_opa_backend_down"),
+            explanation=value.get("explanation", "OPA decision (no explanation provided)"),
+            criticality=value.get("criticality", "low"),
+        )
+    except (ValueError, TypeError) as exc:
+        raise OpaUnavailableError(f"invalid OPA result fields: {exc}") from exc

@@ -61,19 +61,14 @@ def render_preset(posture: str) -> str:
     """
     if posture not in VALID_POSTURES:
         raise ValueError(f"unknown posture preset: {posture!r}")
+    policy = default_policy(posture)
     document = {
         "version": "1.0.0",
         "posture": posture,
-        "environments": {
-            name: {"criticality": risk}
-            for name, risk in default_policy(posture).environments.items()
-        },
-        "data_classes": {
-            name: {"sensitivity": risk}
-            for name, risk in default_policy(posture).data_classes.items()
-        },
-        "risk_weights": dict(default_policy(posture).risk_weights),
-        "rules": [_rule_spec(rule) for rule in default_policy(posture).rules],
+        "environments": {name: {"criticality": risk} for name, risk in policy.environments.items()},
+        "data_classes": {name: {"sensitivity": risk} for name, risk in policy.data_classes.items()},
+        "risk_weights": dict(policy.risk_weights),
+        "rules": [_rule_spec(rule) for rule in policy.rules],
         "escalation": {"threshold": 0.5, "ttl_seconds": 300},
         "audit": {"sink": "jsonl", "path": "~/.tooltrust/audit.jsonl", "postgres_url": None},
     }
@@ -81,6 +76,7 @@ def render_preset(posture: str) -> str:
 
 
 def _rule_spec(rule: Rule) -> dict[str, str]:
+    """Serialize a :class:`Rule` to the dict shape the ``tooltrust.yaml`` schema expects."""
     return {
         "decision": rule.decision,
         "tool": rule.tool,

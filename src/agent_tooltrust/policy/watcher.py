@@ -34,6 +34,9 @@ def watch(
         callback: Called with the freshly loaded :class:`Policy` after every
             change (including the initial load).
 
+    Raises:
+        FileNotFoundError: *path* does not exist.
+
     Raises :class:`FileNotFoundError` if *path* does not exist.
     """
     policy_path = Path(path)

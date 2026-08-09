@@ -18,6 +18,7 @@ from agent_tooltrust.cli.errors import CliError
 
 
 def _build_parser() -> argparse.ArgumentParser:
+    """Construct the top-level argument parser with all subcommand parsers."""
     parser = argparse.ArgumentParser(
         prog="tooltrust",
         description="Pre-execution policy decision point for tool-using AI agents.",

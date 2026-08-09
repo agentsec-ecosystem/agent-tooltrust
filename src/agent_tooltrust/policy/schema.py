@@ -30,7 +30,18 @@ KNOWN_DIMENSIONS = frozenset(
 
 
 def _in_unit(value: float, mode: str) -> float:
-    """Raise ValueError unless *value* is in the [0, 1] risk range."""
+    """Raise ValueError unless *value* is in the [0, 1] risk range.
+
+    Args:
+        value: The numeric value to validate.
+        mode: Human-readable field name for error messages (e.g., ``"criticality"``).
+
+    Returns:
+        *value* unchanged if valid.
+
+    Raises:
+        ValueError: If *value* is outside [0, 1].
+    """
     if not 0.0 <= value <= 1.0:
         raise ValueError(f"{mode} must be in [0, 1], got {value}")
     return value

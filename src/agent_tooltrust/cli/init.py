@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 import argparse
+from typing import Any
 
 from agent_tooltrust.policy.postures import available_postures, init_policy
 
 
-def add_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+def add_parser(subparsers: Any) -> None:
+    """Register the ``tooltrust init`` subcommand parser.
+
+    Args:
+        subparsers: The ``add_subparsers()`` action from the parent parser.
+    """
     parser = subparsers.add_parser(
         "init",
         help="write a posture preset as tooltrust.yaml",
