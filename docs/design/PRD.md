@@ -17,7 +17,7 @@ The insight that justifies the project: **flat allow-lists are a reachability co
 
 This PRD defines **why** the product exists (business rationale), **who** it serves, **what** it delivers (CUJs — critical user journeys — and the feature set), and how it deliberately pursues five quality bets: **platform-neutral compatibility, ease of use, ease of integration, readability of decisions/criticality, and extensibility.** It reflects community research into the current landscape (Section 4) and intentionally positions ToolTrust as the adoption-first, learnable implementation of this pattern.
 
-**Scoping snapshot (decided 2026-08-08):** Python library + MCP client wrapper + a ToolTrust MCP server exposing `evaluate`; full 4-state decision set (allow / audit / escalate / deny); JSON/YAML policy with OPA/Rego parity; policy posture presets (strict/balanced/permissive) shipped via `tooltrust init`; adapters for all major frameworks (LangGraph, PydanticAI, OpenAI SDK, CrewAI, raw Python, MCP); optional non-authoritative LLM explanations (off by default); Postgres-ready audit sink from day one; adversarial resilience (tool-name normalization, injection resistance); field tests as a release gate.
+**Scoping snapshot (decided 2026-08-08):** Python library + MCP client wrapper + ToolTrust MCP server; full 4-state decisions; JSON/YAML policy + OPA/Rego parity; 3 posture presets (strict/balanced/permissive); adapters for 6 frameworks; optional LLM explanations (off by default); Postgres-ready audit; adversarial resilience; field tests as release gate; 8-10 real agents across platforms; SWE-bench integration; demo reference agent. **Security baselines: OpenSSF Silver → Gold, OWASP Agentic Top 10 full coverage, ToolTrust Essential → Hardened → Certified.**
 
 ---
 
@@ -74,7 +74,39 @@ The shipped defaults are a **starter template, not the product.** The real value
 
 An org can start with defaults and incrementally override — the `tooltrust init --posture <strict|balanced|permissive>` scaffold generates a pre-populated `tooltrust.yaml` with the chosen posture's rules, commented for customization. Users never face a blank file. The engine merges (posture default ∨ org overrides ∨ per-call context) at evaluation time.
 
+**Policy versioning and migration:** Every `tooltrust.yaml` carries a `version` field (semver). When an org upgrades, `tooltrust check --migrate` detects breaking changes between versions (removed tools, renamed data classes, threshold shifts) and reports them. A policy version change is recorded in the decision audit — every audit entry includes `policy_version`. This guarantees that "what policy version governed this decision?" is always answerable in a compliance review, even if the policy has since changed.
+
 **Policy deployment and sync (deferred, documented trade-off):** In v0.1, policy lives as a local file or in-memory Python object — no distributed sync. For single-agent or co-located scenarios this is enough; for a fleet, the policy must reach every enforcement point (library instances, MCP wrappers, the MCP server). v0.4 targets distributed policy sync (OPAL or equivalent). Until then, the documented path is: version policies in git, load from a shared location, redeploy on change. This is a deliberate scope trade-off — the engine ships first; fleet-wide coherence ships when AgentControlPlane matures.
+
+### Starter action taxonomy (shipped in `default_policy.yaml`)
+
+The taxonomy is the canonical vocabulary for *what agents do* — a curated, append-only map of domains → verbs → baseline risk. Every tool call from every framework normalizes to one of these verbs. Write one risk rule for `db.query` and it covers PostgreSQL, SQLite, and the MCP database adapter.
+
+| Domain | Verbs | Baseline risk | Notes |
+|--------|-------|---------------|-------|
+| **fs** (filesystem) | `read`, `write`, `delete`, `list`, `move` | low→high | write=med in staging, high in prod; delete always critical |
+| **shell** | `exec`, `pipe` | high | shell exec always high; argument inspection layer catches command smuggling |
+| **http** | `get`, `post`, `put`, `delete`, `patch` | low→med | get=low; methods with bodies=med; outbound to unknown hosts raises risk |
+| **db** (database) | `query`, `execute`, `migrate`, `drop` | low→critical | SELECT-only=low; DDL=high; DROP=critical |
+| **git** (version control) | `status`, `diff`, `log`, `commit`, `push`, `force_push`, `branch`, `merge`, `clone` | low→critical | read-ops=low; push=med; force-push=critical |
+| **email** | `read`, `send`, `delete`, `search` | low→high | read=low; send=high (irreversible external comm) |
+| **cloud** (infra) | `list`, `describe`, `create`, `update`, `delete`, `scale` | low→critical | list/describe=low; create/update=high; delete=critical |
+| **secrets** | `read`, `write`, `rotate`, `revoke` | critical | any secret access at least high; write/revoke=critical |
+| **iam** (identity) | `read_role`, `assign_role`, `revoke_role`, `create_key` | high→critical | read=high; assign/revoke/create=critical |
+| **payment** | `read`, `refund`, `transfer`, `charge` | med→critical | read=med; refund=high (above threshold=critical); transfer/charge=critical |
+| **approval** | `read`, `approve`, `deny`, `delegate` | med→critical | approve/delegate=critical |
+| **search** | `query`, `index`, `delete_index` | low→med | read=low; index mutation=med |
+| **notify** | `send_slack`, `send_teams`, `send_webhook`, `page` | low→high | slack=low; paging=high; webhook to external=high |
+
+**Risk weight mapping** (shipped default, overridable per org):
+| Action weight | Value | Examples |
+|---------------|-------|---------|
+| `read` | 0 | list, describe, status, diff, log, query, get |
+| `write` | 3 | write, create, update, send, post, put, execute |
+| `delete` | critical (10) | delete, drop, revoke, force_push |
+| `grant` | critical (10) | assign_role, approve, delegate, create_key |
+
+This vocabulary is a **starter**, not the final word. Community packs extend it for specific ecosystems (GitHub Actions, Notion, Jira, etc. — see CUJ 5).
 
 ### Design principle (from research)
 - **Deterministic by default; the model does not vote.** The policy engine decides. The LLM at most is an *optional* advisor that can narrow scope (flag "arguable," escalate), never widen it. This is the strongest shared conclusion across Permit0, NEXUS, ConLeash, MSFT AGT, and the OPA ecosystem.
@@ -194,6 +226,7 @@ As a contributor or reviewer, I watch ToolTrust's decisions in real, running age
 
 **Acceptance criteria (P0, gating release):**
 - A field test harness (`tooltrust field-test`) drives real agents through a scripted scenario matrix: safe/staging-read → allow; prod-write-sensitive → escalate; blocked op → deny; unknown tool → fail-closed; deny → model replan → agent tries a different tool; audit entry emitted for all.
+- **8-10 real agents across major agentic platforms** exercised: OpenAI SDK, LangGraph, PydanticAI, CrewAI, raw Python, MCP client, Claude Code via MCP, SWE-bench coding agents, plus at least 2 open-source agent frameworks — not just mocked stubs.
 - Every adapter in v0.1 is exercised in its native framework, with decision outcomes asserted per scenario.
 - The adversarial sub-matrix (CUJ 11) is part of the field test suite.
 - A field test report (`docs/field-test/`) records scenarios × frameworks × expected/actual decision × pass/fail, regenerated on each release.
@@ -356,6 +389,8 @@ Every blocked attack is logged with the distinct `reason_code` for that attack c
 | F-88 | **Child-agent delegation scope** | P2 | delegated agent B's scope must be a *subset* of parent A's (confused-deputy protection) |
 | F-89 | **Adversarial resilience suite** — tool-name normalization, replay-attempt detection, flood resistance | P0-P1 | CUJ 11; normalization P0 for v0.1 (spaces, case, Unicode lookalikes); replay + rate-limit P1 (v0.2) |
 | F-90 | **`tooltrust approve` / `tooltrust deny` CLI** for escalation round-trip | P1 | CUJ 10; time-bounded, action-identity-bound, logged |
+| F-91 | **Demo agent reference implementation** | P0 | a `tooltrust-demo` agent with intentionally risky tools (fs, shell, http, db, git) demonstrating all 4 decision types in one narrative; lives in `examples/demo-agent/` |
+| F-92 | **SWE-Bench integration** | P1 | ToolTrust governing coding agents running SWE-bench tasks — enforce fs/shell/git tool policies during benchmark runs; decision trace per-task for post-hoc analysis |
 
 ---
 
@@ -401,6 +436,63 @@ OSS community (post-launch):
 
 ---
 
+## 11. Security Compliance Baseline
+
+ToolTrust targets three concrete, audit-level security baselines. Each is a public checklist — users can self-audit, and the project publishes its compliance status. **Target: medium across all three; high for OWASP (full coverage v0.2).**
+
+### 11.1 OWASP Agentic AI Top 10 — Target: Full Coverage (HIGH)
+
+| OWASP Risk | ToolTrust mitigation | Feature IDs | Coverage |
+|------------|---------------------|-------------|----------|
+| **A01: Harmful Instructions** | Policy evaluated outside the model; prompt injection cannot alter a decision | F-01, F-04, CUJ 11 | v0.1 ✅ |
+| **A02: Tool & Function Misuse** | 4-state decision on every tool call; taxonomy gating; all 13 domains shipped | F-02, F-05, taxonomy | v0.1 ✅ |
+| **A03: Data Leakage & Privacy** | Data sensitivity dimension in scoring (v0.1); output inspection (v0.3) | F-03, F-82 | v0.1 partial, v0.3 full |
+| **A04: Excessive Agency & Autonomy** | Posture presets (strict/balanced/permissive); deny-by-default; tool hiding (v0.2) | F-66, F-83, F-04 | v0.1 partial, v0.2 full |
+| **A05: Supply Chain Vulnerabilities** | Tool definition scanning (v0.2); pack validation | F-81, F-61 | v0.2 |
+| **A06: Prompt Injection & Jailbreaking** | Engine outside the model; tool-name normalization; adversarial field tests | F-01, F-89, CUJ 11 | v0.1 ✅ |
+| **A07: Insecure Tool Design** | Argument-level validation (v0.2); fail-closed on unknown tool | F-80, F-04 | v0.2 |
+| **A08: Multi-Agent Coordination Risks** | Child-agent delegation scope subset (v0.3); per-agent decision log | F-88, CUJ 6 | v0.3 |
+| **A09: Inadequate Human Oversight** | Escalation round-trip (v0.2); time-bounded, action-identity-bound approvals | F-90, CUJ 10 | v0.2 |
+| **A10: Insufficient Monitoring & Logging** | Decision audit log (JSONL/SQLite/Postgres); exportable; policy version per entry | F-30, F-31, F-33, F-72, CUJ 6 | v0.1 ✅ |
+
+**v0.1: 5/10 full coverage. v0.2: 9/10 full coverage (A03 partial). v0.3: 10/10 full coverage.**
+
+### 11.2 OpenSSF Best Practices Badge — Target: Silver (MEDIUM)
+
+All 6 public repos already achieved **Passing (105%)**. ToolTrust targets **Silver**, with Gold deferred to community phase (requires 2+ independent reviewers).
+
+| Criterion | Requirement | ToolTrust action | Milestone |
+|-----------|-------------|------------------|-----------|
+| **Passing** (baseline) | Basic OSS hygiene | All shipped in repo scaffold | ✅ Already passing |
+| **Dynamic analysis** | Fuzzer/sanitizer in CI | `hypothesis` property-based fuzzer for `evaluate()` input space | v0.1 |
+| **Branch protection** | PR review required; no direct push | GitHub branch protection rules on main | v0.1 |
+| **Signed releases** | Cryptographically signed artifacts | Sigstore / PyPI trusted publishing | v0.1 |
+| **Vulnerability disclosure** | Published process with SLAs | 48h acknowledge / 90d fix SLA in SECURITY.md | v0.1 |
+| **Build reproducibility** | Reproducible builds | `uv` lockfile; CI verifies hash match | v0.1 |
+| **Gold** (HIGH — aspirational) | 2+ independent reviewers per change | Requires community maturity | Post v0.3 |
+
+### 11.3 Custom ToolTrust Security Baseline — Target: Hardened (MEDIUM)
+
+A self-service checklist shipped as `SECURITY_BASELINE.md`. `tooltrust baseline check` audits a deployment against its chosen tier. **Target Hardened; Certified aspirational.**
+
+| Tier | Posture | Key requirements | Target |
+|------|---------|-----------------|--------|
+| **Essential** | balanced (default) | Policy on every call; audit log; deny-by-default; shadow mode; OWASP A02/A04/A06/A10 covered; tool-name normalization | v0.1 ✅ |
+| **Hardened** (MEDIUM) | strict | All Essential + argument validation (F-80); session-state (F-08); tool hiding (F-83); escalation round-trip (CUJ 10); rate limits; replay detection; poison-tool scanning (F-81); OWASP A01-A10 full coverage | v0.2 |
+| **Certified** (HIGH — aspirational) | strict + tamper-evident | All Hardened + tamper-evident audit (F-34); dispatcher-bypass (F-87); child delegation (F-88); output inspection (F-82); OpenSSF Gold; external security review | v0.3+ |
+
+The baseline is auditable: every item maps to a feature ID, a test, or a config flag. The checklist ships in `SECURITY_BASELINE.md` and is regenerated per release.
+
+### Summary: Three Standards, Medium as Floor
+
+| Baseline | v0.1 | v0.2 (MEDIUM target) | Aspirational (HIGH) |
+|----------|------|----------------------|---------------------|
+| **OWASP Agentic Top 10** | 5/10 covered | 9/10 covered | 10/10 full (v0.3) |
+| **OpenSSF Best Practices** | Silver | Silver | Gold (needs community) |
+| **ToolTrust Security Baseline** | Essential | Hardened | Certified (v0.3+) |
+
+---
+
 ## 11. Risks & Open Questions (for scoping)
 
 - **Choosing the right degree of conservative defaults** — too strict yields false positives, too loose is dangerous; needs operational strategy via `dry_run`/shadow.
@@ -420,10 +512,10 @@ OSS community (post-launch):
 
 ## 12. Roadmap (Milestone Sketch)
 
-- **v0.1.0 (P0, per scoping):** core engine (`evaluate`, 4 decisions, fail-closed + degraded mode handling (F-12), taxonomy + defaults, policy posture presets (F-66), `tooltrust check` (F-67), **org-customizable risk posture** (weights envs data thresholds via `tooltrust.yaml`), policy diff/report (F-65), risk scoring, JSON/YAML policy + OPA/Rego parity), audit JSON/SQLite/Postgres, CLI (`evaluate`/`explain`/`init`/`field-test`/`check`), Python package, **all adapters** (raw, MCP client, LangGraph, PydanticAI, OpenAI SDK, CrewAI), **ToolTrust MCP server**, dry-run/shadow mode, optional LLM explanations, tool-name normalization (F-89 P0), **field tests as a release gate (F-75)** + `tooltrust init` (F-85), docs; OpenSSF +90%, ruff/mypy strict. **`shipped` when the 15-line integration walk-through works, every CUJ 1-11 acceptance path passes (CUJs 1-9 + 11 are P0 gates; CUJ 10 is P1), and the field-test matrix is green.** (Sequenced internally: engine → posture/check → policy/OPA → audit → adapters → MCP server → LLM explain → field-test pass → hardening.)
-- **v0.2.0 (P1):** session/context state (F-08 family), argument-level validation (F-80), escalation round-trip CLI (F-90), tool definition scanning (F-81), discovery-time tool hiding (F-83), CI policy regression suite (F-84), session rate/burst limits (F-86), replay-attempt detection (F-89 P1), `audit query`, policy packs + `validate/test`, custom policy functions, OTel spans, HTTP `/authorize` service.
-- **v0.3.0 (P2):** output/response inspection (F-82), dispatcher-bypass safety (F-87), child-agent delegation scope (F-88), approval artifacts & workflow, tamper-evident audit chain (F-34), policy packs catalog, plug into AgentControlPlane & MCP-Data.
-- **v0.4.0 (P3):** governance reports, distributed policy sync.
+- **v0.1.0 (P0, per scoping):** core engine (F-01-F-12, F-20-F-65), policy posture presets (F-66), `tooltrust check` (F-67), taxonomy + defaults, audit JSON/SQLite/Postgres, adapters (F-41), MCP server (F-11), dry-run/shadow, LLM explain, tool-name normalization (F-89 P0), field test gate (F-75), demo agent (F-91), docs. **OpenSSF Silver, OWASP 5/10, ToolTrust Essential.** Shipped when CUJs 1-9+11 (P0) pass and field-test matrix is green.
+- **v0.2.0 (P1):** session/context state (F-08), argument validation (F-80), escalation round-trip (F-90), tool scanning (F-81), tool hiding (F-83), CI policy suite (F-84), rate limits (F-86), replay detection (F-89 P1), SWE-bench integration (F-92), `audit query`, OTel, HTTP `/authorize`. **OWASP 9/10, ToolTrust Hardened.**
+- **v0.3.0 (P2):** output inspection (F-82), dispatcher-bypass (F-87), child delegation (F-88), tamper-evident audit (F-34), packs catalog, AgentControlPlane/MCP-Data integration. **OWASP 10/10, ToolTrust Certified aspirational.**
+- **v0.4.0 (P3):** governance reports, distributed policy sync. **OpenSSF Gold aspirational.**
 
 ---
 
