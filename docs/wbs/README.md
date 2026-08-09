@@ -2,14 +2,30 @@
 
 Work Breakdown Structure — milestone plans and task breakdowns for all versions.
 
-| File | Milestones | Version | Status |
-|------|-----------|---------|--------|
-| [wbs-v0.1.0-part1-engine.md](wbs-v0.1.0-part1-engine.md) | M1 (Core Engine) + M2 (Policy Manager) | v0.1.0 | Draft |
-| [wbs-v0.1.0-part2-audit-adapters.md](wbs-v0.1.0-part2-audit-adapters.md) | M3 (Audit Logger) + M4 (Integration Adapters) | v0.1.0 | Draft |
-| [wbs-v0.1.0-part3-cli-mcp.md](wbs-v0.1.0-part3-cli-mcp.md) | M5 (MCP Server) + M6 (CLI + Explanation) | v0.1.0 | Draft |
-| [wbs-v0.1.0-part4-field-ship.md](wbs-v0.1.0-part4-field-ship.md) | M7 (Field Tests) + M8 (Demo + Hardening + Ship) | v0.1.0 | Draft |
-| [wbs-v0.2-v0.3.md](wbs-v0.2-v0.3.md) | M9-M16 (v0.2 + v0.3 milestones) | v0.2.0, v0.3.0 | Draft |
-| [wbs-v0.4.md](wbs-v0.4.md) | M17-M18 (v0.4 milestones) | v0.4.0 | Draft |
+> **GitHub Issues:** 122 issues created across 4 milestones. All issues link back to these WBS files.
+> **Milestones:** [v0.1.0 (#1-76)](https://github.com/deghosal-2026/agent-tooltrust/milestone/1) | [v0.2.0 (#77-104)](https://github.com/deghosal-2026/agent-tooltrust/milestone/2) | [v0.3.0 (#105-117)](https://github.com/deghosal-2026/agent-tooltrust/milestone/3) | [v0.4.0 (#118-122)](https://github.com/deghosal-2026/agent-tooltrust/milestone/4)
+
+| File | Milestones | Version | GitHub Issues | Status |
+|------|-----------|---------|---------------|--------|
+| [wbs-v0.1.0-part1-engine.md](wbs-v0.1.0-part1-engine.md) | M1 (Core Engine) + M2 (Policy Manager) | v0.1.0 | #12-23 (M1), #1-11 (M2) | Approved ✅ |
+| [wbs-v0.1.0-part2-audit-adapters.md](wbs-v0.1.0-part2-audit-adapters.md) | M3 (Audit Logger) + M4 (Integration Adapters) | v0.1.0 | #24-43 (M3-M4) | Approved ✅ |
+| [wbs-v0.1.0-part3-cli-mcp.md](wbs-v0.1.0-part3-cli-mcp.md) | M5 (MCP Server) + M6 (CLI + Explanation) | v0.1.0 | #44-57 (M5-M6) | Approved ✅ |
+| [wbs-v0.1.0-part4-field-ship.md](wbs-v0.1.0-part4-field-ship.md) | M7 (Field Tests) + M8 (Demo + Hardening + Ship) | v0.1.0 | #58-76 (M7-M8) | Approved ✅ |
+| [wbs-v0.2-v0.3.md](wbs-v0.2-v0.3.md) | M9-M16 (v0.2 + v0.3 milestones) | v0.2.0, v0.3.0 | #77-104 (M9-M12), #105-118 (M13-M16) | Approved ✅ |
+| [wbs-v0.4.md](wbs-v0.4.md) | M17-M18 (v0.4 milestones) | v0.4.0 | #119-122 (M17-M18) | Approved ✅ |
+
+## Issue Summary
+
+| Milestone | Version | Issues | Range |
+|-----------|---------|--------|-------|
+| M1-M2 | v0.1.0 Engine + Policy | 23 | #1-23 |
+| M3-M4 | v0.1.0 Audit + Adapters | 20 | #24-43 |
+| M5-M6 | v0.1.0 MCP + CLI | 14 | #44-57 |
+| M7-M8 | v0.1.0 Field + Ship | 19 | #58-76 |
+| M9-M12 | v0.2.0 Session + Security | 28 | #77-104 |
+| M13-M16 | v0.3.0 Output + Tamper | 13 | #105-117 |
+| M17-M18 | v0.4.0 Governance | 5 | #118-122 |
+| **Total** | | **122** | #1-122 |
 
 ## v0.1.0 Milestone Summary
 
