@@ -93,7 +93,10 @@ class Engine:
             decision = replace(
                 decision,
                 decision="allow",
-                explanation=f"[DRY RUN] would have been {decision.decision}: {decision.explanation}",
+                explanation=(
+                    f"[DRY RUN] would have been {decision.decision}:"
+                    f" {decision.explanation}"
+                ),
                 dry_run=True,
             )
         return decision
