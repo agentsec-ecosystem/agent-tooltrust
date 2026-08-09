@@ -33,9 +33,3 @@ htmlcov/
 
 # uv lock file
 uv.lock
-
-# ruff cache and reports
-.ruff_cache/
-
-# OS generated files
-.DS_Store
