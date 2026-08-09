@@ -17,7 +17,7 @@ The insight that justifies the project: **flat allow-lists are a reachability co
 
 This PRD defines **why** the product exists (business rationale), **who** it serves, **what** it delivers (CUJs — critical user journeys — and the feature set), and how it deliberately pursues five quality bets: **platform-neutral compatibility, ease of use, ease of integration, readability of decisions/criticality, and extensibility.** It reflects community research into the current landscape (Section 4) and intentionally positions ToolTrust as the adoption-first, learnable implementation of this pattern.
 
-**Scoping snapshot (decided 2026-08-08):** Python library + MCP client wrapper + a ToolTrust MCP server exposing `evaluate`; full 4-state decision set (allow / audit / escalate / deny); JSON/YAML policy with OPA/Rego parity; adapters for all major frameworks (LangGraph, PydanticAI, OpenAI SDK, CrewAI, raw Python, MCP); optional non-authoritative LLM explanations (off by default); Postgres-ready audit sink from day one.
+**Scoping snapshot (decided 2026-08-08):** Python library + MCP client wrapper + a ToolTrust MCP server exposing `evaluate`; full 4-state decision set (allow / audit / escalate / deny); JSON/YAML policy with OPA/Rego parity; policy posture presets (strict/balanced/permissive) shipped via `tooltrust init`; adapters for all major frameworks (LangGraph, PydanticAI, OpenAI SDK, CrewAI, raw Python, MCP); optional non-authoritative LLM explanations (off by default); Postgres-ready audit sink from day one; adversarial resilience (tool-name normalization, injection resistance); field tests as a release gate.
 
 ---
 
@@ -69,10 +69,10 @@ The shipped defaults are a **starter template, not the product.** The real value
 | Tier | Who | What they provide | Engine role |
 |------|-----|-------------------|-------------|
 | **Default taxonomy** | Shipped with ToolTrust | Curated tool-category → baseline risk scores; a starter action vocabulary; reasonable escalation thresholds | Evaluates; ships as `default_policy.yaml` with every install |
-| **Org overrides** | Platform/Security team | Per-org weights ("staging is safe for us; pre-prod is risky"), environment-to-criticality mappings, data-class definitions, approval thresholds | Overlays on top of defaults; highest-priority input to the scorer |
+| **Org overrides** | Platform/Security team | Per-org weights, environment-to-criticality mappings, data-class definitions, approval thresholds — starting from a chosen posture preset, not a blank slate | Overlays on top of defaults; highest-priority input to the scorer |
 | **Community packs** | OSS contributors | A reusable `.yaml` pack that maps a specific tool ecosystem (e.g., "GitHub admin tools", "AWS cost ops", "notion.write") onto the canonical taxonomy with their org's risk profile | Validated via `tooltrust pack validate`; installable via `tooltrust pack add` |
 
-An org can start with defaults and incrementally override — the `tooltrust init` scaffold generates a starter `tooltrust.yaml` with commented-out sections for custom weights, environments, and data classes. The engine merges (defaults ∨ org ∨ per-call context) at evaluation time.
+An org can start with defaults and incrementally override — the `tooltrust init --posture <strict|balanced|permissive>` scaffold generates a pre-populated `tooltrust.yaml` with the chosen posture's rules, commented for customization. Users never face a blank file. The engine merges (posture default ∨ org overrides ∨ per-call context) at evaluation time.
 
 **Policy deployment and sync (deferred, documented trade-off):** In v0.1, policy lives as a local file or in-memory Python object — no distributed sync. For single-agent or co-located scenarios this is enough; for a fleet, the policy must reach every enforcement point (library instances, MCP wrappers, the MCP server). v0.4 targets distributed policy sync (OPAL or equivalent). Until then, the documented path is: version policies in git, load from a shared location, redeploy on change. This is a deliberate scope trade-off — the engine ships first; fleet-wide coherence ships when AgentControlPlane matures.
 
@@ -120,71 +120,145 @@ A working `v0.1.0` that can be installed with `pip install agent-tooltrust`, ini
 
 ## 6. Critical User Journeys (CUJs)
 
-Eight critical journeys, each with an entrance gate / decision / acceptance criteria. These are the north star for the feature set.
+Eleven critical journeys, each with an entrance gate / decision / acceptance criteria. These are the north star for the feature set.
 
-### CUJ 1 — Evaluate one tool call ("is my integration behaving? minimal sanity check")
-As an engineer, I run a small snippet that calls `evaluate()` on a realistically risk-contrasted pair of logs and see correct decisions and explanations they understand immediately.
+### CUJ 1 — Evaluate one tool call ("15 lines to a decision")
+As an engineer, I run a small snippet, see all four decision types correctly returned, and understand the output immediately.
 
-**Acceptance criteria:**
-- Safe staging read → `allow`
-- Prod write toward a sensitive class → `escalate`
-- Blocked action → returns `deny` with message readable by a non-expert
-- All within ~15 lines of Python, no service.
+**Acceptance criteria (P0):**
+| Scenario | Expected decision | Expected explanation |
+|----------|-------------------|---------------------|
+| Read logs in staging, internal data | `allow` | "Read-only in staging: low risk" |
+| Read logs in staging, sensitive data | `audit` | "Read on sensitive data: logged, no block" |
+| Write deploy in production, internal data | `escalate` | "Write in production: requires approval" |
+| Delete in production, restricted data | `deny` | "Delete in production with restricted data: blocked" |
+| Unknown tool name, any context | `deny` | "Unknown tool: default deny" |
+| `evaluate()` call on an unreachable engine | `deny` | "Engine unavailable: fail-closed" |
 
-### CUJ 2 — Wire into an agent framework ("integrate into my agent in one afternoon")
-As an engineer, I hook ToolTrust into each major framework using an idiomatic wrapper and get safe-by-default without racing the agent:
+All within ~15 lines of Python, no service, no network call in the hot path.
 
-**Acceptance criteria per framework:** the adapter intercepts every tool call before side effects; decisions flow; only allowed calls execute; a deny is surfaced to the model as a tool result (not a protocol crash); audit got it.
-- LangGraph (node/`tools` dispatch, callback/tool wrapper)
-- PydanticAI (tool interceptor)
-- OpenAI Agents SDK (`tool_input_guardrail` / hook)
-- CrewAI (tool wrapper)
-- Raw Python (decorator / context manager)
-- MCP client path (adapter around `tool_call`)
+### CUJ 2 — Wire into an agent framework ("integrate in one afternoon")
+As an engineer, I hook ToolTrust into each major framework using an idiomatic wrapper and get safe-by-default without breaking the agent loop.
 
-### CUJ 3 — Understand *why* an action was risky ("can you explain what just nearly happened?")
-As a user or reviewer, when a request was escalated or denied, I can read one explanation that tells me the decision/risk, which factor (e.g. 'environment=prod' + 'action=delete'), and what it would take to get allowed.
+**Per-framework acceptance criteria (P0):**
 
-- Every decision object carries `decision`, `criticality` (low/med/high/critical), `reason_code`, `explanation` (template-generated, human-readable), and `factors`.
-- Admin can see a `tool trust report` or a summary of which risk classes were / were not consumed.
-- Explanations are stored in the audit; no black-box denials.
+| Framework | Integration point | Deny experience |
+|-----------|-------------------|-----------------|
+| **Raw Python** | `@tooltrust.guard` decorator or `with tooltrust.session():` context | `ToolTrustDecisionError` with `.decision` attribute |
+| **MCP client** | Proxy `tools/call` through the wrapper | Tool result returns `isError: true` with the deny reason as content — the model sees it as a tool error it can replan around |
+| **LangGraph** | ToolNode pre-call interceptor / callback | Denied tool returns a `ToolMessage(content="[ToolTrust denied] reason...")` — the graph continues, no crash |
+| **PydanticAI** | `@tooltrust.guard` on `@agent.tool` | `ModelRetry` or tool-return error surfaced to the agent's next reasoning step |
+| **OpenAI Agents SDK** | `tool_input_guardrail` hook | `ToolGuardrailFunctionOutput.deny(reason=...)` — framework-native denial, agent replans |
+| **CrewAI** | Tool wrapper / `_run()` interceptor | Denied tool returns error string; agent sees it as a tool output it can handle |
 
-### CUJ 4 — "Drive my allow/deny/escalate behavior with policy"
-As platform lead, I express policy as data (YAML or Python): per-env rules, per-data-class, per-action; choose default posture; set approval thresholds; read outcomes.
+Every framework: audit entry emitted for every decision (allow and deny alike); field-test validated (CUJ 7).
 
-- Declarative; a minimal rule set is committed to the repo in under 30 minutes; played with in an `evaluate` CLI/smoke test.
-- Support: explicit allow/deny, referenced rule composition, and a threshold for escalation.
-- `shadow mode` — run the policy and log decisions without enforcing, so the team sees where it would block before production hard-breaks (industry-recommended adoption path).
+### CUJ 3 — Understand *why* an action was risky ("explainable, not black-box")
+As a reviewer, when a request was escalated or denied, I can read the explanation, understand which factor drove the decision within 10 seconds, and know what to change — without reading engine code.
 
-### CUJ 5 — "Extend ToolTrust" (a maintainer or operator adds an MCP tool / custom class)
-As a tool platform author, I define a new tool (or whole adapter) with a declared risk profile using a small schema/format, register it in the pack, and the engine scores it — no engine core changes.
+**Acceptance criteria (P0):**
+- Decision object carries: `decision` (str), `criticality` (none/low/med/high/critical), `reason_code` (machine-readable), `explanation` (template-generated, human sentence), `factors` (list of `{dimension, value, contribution}`).
+- **Actionability test:** "A human given only the explanation text and the original tool call can identify the one change (e.g., approve, move to staging, lower data class) that would change the outcome — without consulting documentation."
+- `tooltrust explain '<call-json>'` CLI prints the full factor breakdown.
+- Explanations are stored in the audit log; no "denied with no reason" entries.
 
-- Tool metadata schema: probably enough to define env-then-risk without any code.
-- A short contribution / how-to → an open PR.
-- New packs can be added & validated (`tooltrust pack validate`, `tooltrust pack test`).
+### CUJ 4 — Adopt incrementally with shadow mode ("trust before you enforce")
+As platform lead, I deploy ToolTrust in **observe-only** mode first, monitor decision logs for a real workload, tune the policy against what I see, and only then flip the enforce switch — without changing a single line of agent code.
 
-### CUJ 6 — "Prove compliance: what did this agent do, and who approved?"
-As a compliance interviewer, given a `session_id`, I can reconstruct the full chain of decisions: per-call decision (allow/approve/deny), msg code, timestamp, policy version, approver (for escalate), linked explanations.
+**Acceptance criteria (P0):**
+- `engine.evaluate(..., dry_run=True)` returns the decision, logs it to the audit, but returns `allow` to the caller — the agent never sees the shadow decision.
+- After N days of shadow, `tooltrust audit query --dry-run` shows the decisions that *would have* been blocked/escalated.
+- Platform lead tunes the policy (`tooltrust.yaml`), reruns shadow until the only blocked actions are genuinely unwanted, then flips `dry_run=False`.
+- The difference between shadow and enforced decisions is visible in one diff or audit filter.
 
-### CUJ 7 — "Field test: it actually works in real agent frameworks"
-As a contributor or reviewer, I can watch ToolTrust's decisions in **real, running agent loops** — not just unit fixtures — across every supported framework, and see a published field-test report with pass/fail per scenario.
+### CUJ 5 — Extend ToolTrust without touching the engine ("one pack, one PR")
+As a tool platform author, I define a new tool ecosystem (or risk function) using a documented schema, validate it, and the engine scores it — no engine core changes, no rebuild.
+
+**Acceptance criteria (P1):**
+- A `tooltrust pack add` flow: create a `tools.yaml` mapping native tool names → canonical action types + risk metadata; write a `tests.yaml` with expected decisions; run `tooltrust pack validate && tooltrust pack test` — all pass without engine changes.
+- Custom risk function registered via a pure-function decorator (`@tooltrust.risk_function`), tested in isolation, and correctly fed into the scorer.
+- Contribution is one file + one test file → one PR.
+- A one-page "how to contribute a pack" doc is the only reference needed.
+
+### CUJ 6 — Prove compliance ("show me the decision log")
+As a compliance reviewer, given a `session_id`, I can reconstruct the full chain of decisions for that session, export it in a defensible format, and trace every escalated action back to its human approver.
+
+**Acceptance criteria (P0):**
+- `tooltrust audit show --session <id>` prints every decision for that session: timestamp, tool, action, env, data_class, decision, reason_code, explanation, policy_version, approver (if escalated).
+- Exportable as JSON and CSV (`--format json|csv`).
+- Every escalated action has a linked approval record with: who approved, when, what they approved, expiry.
+- Chain-of-decisions for a multi-step agent workflow is reconstructable and traceable in under 5 minutes.
+
+### CUJ 7 — Field test ("it actually works in real agent loops")
+As a contributor or reviewer, I watch ToolTrust's decisions in real, running agent loops — not just unit fixtures — across every supported framework. Field tests are a release gate; no green matrix, no ship.
 
 **Acceptance criteria (P0, gating release):**
-- A **field test harness** (`tooltrust field-test`) drives real agents (LangGraph, PydanticAI, OpenAI SDK, CrewAI, MCP client, raw Python) through a scripted scenario matrix: safe/staging-read → allow; prod-write-sensitive → escalate; blocked op → deny; fail-closed on unknown tool; replay denied call to see the model replan.
-- Every adapter in v0.1 is exercised in its native framework (not just mocked), with decision outcomes asserted per scenario.
-- A field test report (`docs/field-test/`) records scenarios × frameworks × expected/actual decision × pass/fail, and is regenerated on release.
-- A "no surprises" rule: any field-test miss on a P0 scenario blocks the release — field tests are part of shippability, not an afterthought.
+- A field test harness (`tooltrust field-test`) drives real agents through a scripted scenario matrix: safe/staging-read → allow; prod-write-sensitive → escalate; blocked op → deny; unknown tool → fail-closed; deny → model replan → agent tries a different tool; audit entry emitted for all.
+- Every adapter in v0.1 is exercised in its native framework, with decision outcomes asserted per scenario.
+- The adversarial sub-matrix (CUJ 11) is part of the field test suite.
+- A field test report (`docs/field-test/`) records scenarios × frameworks × expected/actual decision × pass/fail, regenerated on each release.
+- Any field-test miss on a P0 scenario blocks the release.
 
-### CUJ 8 — "Customize the risk posture to my org" (override defaults, test, enforce)
-As a platform/security lead, I start from the shipped defaults and incrementally replace them with my org's risk posture: my environments, my data classifications, my tool categories, my escalation thresholds — without touching engine code.
+### CUJ 8 — Customize the risk posture to my org ("not a blank slate")
+As a platform/security lead, I choose a **policy posture preset** (strict/balanced/permissive), then incrementally override: my environments, my data classifications, my tool categories, my thresholds — without touching engine code. I never start from zero.
 
-**Acceptance criteria:**
-- `tooltrust init` generates a commented `tooltrust.yaml` with placeholders for custom `environments`, `data_classes`, `tool_categories`, and `thresholds`.
-- I can set "environment: staging → risk weight 0.1" and "environment: pre-prod → risk weight 0.7" and see the same tool call score differently in each.
-- I can define a custom data class (`"customer-PII"`) that raises risk higher than the shipped default `"restricted"`.
-- My custom policy produces the same decision every time (deterministic), and I can run `tooltrust test` against a fixture set to confirm my overrides don't accidentally permit a dangerous action.
-- A "policy diff" shows which defaults I kept, which I overrode, and which gaps remain.
-- The policy is committed to my repo as `tooltrust.yaml`; my team reviews it in PRs; it loads from `TOOLTRUST_POLICY_PATH`.
+**Acceptance criteria (P0):**
+- `tooltrust init` offers three postures:
+
+| Posture | Default behavior | Best for |
+|---------|-----------------|----------|
+| **strict** | Deny-by-default; write=escalate always; read-only in staging; all unknown tools denied | Prod fleets, compliance environments |
+| **balanced** (default) | Audited reads; write-to-staging allowed; prod-writes escalate; destructive ops denied | Internal dev platforms |
+| **permissive** | Deny only destructive ops (delete/drop); audit everything else; local dev | Local dev, trusted sandboxes |
+
+- Choosing `strict` generates a `tooltrust.yaml` pre-populated with restrictive rules — the user overrides *down* (relaxes specific cases) rather than building up from nothing.
+- Custom environments/data classes/weights can be set and the same tool call scores differently in each.
+- `tooltrust test` confirms custom overrides don't accidentally permit a dangerous action.
+- A `tooltrust diff` shows which defaults were kept, which were overridden, and which gaps remain.
+- Policy loads from `TOOLTRUST_POLICY_PATH` and is PR-reviewable.
+
+### CUJ 9 — Degraded and failure modes ("what happens when it breaks")
+As an operator, I know exactly what happens in every failure condition: the engine is unreachable, the OPA backend is down, the LLM explainer errors, a malformed policy is loaded, a timeout occurs — and every scenario is safe by default.
+
+**Acceptance criteria (P0):**
+
+| Failure | Behavior | Why |
+|---------|----------|-----|
+| Policy engine process crashes / import fails | Every `evaluate()` call returns `deny` with reason `engine_unavailable` | Fail-closed: no authorization → no execution |
+| OPA backend unreachable (network error, timeout) | Calls routed to the OPA path return `deny` with `opa_backend_unavailable`; native JSON/YAML path unaffected | Dual backend: each fails independently |
+| LLM explainer API error or timeout | Explanation falls back to template-generated text; decision is unaffected | LLM is advisory only; the decision was already made deterministically |
+| Malformed `tooltrust.yaml` (parse error) | Engine refuses to load; `tooltrust check` reports the parse error at line/column; no policy = all calls deny | Never operate with a broken policy |
+| `evaluate()` call exceeds configured timeout | Returns `deny` with `evaluation_timeout` | Safety over latency |
+| Audit sink failure (disk full, Postgres down) | Decision stands; audit write failure is logged to stderr; engine continues evaluating | Audit is a side effect, not a gating dependency |
+
+No failure mode silently allows. Every failure reason is logged with a distinct `reason_code` the SIEM can alert on.
+
+### CUJ 10 — Escalation round-trip ("human says yes or no, agent continues")
+As an operator, when a tool call is escalated, a human approves or denies it; the agent resumes exactly where it left off, and the approval is audited with an expiry.
+
+**Acceptance criteria (P1):**
+- Agent calls tool → engine returns `escalate` + `escalation_id` + reason → agent pauses.
+- Human reviews the escalation (via CLI `tooltrust approve <id>` or programmatic callback): sees the tool call, the reason, the context, and approves or denies.
+- On **approve:** the engine records an approval event bound to `escalation_id` + `action_identity` (tool+args hash, ensuring the approval can't be replayed for a different call); tool executes; agent resumes.
+- On **deny:** engine records the denial; agent receives the deny reason and can replan.
+- Approval is time-bounded (default: 5 minutes, configurable); an expired approval is treated as deny.
+- An approval for call X cannot be reused for call Y (action-identity binding prevents replay).
+
+### CUJ 11 — Adversarial resilience ("you can't trick the engine")
+As a security reviewer, I attempt to bypass ToolTrust using known agent-attack techniques — prompt injection, tool-name obfuscation, OPA policy manipulation, argument smuggling — and the engine blocks every attempt, logs it, and never silently allows.
+
+**Acceptance criteria (P0 for v0.1):**
+
+| Attack vector | Expected defense |
+|---------------|-----------------|
+| Prompt injection: LLM instructed to call a blocked tool | Engine evaluates the tool call, not the prompt; deny stands; model sees a rejection it can't override |
+| Tool-name obfuscation: `"deploy_service "` (trailing spaces), Unicode lookalikes (`dеploy`), case variants | Engine normalizes tool names before matching; unknown normalized name → deny |
+| Argument smuggling via dispatcher: `bash: "git push --force"` when `git.push` is denied | Dispatcher input parsed to canonical (tool, action) and evaluated against the same policy (F-87, v0.2) |
+| OPA policy tampering: attacker modifies the `.rego` file | Policy version recorded in every decision log; hash mismatch detection (F-34 by v0.3); before that, filesystem integrity is the operator's responsibility |
+| Replay attack: reuse an approval token from an earlier escalate | Approval is bound to `action_identity` (tool+args hash); replay with different args fails |
+| Flooding: rapid-fire tool calls hoping one slips through | Rate limits (F-86, v0.2) throttle per-session; before that, every call is independently evaluated — no "slip through" path |
+
+Every blocked attack is logged with the distinct `reason_code` for that attack class, making a SIEM dashboard possible. The adversarial sub-matrix is part of the field test suite (CUJ 7).
 
 ---
 
@@ -210,6 +284,7 @@ As a platform/security lead, I start from the shipped defaults and incrementally
 | F-09 | Approval workflow state (subject, artifact, expiry) — "approval is bound to an action identity" | P1-P2 | HITL; P2 full UI |
 | F-10 | OPA/Rego parity — evaluate a Rego policy as a peer backend to native rules | P0 | Same decision contract, dual authoring paths |
 | F-11 | ToolTrust MCP server exposing `evaluate` + `explain` tools | P0 | Agents query authorization through their own stack |
+| F-12 | **Degraded/failure mode handling** — every failure path is deny + logged reason (engine crash, OPA unreachable, malformed policy, timeout, audit sink failure) | P0 | CUJ 9; no-fail-open guarantee, SIEM-ready reason codes |
 
 ### 7.2 Explainability
 | ID | Feature | Priority | Notes |
@@ -254,6 +329,8 @@ As a platform/security lead, I start from the shipped defaults and incrementally
 | F-63 | OPA/Rego interop (evaluate a Rego policy as an optional backend) | P0 | parity with native JSON/YAML rules |
 | F-64 | Rule composition (`and`/`or`/`not`, sub-entity — group) | P1 | |
 | F-65 | **Policy diff/report** — which defaults were kept, which were overridden, which gaps remain | P0 | supports CUJ 8: org customization with auditability |
+| F-66 | **Policy posture presets** — `strict` / `balanced` (default) / `permissive` starter policies shipped with ToolTrust | P0 | generated by `tooltrust init --posture <name>`; pre-populated not blank |
+| F-67 | **`tooltrust check`** — validate `tooltrust.yaml` for parse errors, unknown keys, missing required sections; return line/column on failure | P0 | CUJ 9: never operate with a broken policy |
 
 ### 7.7 Governance/dev tools
 | ID | Feature | Priority | Notes |
@@ -273,10 +350,12 @@ As a platform/security lead, I start from the shipped defaults and incrementally
 | F-82 | **Output/response inspection** | P1P2 | redact secrets (keys/PII), catch injected instructions in tool results returning to the model (SkillAudit Layer 4) |
 | F-83 | **Discovery-time tool hiding** | P1 | don't even expose tools an agent can't call — smaller surface, fewer tokens, "you can't misuse a tool you were never shown" |
 | F-84 | **CI policy regression suite** | P1 | `tooltrust test` replays recorded decision fixtures (golden sets per env/action/class) on every PR; deterministic drift detection |
-| F-85 | **`tooltrust init` scaffold** | P0 | generate a commented `tooltrust.yaml` (custom envs/data/thresholds) + adapter + quickstart in one command; shaves the install→first-decision path |
+| F-85 | **`tooltrust init` scaffold** | P0 | `tooltrust init [--posture strict|balanced|permissive]` generates a commented `tooltrust.yaml` (pre-populated with chosen posture) + adapter + quickstart |
 | F-86 | **Session-call rate/burst limits** | P1 | per-session op-count and burst ceilings (SkillAudit Layer 3b) |
-| F-87 | **Dispatcher-bypass safety** | P1-P2 | the coarse `bash`/`call_aws` rule that can smuggle a `git push` around a per-action rule — parse dispatcher input to canonical (name, action) and evaluate against the same policy (Vercel-documented gap) |
-| F-88 | **Child-agent delegation scope** | P2 | delegated agent B's scope must be a *subset* of parent A's (IETF cap-down, never up); confused-deputy protection |
+| F-87 | **Dispatcher-bypass safety** | P1-P2 | parse coarse tool input to canonical (name, action) and evaluate against the same policy |
+| F-88 | **Child-agent delegation scope** | P2 | delegated agent B's scope must be a *subset* of parent A's (confused-deputy protection) |
+| F-89 | **Adversarial resilience suite** — tool-name normalization, replay-attempt detection, flood resistance | P0-P1 | CUJ 11; normalization P0 for v0.1 (spaces, case, Unicode lookalikes); replay + rate-limit P1 (v0.2) |
+| F-90 | **`tooltrust approve` / `tooltrust deny` CLI** for escalation round-trip | P1 | CUJ 10; time-bounded, action-identity-bound, logged |
 
 ---
 
@@ -298,10 +377,11 @@ Product-level success (by v1.0 & T-1):
 2. **Correctness:** "Does it get the right verdict on a 40-cell matrix of tool×env×action×class?" — target 100% on the acceptance matrix (deterministic).
 3. **Explanation usefulness:** reviewers can re-explain the decision in one paragraph (no "ugh, why?"); deny reasons are `actionable` (a test in CI).
 4. **Safety:** >90% of the *unsafe-and-suspicious* matrix rows → deny; 0 crafted `allow` for `delete` in prod with class `restricted`.
-5. **Field-test green (release gate):** every P0 scenario passes in every framework's real agent loop — safe/staging→allow, prod-write-sensitive→escalate, blocked→deny, unknown-tool→fail-closed, and deny→replan round-trips — with a regenerated `docs/field-test/` report at each release.
+5. **Field-test green (release gate):** every P0 scenario passes in every framework's real agent loop — safe/staging→allow, prod-write-sensitive→escalate, blocked→deny, unknown-tool→fail-closed, deny→replan round-trips, adversarial sub-matrix (CUJ 11) — with a regenerated `docs/field-test/` report at each release.
 6. **Performance:** <2 ms deterministic overhead per call (target <0.5ms).
 7. **Extensibility:** a contributor can add a new tool pack + test via one page of docs in one sitting (measure: docs `1 new pack` issue → PR cycle).
-8. **Customization:** a platform lead can override defaults for their org (custom environments, data classes, thresholds) and load the result from `tooltrust.yaml` without touching engine code.
+8. **Customization:** a platform lead can choose a posture preset (`tooltrust init --posture balanced`), override defaults for their org, and load the result from `tooltrust.yaml` without touching engine code.
+9. **Security resilience:** 0 crafted `allow` outcomes on the adversarial sub-matrix (tool-name normalization, injection attempts, unknown-tool probes, replay attempts).
 
 v0.2 session-state success (when F-08 lands):
 - **A same-risk action that auto-`allow`s at session start escalates once the accumulated session risk crosses its threshold** (the Omnigent demo behavior, reproduced deterministically in a test).
@@ -340,8 +420,8 @@ OSS community (post-launch):
 
 ## 12. Roadmap (Milestone Sketch)
 
-- **v0.1.0 (P0, per scoping):** core engine (`evaluate`, 4 decisions, fail-closed, taxonomy + defaults, **org-customizable risk posture** (weights envs data thresholds via `tooltrust.yaml`), policy diff/report (F-65), risk scoring, JSON/YAML policy + OPA/Rego parity), audit JSON/SQLite/Postgres, CLI (`evaluate`/`explain`/`init`/`field-test`), Python package, **all adapters** (raw, MCP client, LangGraph, PydanticAI, OpenAI SDK, CrewAI), **ToolTrust MCP server**, dry-run/shadow mode, optional LLM explanations, **field tests as a release gate (F-75)** + `tooltrust init` (F-85), docs; OpenSSF +90%, ruff/mypy strict. **`shipped` when the 15-line integration walk-through works, every CUJ 1-8 acceptance path passes, and the field-test matrix is green.** (Sequenced internally: engine → policy/OPA → audit → adapters → MCP server → LLM explain → field-test pass → hardening.)
-- **v0.2.0 (P1):** session/context state (F-08 family), argument-level validation (F-80), tool definition scanning (F-81), discovery-time tool hiding (F-83), CI policy regression suite (F-84), session rate/burst limits (F-86), `audit query`, policy packs + `validate/test`, custom policy functions, OTel spans, HTTP `/authorize` service.
+- **v0.1.0 (P0, per scoping):** core engine (`evaluate`, 4 decisions, fail-closed + degraded mode handling (F-12), taxonomy + defaults, policy posture presets (F-66), `tooltrust check` (F-67), **org-customizable risk posture** (weights envs data thresholds via `tooltrust.yaml`), policy diff/report (F-65), risk scoring, JSON/YAML policy + OPA/Rego parity), audit JSON/SQLite/Postgres, CLI (`evaluate`/`explain`/`init`/`field-test`/`check`), Python package, **all adapters** (raw, MCP client, LangGraph, PydanticAI, OpenAI SDK, CrewAI), **ToolTrust MCP server**, dry-run/shadow mode, optional LLM explanations, tool-name normalization (F-89 P0), **field tests as a release gate (F-75)** + `tooltrust init` (F-85), docs; OpenSSF +90%, ruff/mypy strict. **`shipped` when the 15-line integration walk-through works, every CUJ 1-11 acceptance path passes (CUJs 1-9 + 11 are P0 gates; CUJ 10 is P1), and the field-test matrix is green.** (Sequenced internally: engine → posture/check → policy/OPA → audit → adapters → MCP server → LLM explain → field-test pass → hardening.)
+- **v0.2.0 (P1):** session/context state (F-08 family), argument-level validation (F-80), escalation round-trip CLI (F-90), tool definition scanning (F-81), discovery-time tool hiding (F-83), CI policy regression suite (F-84), session rate/burst limits (F-86), replay-attempt detection (F-89 P1), `audit query`, policy packs + `validate/test`, custom policy functions, OTel spans, HTTP `/authorize` service.
 - **v0.3.0 (P2):** output/response inspection (F-82), dispatcher-bypass safety (F-87), child-agent delegation scope (F-88), approval artifacts & workflow, tamper-evident audit chain (F-34), policy packs catalog, plug into AgentControlPlane & MCP-Data.
 - **v0.4.0 (P3):** governance reports, distributed policy sync.
 
