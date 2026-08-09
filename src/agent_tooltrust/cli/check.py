@@ -9,8 +9,8 @@ a malformed file fails closed instead of shipping silently.
 from __future__ import annotations
 
 import argparse
-import sys
 
+from agent_tooltrust.cli.errors import CliError
 from agent_tooltrust.errors import PolicyParseError
 from agent_tooltrust.policy.loader import load_policy
 
@@ -34,7 +34,6 @@ def _run(args: argparse.Namespace) -> int:
     try:
         policy = load_policy(args.policy)
     except PolicyParseError as exc:
-        print(f"invalid policy: {exc}", file=sys.stderr)
-        return 1
+        raise CliError(f"invalid policy: {exc}") from exc
     print(f"ok: {args.policy} (version {policy.version}, posture {policy.posture})")
     return 0

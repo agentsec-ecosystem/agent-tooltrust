@@ -14,6 +14,7 @@ from collections.abc import Sequence
 from typing import NoReturn
 
 from agent_tooltrust.cli import check, diff, init
+from agent_tooltrust.cli.errors import CliError
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -52,10 +53,6 @@ def main(argv: Sequence[str] | None = None) -> int:
 def _climain(argv: Sequence[str] | None = None) -> NoReturn:
     """Console-script wrapper: always raises SystemExit with the exit code."""
     raise SystemExit(main(argv))
-
-
-class CliError(Exception):
-    """A user-facing CLI failure (shown as ``tooltrust: error: ...``)."""
 
 
 if __name__ == "__main__":

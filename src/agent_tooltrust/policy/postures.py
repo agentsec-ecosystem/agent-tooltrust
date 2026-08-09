@@ -14,15 +14,12 @@ simply overwrite with the same values).
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 
 import yaml
 
 from agent_tooltrust.policy.models import Rule, default_policy
-
-from collections.abc import Mapping
-
-
 
 #: Directory the shipped preset files live in (package data).
 PRESET_DIR = Path(__file__).parent / "postures"

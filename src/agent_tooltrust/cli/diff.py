@@ -7,8 +7,8 @@ org overlay). Produces machine-parseable output for CI pipelines.
 from __future__ import annotations
 
 import argparse
-import sys
 
+from agent_tooltrust.cli.errors import CliError
 from agent_tooltrust.errors import PolicyParseError
 from agent_tooltrust.policy.loader import load_policy
 from agent_tooltrust.policy.models import default_policy
@@ -40,8 +40,7 @@ def _run(args: argparse.Namespace) -> int:
     try:
         org = load_policy(args.policy)
     except PolicyParseError as exc:
-        print(f"cannot load policy: {exc}", file=sys.stderr)
-        return 1
+        raise CliError(f"cannot load policy: {exc}") from exc
     posture = args.posture if args.posture else org.posture
     base = default_policy(posture)
     print(f"--- base (posture {posture})")
