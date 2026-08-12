@@ -22,6 +22,12 @@ from agent_tooltrust.audit.logger import AuditLogger
 from agent_tooltrust.audit.sinks.jsonl import JsonlSink
 from agent_tooltrust.audit.sinks.postgres import PostgresSink
 from agent_tooltrust.audit.sinks.sqlite import SqliteSink
+from agent_tooltrust.audit.tamper_proof import (
+    build_hash_chain,
+    sign_root,
+    verify_chain,
+    verify_signature,
+)
 from agent_tooltrust.cli.errors import CliError
 
 _FIELDS = (
@@ -76,6 +82,11 @@ def add_parser(subparsers: Any) -> None:
     export.add_argument("--format", choices=["json", "csv"], default="csv")
     export.set_defaults(func=_run_export)
 
+    verify = sub.add_parser("verify", help="verify audit log integrity")
+    _add_sink_args(verify)
+    verify.add_argument("--sign", action="store_true", help="Sign root entry with ed25519")
+    verify.set_defaults(func=_run_verify)
+
 
 def _add_sink_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--sink", choices=["jsonl", "sqlite", "postgres"], default="jsonl")
@@ -119,6 +130,42 @@ def _run_export(args: argparse.Namespace) -> int:
     logger = AuditLogger(_build_sink(args))
     entries = logger.query(args.session)
     _emit(entries, args.format)
+    return 0
+
+
+def _run_verify(args: argparse.Namespace) -> int:
+    """Verify audit log integrity via hash chain.
+
+    Args:
+        args: Parsed arguments.
+
+    Returns:
+        Exit code 0 if valid, 1 if tampered.
+    """
+    logger = AuditLogger(_build_sink(args))
+    entries = logger.query()
+
+    if not entries:
+        print("No audit entries to verify.")
+        return 0
+
+    chained = build_hash_chain(entries)
+    result = verify_chain(chained)
+    if result["valid"]:
+        print(f"✓ Audit log is intact ({len(entries)} entries)")
+    else:
+        print(f"✗ Tampering detected at index {result['tampered_index']}")
+        return 1
+
+    if args.sign:
+        signed = sign_root(chained)
+        valid = verify_signature(signed)
+        if valid:
+            print(f"  Signature valid (root {signed['chain_hash'][:12]}...)")
+        else:
+            print("  Signature verification failed")
+            return 1
+
     return 0
 
 

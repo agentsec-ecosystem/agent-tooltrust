@@ -114,22 +114,24 @@ class TestServerCore:
         assert "session_risk_score" in result
 
     def test_evaluate_emits_audit_entry(self, core: ServerCore) -> None:
+        sid = str(uuid.uuid4())
         result = core.evaluate(
             "query_logs", "read", "staging", "internal", "debug-bot",
-            session_id="audit_test",
+            session_id=sid,
         )
 
         assert "call_id" in result
         uuid.UUID(result["call_id"])
 
-        entries = core.audit_logger.query("audit_test")
+        entries = core.audit_logger.query(sid)
         assert len(entries) == 1
         assert entries[0].tool == "query_logs"
 
     def test_explain_from_audit_finds_entry(self, core: ServerCore) -> None:
+        sid = str(uuid.uuid4())
         result = core.evaluate(
             "query_logs", "read", "staging", "internal", "debug-bot",
-            session_id="explain_test",
+            session_id=sid,
         )
         call_id = result["call_id"]
 
