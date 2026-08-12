@@ -2,18 +2,16 @@
 
 Work Breakdown Structure — milestone plans and task breakdowns for all versions.
 
-> **GitHub Issues:** 135 issues across all milestones. All issues link back to these WBS files.
-> **Milestones:** [v0.1.0 (#1-76, #123-135)](https://github.com/deghosal-2026/agent-tooltrust/milestone/1) | [v0.2.0 (#77-104)](https://github.com/deghosal-2026/agent-tooltrust/milestone/2) | [v0.3.0 (#105-117)](https://github.com/deghosal-2026/agent-tooltrust/milestone/3) | [v0.4.0 (#118-122)](https://github.com/deghosal-2026/agent-tooltrust/milestone/4)
+> **GitHub Issues:** 135 issues across 2 versions. All issues link back to these WBS files.
 
 | File | Milestones | Version | GitHub Issues | Status |
 |------|-----------|---------|---------------|--------|
-| [wbs-v0.1.0-part1-engine.md](wbs-v0.1.0-part1-engine.md) | M1 (Core Engine) + M2 (Policy Manager) | v0.1.0 | #1-23 | **Complete ✅** |
-| [wbs-v0.1.0-part2-audit-adapters.md](wbs-v0.1.0-part2-audit-adapters.md) | M3 (Audit Logger) + M4 (Integration Adapters) | v0.1.0 | #24-43 | **Complete ✅** |
-| [wbs-v0.1.0-part3-cli-mcp.md](wbs-v0.1.0-part3-cli-mcp.md) | M5 (MCP Server) + M6 (CLI + Explanation) | v0.1.0 | #44-57 | **Complete ✅** |
-| [wbs-v0.1.0-part4-field-ship.md](wbs-v0.1.0-part4-field-ship.md) | M7 (Field Tests) + M8 (Demo + Hardening + Ship) | v0.1.0 | #58-76 | Approved ✅ |
-| [wbs-v0.1.0-enhancements.md](wbs-v0.1.0-enhancements.md) | **M19-M23** (Security, OTel, Extensibility, Governance, SWE-bench) | v0.1.0 | #123-135 | Pending |
-| [wbs-v0.2-v0.3.md](wbs-v0.2-v0.3.md) | M9-M16 (v0.2 + v0.3 milestones) | v0.2.0, v0.3.0 | #77-117 | Approved ✅ |
-| [wbs-v0.4.md](wbs-v0.4.md) | M17-M18 (v0.4 milestones) | v0.4.0 | #118-122 | Approved ✅ |
+| [wbs-v0.1.0-part1-engine.md](wbs-v0.1.0-part1-engine.md) | M1-M2 (Engine + Policy) | v0.1.0 | #1-23 | **Complete ✅** |
+| [wbs-v0.1.0-part2-audit-adapters.md](wbs-v0.1.0-part2-audit-adapters.md) | M3-M4 (Audit + Adapters) | v0.1.0 | #24-43 | **Complete ✅** |
+| [wbs-v0.1.0-part3-cli-mcp.md](wbs-v0.1.0-part3-cli-mcp.md) | M5-M6 (MCP + CLI) | v0.1.0 | #44-57 | **Complete ✅** |
+| [wbs-v0.1.0-part4-field-ship.md](wbs-v0.1.0-part4-field-ship.md) | M7-M8 (Field + Ship) | v0.1.0 | #58-76 | Pending |
+| [wbs-v0.1.0-enhancements.md](wbs-v0.1.0-enhancements.md) | M19-M23 (Security, OTel, Extensibility, Governance, SWE-bench) | v0.1.0 | #123-135 | Pending |
+| [wbs-v0.2.0.md](wbs-v0.2.0.md) | M9-M18 (Session, Escalation, Dispatcher, Delegation, Packs, Governance) | v0.2.0 | #81, #83-86, #88-89, #91, #93, #95, #97, #100-101, #103-104, #106-108, #110-117, #119-122 | Pending |
 
 ## Issue Summary
 
@@ -24,14 +22,13 @@ Work Breakdown Structure — milestone plans and task breakdowns for all version
 | M5 | v0.1.0 MCP Server | 6 | 6 | #44-49 |
 | M6 | v0.1.0 CLI + Explanation | 8 | 8 | #50-57 |
 | M7-M8 | v0.1.0 Field + Ship | 19 | 0 | #58-76 |
-| M9-M12 | v0.2.0 Session + Security | 28 | 0 | #77-104 |
-| M13-M16 | v0.3.0 Output + Tamper | 13 | 0 | #105-117 |
-| M17-M18 | v0.4.0 Governance | 5 | 0 | #118-122 |
-| **Total** | | **122** | **57** | #1-122 |
+| M19-M23 | v0.1.0 Enhancements | 13 | 0 | #123-135 |
+| M9-M18 | v0.2.0 All remaining | 44 | 17 | #77-122 |
+| **Total** | | **135** | **74** | #1-135 |
 
 ## v0.1.0 Milestone Summary
 
-> **Status: M1-M6 Complete ✅ (57/122 issues closed)** — Engine, policy, audit, adapters, MCP server, CLI, explanation shipped. M7-M8 remaining.
+> **Status: v0.1.0 M1-M6 Complete, M19-M23 + M7-M8 pending (74/135 closed). v0.2.0 collects all remaining features.**
 
 | M# | Name | Features | CUJs | Exit gate |
 |----|------|----------|------|-----------|
