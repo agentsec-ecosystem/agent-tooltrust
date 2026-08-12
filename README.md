@@ -189,6 +189,58 @@ See [SECURITY.md](SECURITY.md) for the full OWASP mapping and [SECURITY_BASELINE
 
 ---
 
+## Understanding Criticality — Risk Scenarios
+
+ToolTrust scores every tool call across five dimensions. Here's how the risk
+ladder works in practice:
+
+### Risk Ladder
+
+| Risk Level | Decision | Example |
+|------------|----------|---------|
+| **Low** | Allow | `query_logs` (read) in staging on public data by a CI bot |
+| **Medium** | Audit | `read_secrets` (read) in production on restricted data — allowed but logged |
+| **High** | Escalate | `deploy_service` (write) in production on restricted data — requires human approval |
+| **Critical** | Deny | `drop_database` (delete) in production on customer PII — blocked |
+
+### Scenario 1 — The CI Bot
+
+A CI/CD pipeline bot queries application logs in staging for debugging:
+- **Tool:** `query_logs` | **Action:** `read` | **Env:** `staging` | **Data:** `internal`
+- **Result:** **ALLOW** — read-only log query in staging on internal data is low risk.
+  All dimensions contribute minimally: action_class=0.00, environment=0.10, data=0.20.
+
+### Scenario 2 — The Support Bot Reads Customer Data
+
+A support bot needs to read customer information to resolve a ticket:
+- **Tool:** `read_secrets` | **Action:** `read` | **Env:** `production` | **Data:** `restricted`
+- **Result:** **AUDIT** — reading sensitive data in production triggers enhanced logging.
+  Every access recorded with full context for compliance review.
+
+### Scenario 3 — The Release Bot Deploys
+
+A scheduled release bot pushes a deployment to production:
+- **Tool:** `deploy_service` | **Action:** `write` | **Env:** `production` | **Data:** `restricted`
+- **Result:** **ESCALATE** — write actions in production require explicit human approval.
+  The bot cannot deploy until an on-call engineer approves the escalation.
+
+### Scenario 4 — Destructive Operation
+
+An agent attempts to delete a production database containing customer data:
+- **Tool:** `drop_database` | **Action:** `delete` | **Env:** `production` | **Data:** `customer_pii`
+- **Result:** **DENY** — destructive operation on sensitive data is blocked outright.
+  The explanation suggests: "Use a read-only alternative or move to a lower-risk environment."
+
+### Scenario 5 — Scoped Consent
+
+A support bot is pre-approved to query logs in staging but tries to access production:
+- **Session consent:** `[{tool: query_logs, env: staging, data_class: internal}]`
+- **Call:** `query_logs` (read) in **production** on internal data
+- **Result:** **ESCALATE** — the call falls outside the session's consent scope.
+  The scope boundary prevents the agent from silently exceeding its granted permissions.
+
+---
+
 ## Community
 
 - [Report a bug](https://github.com/deghosal-2026/agent-tooltrust/issues/new?template=bug.md)
