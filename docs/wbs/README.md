@@ -21,16 +21,16 @@ Work Breakdown Structure — milestone plans and task breakdowns for all version
 | M1-M2 | v0.1.0 Engine + Policy | 23 | 23 | #1-23 |
 | M3-M4 | v0.1.0 Audit + Adapters | 20 | 20 | #24-43 |
 | M5 | v0.1.0 MCP Server | 6 | 6 | #44-49 |
-| M6 | v0.1.0 CLI + Explanation | 8 | 0 | #50-57 |
+| M6 | v0.1.0 CLI + Explanation | 8 | 8 | #50-57 |
 | M7-M8 | v0.1.0 Field + Ship | 19 | 0 | #58-76 |
 | M9-M12 | v0.2.0 Session + Security | 28 | 0 | #77-104 |
 | M13-M16 | v0.3.0 Output + Tamper | 13 | 0 | #105-117 |
 | M17-M18 | v0.4.0 Governance | 5 | 0 | #118-122 |
-| **Total** | | **122** | **49** | #1-122 |
+| **Total** | | **122** | **57** | #1-122 |
 
 ## v0.1.0 Milestone Summary
 
-> **Status: M1-M5 Complete ✅ (49/122 issues closed)** — Core engine, policy, audit, adapters, MCP server shipped. M6-M8 remaining.
+> **Status: M1-M6 Complete ✅ (57/122 issues closed)** — Engine, policy, audit, adapters, MCP server, CLI, explanation shipped. M7-M8 remaining.
 
 | M# | Name | Features | CUJs | Exit gate |
 |----|------|----------|------|-----------|
@@ -39,7 +39,7 @@ Work Breakdown Structure — milestone plans and task breakdowns for all version
 | M3 | Audit Logger | F-30, F-31, F-33 | CUJ 6 | 3 sinks verified, CLI audit working — **COMPLETE ✅** |
 | M4 | Integration Adapters | F-40-F-42 | CUJ 2 | 6 adapters pass integration tests — **COMPLETE ✅** |
 | M5 | MCP Server | F-11, session state, /audit HTTP | CUJ 2 | Server starts, 3 tools, session tracking, audit emitted — **COMPLETE ✅** |
-| M6 | CLI + Explanation | F-23, F-51, F-52, F-74, F-85 | CUJ 3, 8 | All CLI commands working, quickstart verified |
+| M6 | CLI + Explanation | F-23, F-51, F-52, F-74, F-85 | CUJ 3, 8 | All CLI commands working, quickstart verified, CUJ 3 actionability passes — **COMPLETE ✅** |
 | M7 | Field Tests | F-75 | CUJ 7, 11 | 10-agent sweep, 300 assertions pass |
 | M8 | Demo + Hardening + Ship | F-50, F-91 | All P0 CUJs | PyPI v0.1.0, OpenSSF Silver, OWASP 5/10 |
 

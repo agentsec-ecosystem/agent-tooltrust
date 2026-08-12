@@ -58,6 +58,7 @@
 
 **PRD coverage:** F-23, F-51, F-52, F-74, F-85
 **CUJs covered:** CUJ 3 (explainable), CUJ 8 (posture customization — init)
+**Status:** **COMPLETE ✅** — 8 CLI commands, actionability tests pass, quickstart doc, 432 tests
 
 ### M6 Task Checklist
 
@@ -86,16 +87,16 @@
 
 ### M6 Exit Gate
 
-- [ ] Code review passed (every file reviewed)
-- [ ] Every `.py` file has module-level and function-level docstrings
-- [ ] Test coverage >95% (`pytest --cov=agent_tooltrust --cov-fail-under=95`)
-- [ ] Ruff clean (`ruff check .` — 0 errors)
-- [ ] Mypy strict clean (`mypy --strict` — 0 errors)
-- [ ] All CLI commands work with valid inputs
-- [ ] All CLI commands fail gracefully with invalid inputs (exit non-zero + message)
-- [ ] `tooltrust init` generates valid YAML for all 3 postures
-- [ ] Explanation actionability test passes (CUJ 3)
-- [ ] Quickstart document is followable end-to-end
+- [x] Code review passed (every file reviewed)
+- [x] Every `.py` file has module-level and function-level docstrings
+- [x] Test coverage >95% (`pytest --cov=agent_tooltrust --cov-fail-under=95`)
+- [x] Ruff clean (`ruff check .` — 0 errors)
+- [x] Mypy strict clean (`mypy --strict` — 0 errors)
+- [x] All CLI commands work with valid inputs
+- [x] All CLI commands fail gracefully with invalid inputs (exit non-zero + message)
+- [x] `tooltrust init` generates valid YAML for all 3 postures
+- [x] Explanation actionability test passes (CUJ 3)
+- [x] Quickstart document is followable end-to-end
 
 **Dependency:** M1-M5 (all prior milestones)
 **Produces for later milestones:** Full CLI surface, quickstart doc

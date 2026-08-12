@@ -83,6 +83,7 @@ ignore = []
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101"]
+"tests/test_cli_integration.py" = ["S603", "S607"]
 # RUF001/RUF003: the whole point of F-89 is tables/tests full of
 # deliberately ambiguous Unicode characters (Cyrillic/Greek lookalikes).
 "src/agent_tooltrust/engine/normalize.py" = ["RUF001", "RUF003"]
