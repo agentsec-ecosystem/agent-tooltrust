@@ -1,0 +1,25 @@
+{
+  "agent_id": "lg-01",
+  "framework": "langgraph",
+  "agent_class": "ci-bot",
+  "tools": [
+    "get_weather",
+    "get_current_time"
+  ],
+  "results": [
+    {
+      "tool": "get_weather",
+      "called": true,
+      "decision": "allow",
+      "reason": "allow_low_risk",
+      "elapsed_s": 4.7
+    },
+    {
+      "tool": "get_current_time",
+      "called": true,
+      "decision": "allow",
+      "reason": "allow_low_risk",
+      "elapsed_s": 4.32
+    }
+  ]
+}

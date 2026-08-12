@@ -1,0 +1,5 @@
+# Raw upstream framework checkouts downloaded by scripts/download_field_agents.sh.
+# These are large (up to ~1 GB each) and should never be committed. The tracked
+# build_agent shims live in sibling <framework>/ directories and import from
+# vendor/<repo>/ at runtime (or are self-contained where packages are installed).
+vendor/

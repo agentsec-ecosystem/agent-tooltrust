@@ -1,0 +1,73 @@
+"""tooltrust_mcp build_agent — ToolTrust MCP server self-test agents."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from agent_tooltrust.engine.engine import Engine
+from agent_tooltrust.policy.models import default_policy
+from tests.field.agents import MissingFrameworkError
+
+
+def build_agent(agent_id: str = "mcp-01", payload: dict[str, Any] | None = None) -> Any:
+    """Build a ToolTrust MCP self-test agent for the given roster agent.
+
+    Each returns an ``MCPClient``-like wrapper that routes a bounded tool set
+    through :class:`~agent_tooltrust.adapters.mcp.ToolTrustMCPWrapper`.
+
+    Args:
+        agent_id: Roster agent id (mcp-01 .. mcp-10).
+        payload: Optional overrides (engine, policy).
+
+    Returns:
+        A ``SimpleNamespace`` exposing ``evaluate(...)`` and ``describe()``.
+    """
+    try:
+        from types import SimpleNamespace
+    except ImportError:  # pragma: no cover
+        raise MissingFrameworkError("stdlib required") from None
+
+    from agent_tooltrust.adapters.mcp import ToolTrustMCPWrapper
+
+    engine = (payload or {}).get("engine") or Engine(default_policy("balanced"))
+    wrapper = ToolTrustMCPWrapper(_NullMCPClient(), engine)
+    tools = _agent_tools(agent_id)
+
+    def evaluate(call: dict[str, Any]) -> Any:
+        return engine.evaluate(
+            tool_name=str(call.get("tool", "")),
+            action=str(call.get("action", "call")),
+            environment=str(call.get("environment", "staging")),
+            data_class=str(call.get("data_class", "internal")),
+            agent_id=agent_id,
+        )
+
+    return SimpleNamespace(
+        agent_id=agent_id,
+        tools=tools,
+        wrapper=wrapper,
+        evaluate=evaluate,
+        describe=lambda: {"agent_id": agent_id, "tools": tools},
+    )
+
+
+class _NullMCPClient:  # pragma: no cover — never invoked in self-test
+    class tools:
+        @staticmethod
+        def call(tool_name: str, arguments: dict[str, Any] | None = None) -> dict[str, Any]:
+            return {"ok": True}
+
+
+def _agent_tools(agent_id: str) -> list[str]:
+    return {
+        "mcp-01": ["query_logs", "get_weather"],
+        "mcp-02": ["add", "get_current_time"],
+        "mcp-03": ["get_weather", "search_docs"],
+        "mcp-04": ["get_weather", "get_current_time", "add"],
+        "mcp-05": ["query_logs"],
+        "mcp-06": ["add", "echo"],
+        "mcp-07": ["search_docs", "get_current_time"],
+        "mcp-08": ["add", "get_weather", "echo"],
+        "mcp-09": ["echo"],
+        "mcp-10": ["get_weather", "add"],
+    }.get(agent_id, ["get_weather"])

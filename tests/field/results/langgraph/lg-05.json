@@ -1,0 +1,25 @@
+{
+  "agent_id": "lg-05",
+  "framework": "langgraph",
+  "agent_class": "sensitive",
+  "tools": [
+    "query_logs",
+    "get_current_time"
+  ],
+  "results": [
+    {
+      "tool": "query_logs",
+      "called": true,
+      "decision": "audit",
+      "reason": "audit_sensitive_data",
+      "elapsed_s": 7.09
+    },
+    {
+      "tool": "get_current_time",
+      "called": true,
+      "decision": "audit",
+      "reason": "audit_sensitive_data",
+      "elapsed_s": 4.65
+    }
+  ]
+}

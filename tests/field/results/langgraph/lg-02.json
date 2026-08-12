@@ -1,0 +1,25 @@
+{
+  "agent_id": "lg-02",
+  "framework": "langgraph",
+  "agent_class": "engineer",
+  "tools": [
+    "add",
+    "get_weather"
+  ],
+  "results": [
+    {
+      "tool": "add",
+      "called": false,
+      "decision": "allow",
+      "reason": "allow_low_risk",
+      "elapsed_s": 2.72
+    },
+    {
+      "tool": "get_weather",
+      "called": true,
+      "decision": "allow",
+      "reason": "allow_low_risk",
+      "elapsed_s": 4.21
+    }
+  ]
+}

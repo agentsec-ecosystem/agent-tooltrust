@@ -1,0 +1,25 @@
+{
+  "agent_id": "lg-03",
+  "framework": "langgraph",
+  "agent_class": "general",
+  "tools": [
+    "get_weather",
+    "search_docs"
+  ],
+  "results": [
+    {
+      "tool": "get_weather",
+      "called": true,
+      "decision": "allow",
+      "reason": "allow_low_risk",
+      "elapsed_s": 4.49
+    },
+    {
+      "tool": "search_docs",
+      "called": false,
+      "decision": "allow",
+      "reason": "allow_low_risk",
+      "elapsed_s": 3.27
+    }
+  ]
+}

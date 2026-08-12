@@ -116,10 +116,15 @@ class TestCLIIntegration:
         assert result.returncode == 0
         Path(f.name).unlink()
 
-    def test_field_test_placeholder(self) -> None:
-        result = _run("field-test")
+    def test_field_test(self) -> None:
+        result = _run(
+            "field-test",
+            "--agents", "lg-01",
+            "--matrix", "decision",
+            "--report", "none",
+        )
         assert result.returncode == 0
-        assert "M7" in result.stdout
+        assert "Pass rate" in result.stdout
 
     def test_missing_required_args_fails(self) -> None:
         result = _run("evaluate")

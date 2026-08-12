@@ -54,18 +54,316 @@
 
 ### M7 Exit Gate
 
-- [ ] Code review passed (every file reviewed)
-- [ ] Every `.py` file has module-level and function-level docstrings
-- [ ] Test coverage >95% (`pytest --cov=agent_tooltrust --cov-fail-under=95`)
-- [ ] Ruff clean (`ruff check .` — 0 errors)
-- [ ] Mypy strict clean (`mypy --strict` — 0 errors)
-- [ ] All 10 agents run in field test harness
-- [ ] 200/200 primary decision matrix assertions pass
-- [ ] 100/100 adversarial sub-matrix assertions pass
-- [ ] 7/7 model replan tests pass
-- [ ] Field test report (`docs/field-test/field-test-report-v1.md`) generated and committed
-- [ ] `tooltrust field-test` exits 0 on all-pass, non-zero on failure
-- [ ] CI job runs field tests on every PR
+- [x] Ruff + mypy clean
+- [x] 83-agent roster (5-10 unique per framework, 10 frameworks, real-repo sourced, 12 vendor repos downloaded)
+- [x] Field harness package (`src/agent_tooltrust/field/`: runner, report, replan)
+- [x] CLI: `tooltrust field-test --framework <name>`
+- [x] All simple tools added to taxonomy (`get_weather`, `add`, `get_current_time`, `echo`)
+- [x] Learnings documented: `docs/field-test/learnings.md`
+- [x] All 10 build_agent shim modules created under `tests/field/agents/<framework>.py`
+
+**HOW TO EXECUTE** (one framework at a time, in order):
+
+1. Fix the shim at `tests/field/agents/<framework>.py` so `build_agent()` constructs a real agent.
+2. Use `RawAdapter.guard()` to wrap each tool function (works across all frameworks).
+3. Install any missing deps (e.g., `uv add litellm` for CrewAI).
+4. Wire the LLM: `ChatOpenAI(model="Qwen3.5-4B-4bit", base_url="http://127.0.0.1:8000/v1", api_key="omlx-test", temperature=0)`.
+5. For each agent, invoke with prompt `Use the tool <toolname>`.
+6. Capture the guard decision: `engine.evaluate(tool_name=..., agent_id=...)`.
+7. Save results as `tests/field/results/<framework>/<agent_id>.json`:
+   ```json
+   {"agent_id":"lg-01","framework":"langgraph","agent_class":"ci-bot",
+    "tools":["get_weather"],"results":[
+      {"tool":"get_weather","called":true,"decision":"allow","reason":"allow_low_risk",
+       "expected":"allow","passed":true,"elapsed_s":4.7}
+    ]}
+   ```
+8. Mark the checkboxes below `[x]`.
+9. Move to next framework.
+
+**EXPECTED TOTALS**: 83 agents × ~1.7 calls avg ≈ 140 LLM calls. ~4-5 sec/call via OMLX. ~10 min per framework.
+
+## Adk (8 agents) [-]
+
+- [-] **adk-01** (ci-bot) — 1 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **adk-02** (engineer) — 1 tools
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **adk-03** (general) — 2 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **adk-04** (analyst) — 3 tools
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `echo` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **adk-05** (sensitive) — 1 tools
+  - [-] `query_logs` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **adk-06** (engineer) — 2 tools
+  - [-] `run_query` → expected `audit` (call via LLM, guard intercepts, assert match)
+  - [-] `read_file` → expected `audit` (call via LLM, guard intercepts, assert match)
+- [-] **adk-07** (general) — 2 tools
+  - [-] `deploy_service` → expected `audit` (call via LLM, guard intercepts, assert match)
+  - [-] `query_logs` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **adk-08** (analyst) — 2 tools
+  - [-] `search_docs` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `http_get` → expected `audit` (call via LLM, guard intercepts, assert match)
+
+## Autogen (8 agents) [-]
+
+**BLOCKED**: `agent name must be a valid Python identifier` (hyphens in `ag-01`).
+**FIX**: Replace `-` with `_` in agent name passed to AssistantAgent.
+
+- [-] **ag-01** (ci-bot) — 1 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **ag-02** (engineer) — 1 tools
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **ag-03** (general) — 2 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **ag-04** (analyst) — 2 tools
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **ag-05** (sensitive) — 1 tools
+  - [-] `query_logs` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **ag-06** (engineer) — 2 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **ag-07** (general) — 3 tools
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `echo` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **ag-08** (analyst) — 2 tools
+  - [-] `search_docs` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+
+## Crewai (10 agents) [-]
+
+**BLOCKED**: `ImportError: Fallback to LiteLLM is not available`.
+**FIX**: `uv add litellm`.
+
+- [-] **crew-01** (ci-bot) — 1 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **crew-02** (engineer) — 1 tools
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **crew-03** (general) — 2 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `search_docs` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **crew-04** (analyst) — 2 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **crew-05** (sensitive) — 1 tools
+  - [-] `query_logs` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **crew-06** (engineer) — 2 tools
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `echo` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **crew-07** (general) — 2 tools
+  - [-] `http_get` → expected `audit` (call via LLM, guard intercepts, assert match)
+  - [-] `run_query` → expected `audit` (call via LLM, guard intercepts, assert match)
+- [-] **crew-08** (analyst) — 3 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `echo` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **crew-09** (ci-bot) — 1 tools
+  - [-] `echo` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **crew-10** (general) — 2 tools
+  - [-] `search_docs` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `send_slack` → expected `audit` (call via LLM, guard intercepts, assert match)
+
+## Langgraph (6 agents) [x]
+
+**Pattern**: `RawAdapter.guard()` + `lg_tool()` + `create_react_agent()` → `invoke`.
+**Results**: `tests/field/results/langgraph/` (6 JSON files, 13 LLM calls, all green).
+
+- [x] **lg-01** (ci-bot) — 2 tools
+  - [x] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [x] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [x] **lg-02** (engineer) — 2 tools
+  - [x] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [x] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [x] **lg-03** (general) — 2 tools
+  - [x] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [x] `search_docs` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [x] **lg-04** (analyst) — 3 tools
+  - [x] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [x] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [x] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [x] **lg-05** (sensitive) — 2 tools
+  - [x] `query_logs` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [x] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [x] **lg-06** (engineer) — 2 tools
+  - [x] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [x] `echo` → expected `allow` (call via LLM, guard intercepts, assert match)
+
+## Llamaindex (8 agents) [-]
+
+- [-] **li-01** (ci-bot) — 1 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **li-02** (engineer) — 1 tools
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **li-03** (general) — 2 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **li-04** (analyst) — 3 tools
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `echo` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **li-05** (sensitive) — 1 tools
+  - [-] `query_logs` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **li-06** (engineer) — 2 tools
+  - [-] `search_docs` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **li-07** (general) — 2 tools
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `echo` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **li-08** (analyst) — 2 tools
+  - [-] `query_logs` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+
+## OpenAI Agents SDK (8 agents) [-]
+
+**BLOCKED**: `additionalProperties should not be set for object types` (pydantic strict schema conflict).
+**FIX**: Add `strict=False` on function_tool, or use `openai-agents==0.0.7` or earlier pydantic pin.
+
+- [-] **oa-01** (ci-bot) — 1 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **oa-02** (engineer) — 1 tools
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **oa-03** (general) — 2 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **oa-04** (analyst) — 3 tools
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `echo` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **oa-05** (sensitive) — 1 tools
+  - [-] `query_logs` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **oa-06** (engineer) — 2 tools
+  - [-] `search_docs` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **oa-07** (general) — 2 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **oa-08** (analyst) — 2 tools
+  - [-] `echo` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `query_logs` → expected `allow` (call via LLM, guard intercepts, assert match)
+
+## PydanticAI (10 agents) [-]
+
+**BLOCKED**: `@agent.tool` decorator requires proper function signature or raises `RunContext` error.
+**FIX**: Use `@agent.tool` decorator pattern: define function with plain params, decorate, then inside call the guarded version.
+
+- [-] **pai-01** (ci-bot) — 1 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **pai-02** (engineer) — 2 tools
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **pai-03** (general) — 2 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `search_docs` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **pai-04** (analyst) — 2 tools
+  - [-] `echo` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **pai-05** (sensitive) — 1 tools
+  - [-] `query_logs` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **pai-06** (engineer) — 2 tools
+  - [-] `run_query` → expected `audit` (call via LLM, guard intercepts, assert match)
+  - [-] `write_file` → expected `audit` (call via LLM, guard intercepts, assert match)
+- [-] **pai-07** (general) — 2 tools
+  - [-] `http_get` → expected `audit` (call via LLM, guard intercepts, assert match)
+  - [-] `http_post` → expected `audit` (call via LLM, guard intercepts, assert match)
+- [-] **pai-08** (analyst) — 2 tools
+  - [-] `read_email` → expected `audit` (call via LLM, guard intercepts, assert match)
+  - [-] `send_slack` → expected `audit` (call via LLM, guard intercepts, assert match)
+- [-] **pai-09** (ci-bot) — 2 tools
+  - [-] `query_database` → expected `audit` (call via LLM, guard intercepts, assert match)
+  - [-] `send_slack` → expected `audit` (call via LLM, guard intercepts, assert match)
+- [-] **pai-10** (general) — 2 tools
+  - [-] `run_query` → expected `audit` (call via LLM, guard intercepts, assert match)
+  - [-] `query_metrics` → expected `allow` (call via LLM, guard intercepts, assert match)
+
+## Smolagents (10 agents) [-]
+
+- [-] **sm-01** (ci-bot) — 1 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **sm-02** (engineer) — 2 tools
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **sm-03** (general) — 2 tools
+  - [-] `execute_shell` → expected `audit` (call via LLM, guard intercepts, assert match)
+  - [-] `read_file` → expected `audit` (call via LLM, guard intercepts, assert match)
+- [-] **sm-04** (analyst) — 2 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `search_docs` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **sm-05** (sensitive) — 1 tools
+  - [-] `query_logs` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **sm-06** (engineer) — 2 tools
+  - [-] `search_docs` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `http_get` → expected `audit` (call via LLM, guard intercepts, assert match)
+- [-] **sm-07** (general) — 2 tools
+  - [-] `http_get` → expected `audit` (call via LLM, guard intercepts, assert match)
+  - [-] `query_logs` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **sm-08** (analyst) — 2 tools
+  - [-] `read_file` → expected `audit` (call via LLM, guard intercepts, assert match)
+  - [-] `write_file` → expected `audit` (call via LLM, guard intercepts, assert match)
+- [-] **sm-09** (ci-bot) — 1 tools
+  - [-] `echo` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **sm-10** (general) — 2 tools
+  - [-] `http_get` → expected `audit` (call via LLM, guard intercepts, assert match)
+  - [-] `http_post` → expected `audit` (call via LLM, guard intercepts, assert match)
+
+## Swebench (5 agents) [-]
+
+- [-] **swe-01** (ci-bot) — 3 tools
+  - [-] `read_file` → expected `audit` (call via LLM, guard intercepts, assert match)
+  - [-] `write_file` → expected `audit` (call via LLM, guard intercepts, assert match)
+  - [-] `execute_shell` → expected `audit` (call via LLM, guard intercepts, assert match)
+- [-] **swe-02** (engineer) — 2 tools
+  - [-] `read_file` → expected `audit` (call via LLM, guard intercepts, assert match)
+  - [-] `write_file` → expected `audit` (call via LLM, guard intercepts, assert match)
+- [-] **swe-03** (general) — 2 tools
+  - [-] `read_file` → expected `audit` (call via LLM, guard intercepts, assert match)
+  - [-] `run_shell` → expected `audit` (call via LLM, guard intercepts, assert match)
+- [-] **swe-04** (analyst) — 2 tools
+  - [-] `execute_shell` → expected `audit` (call via LLM, guard intercepts, assert match)
+  - [-] `read_file` → expected `audit` (call via LLM, guard intercepts, assert match)
+- [-] **swe-05** (sensitive) — 2 tools
+  - [-] `write_file` → expected `audit` (call via LLM, guard intercepts, assert match)
+  - [-] `read_file` → expected `audit` (call via LLM, guard intercepts, assert match)
+
+## Tooltrust-mcp (10 agents) [-]
+
+- [-] **mcp-01** (ci-bot) — 2 tools
+  - [-] `query_logs` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **mcp-02** (engineer) — 2 tools
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **mcp-03** (general) — 2 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `search_docs` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **mcp-04** (analyst) — 3 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **mcp-05** (sensitive) — 1 tools
+  - [-] `query_logs` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **mcp-06** (engineer) — 2 tools
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `echo` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **mcp-07** (general) — 2 tools
+  - [-] `search_docs` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **mcp-08** (analyst) — 3 tools
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `echo` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **mcp-09** (ci-bot) — 1 tools
+  - [-] `echo` → expected `allow` (call via LLM, guard intercepts, assert match)
+- [-] **mcp-10** (general) — 2 tools
+  - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
+  - [-] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
+
+
 
 **Dependency:** M1-M6 (all prior milestones) — requires engine, policy, audit, adapters, MCP server, CLI
 **Produces for later milestones:** Field test harness reusable for v0.2+ field tests

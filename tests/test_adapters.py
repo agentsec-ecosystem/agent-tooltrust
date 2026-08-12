@@ -5,12 +5,16 @@ against a low-risk call (allow) and a high-risk call (deny/escalate), verifying
 the adapter-specific interception and error-surfacing contract.
 """
 
+from agent_tooltrust.adapters.adk import AdkAdapter
+from agent_tooltrust.adapters.autogen import AutoGenAdapter
 from agent_tooltrust.adapters.base import CallContext
 from agent_tooltrust.adapters.crewai import CrewAIAdapter
+from agent_tooltrust.adapters.llamaindex import LlamaIndexAdapter
 from agent_tooltrust.adapters.mcp import ToolTrustMCPWrapper
 from agent_tooltrust.adapters.openai import OpenAIAdapter
 from agent_tooltrust.adapters.pydantic import PydanticAIAdapter
 from agent_tooltrust.adapters.raw import RawAdapter, ToolTrustDecisionError
+from agent_tooltrust.adapters.smolagents import SmolagentsAdapter
 from agent_tooltrust.engine.engine import Engine
 from agent_tooltrust.policy.models import default_policy
 
@@ -320,3 +324,219 @@ class TestLangGraphAdapterNoop:
             assert "langgraph" in str(exc)
         else:
             raise AssertionError("Expected ImportError for langgraph")
+
+
+class TestAutoGenAdapter:
+    def test_wrap_tool_allows_low_risk_sync(self):
+        adapter = AutoGenAdapter(engine=_engine())
+        called = False
+
+        def add(a, b):
+            nonlocal called
+            called = True
+            return a + b
+
+        guarded = adapter.wrap_tool(add, **_LOW_GUARD)
+        assert guarded(1, 2) == 3
+        assert called
+
+    def test_wrap_tool_raises_on_high_risk_sync(self):
+        adapter = AutoGenAdapter(engine=_engine())
+
+        def deploy():
+            return "should not run"
+
+        guarded = adapter.wrap_tool(deploy, **_HIGH_GUARD)
+        try:
+            guarded()
+        except ToolTrustDecisionError as exc:
+            assert exc.decision.decision in ("deny", "escalate")
+            assert "[ToolTrust]" in str(exc)
+        else:
+            raise AssertionError("Expected ToolTrustDecisionError")
+
+    def test_wrap_tool_allows_async_low_risk(self):
+        import asyncio
+
+        adapter = AutoGenAdapter(engine=_engine())
+        called = False
+
+        async def add(a, b):
+            nonlocal called
+            called = True
+            return a + b
+
+        guarded = adapter.wrap_tool(add, **_LOW_GUARD)
+        assert asyncio.run(guarded(1, 2)) == 3
+        assert called
+
+    def test_wrap_tool_raises_on_async_high_risk(self):
+        import asyncio
+
+        adapter = AutoGenAdapter(engine=_engine())
+
+        async def deploy():
+            return "should not run"
+
+        guarded = adapter.wrap_tool(deploy, **_HIGH_GUARD)
+        try:
+            asyncio.run(guarded())
+        except ToolTrustDecisionError as exc:
+            assert exc.decision.decision in ("deny", "escalate")
+        else:
+            raise AssertionError("Expected ToolTrustDecisionError")
+
+    def test_wrap_tool_defaults_to_fn_name(self):
+        adapter = AutoGenAdapter(engine=_engine())
+        called = False
+
+        def query_logs():
+            nonlocal called
+            called = True
+            return "ok"
+
+        guarded = adapter.wrap_tool(
+            query_logs,
+            action="read",
+            environment="staging",
+            data_class="internal",
+            agent_id="release-bot",
+        )
+        guarded()
+        assert called
+
+
+class TestSmolagentsAdapter:
+    def test_wrap_tool_allows_low_risk(self):
+        adapter = SmolagentsAdapter(engine=_engine())
+
+        class FakeTool:
+            name = "query_logs"
+
+            def forward(self, **kwargs):
+                return "success"
+
+        tool = FakeTool()
+        guarded = adapter.wrap_tool(tool, **_LOW_GUARD)
+        assert guarded.forward() == "success"
+
+    def test_wrap_tool_returns_error_on_deny(self):
+        adapter = SmolagentsAdapter(engine=_engine())
+
+        class FakeTool:
+            name = "deploy_service"
+
+            def forward(self, **kwargs):
+                return "should not run"
+
+        tool = FakeTool()
+        guarded = adapter.wrap_tool(tool, **_HIGH_GUARD)
+        result = guarded.forward()
+        assert "[ToolTrust]" in result
+
+    def test_wrap_tool_passes_kwargs(self):
+        adapter = SmolagentsAdapter(engine=_engine())
+
+        class FakeTool:
+            name = "query_logs"
+
+            def forward(self, **kwargs):
+                return kwargs.get("fmt", "default")
+
+        tool = FakeTool()
+        guarded = adapter.wrap_tool(tool, **_LOW_GUARD)
+        assert guarded.forward(fmt="json") == "json"
+
+
+class TestLlamaIndexAdapter:
+    def test_wrap_tool_allows_low_risk(self):
+        adapter = LlamaIndexAdapter(engine=_engine())
+
+        def query_logs(fmt="json"):
+            return f"results-{fmt}"
+
+        guarded = adapter.wrap_tool(query_logs, **_LOW_GUARD)
+        assert guarded(fmt="json") == "results-json"
+
+    def test_wrap_tool_raises_on_high_risk(self):
+        adapter = LlamaIndexAdapter(engine=_engine())
+
+        def deploy_service():
+            return "should not run"
+
+        guarded = adapter.wrap_tool(deploy_service, **_HIGH_GUARD)
+        try:
+            guarded()
+        except ToolTrustDecisionError as exc:
+            assert exc.decision.decision in ("deny", "escalate")
+            assert "[ToolTrust]" in str(exc)
+        else:
+            raise AssertionError("Expected ToolTrustDecisionError")
+
+    def test_wrap_tool_defaults_to_fn_name(self):
+        adapter = LlamaIndexAdapter(engine=_engine())
+        called = False
+
+        def query_metrics():
+            nonlocal called
+            called = True
+            return "ok"
+
+        guarded = adapter.wrap_tool(
+            query_metrics,
+            action="read",
+            environment="staging",
+            data_class="public",
+            agent_id="release-bot",
+        )
+        guarded()
+        assert called
+
+
+class TestAdkAdapter:
+    def test_wrap_tool_allows_low_risk(self):
+        adapter = AdkAdapter(engine=_engine())
+        called = False
+
+        def get_weather(city):
+            nonlocal called
+            called = True
+            return f"sunny {city}"
+
+        guarded = adapter.wrap_tool(get_weather, **_LOW_GUARD)
+        assert guarded("SF") == "sunny SF"
+        assert called
+
+    def test_wrap_tool_raises_on_high_risk(self):
+        adapter = AdkAdapter(engine=_engine())
+
+        def deploy():
+            return "should not run"
+
+        guarded = adapter.wrap_tool(deploy, **_HIGH_GUARD)
+        try:
+            guarded()
+        except ToolTrustDecisionError as exc:
+            assert exc.decision.decision in ("deny", "escalate")
+            assert "[ToolTrust]" in str(exc)
+        else:
+            raise AssertionError("Expected ToolTrustDecisionError")
+
+    def test_wrap_tool_defaults_to_fn_name(self):
+        adapter = AdkAdapter(engine=_engine())
+        called = False
+
+        def search_docs():
+            nonlocal called
+            called = True
+            return "docs"
+
+        guarded = adapter.wrap_tool(
+            search_docs,
+            action="read",
+            environment="staging",
+            data_class="internal",
+            agent_id="release-bot",
+        )
+        guarded()
+        assert called

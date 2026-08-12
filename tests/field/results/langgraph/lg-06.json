@@ -1,0 +1,25 @@
+{
+  "agent_id": "lg-06",
+  "framework": "langgraph",
+  "agent_class": "engineer",
+  "tools": [
+    "add",
+    "echo"
+  ],
+  "results": [
+    {
+      "tool": "add",
+      "called": false,
+      "decision": "allow",
+      "reason": "allow_low_risk",
+      "elapsed_s": 3.64
+    },
+    {
+      "tool": "echo",
+      "called": true,
+      "decision": "allow",
+      "reason": "allow_low_risk",
+      "elapsed_s": 5.6
+    }
+  ]
+}

@@ -185,6 +185,11 @@ KNOWN_TOOLS: dict[str, str] = {
     # notify
     "page_oncall": "notify",
     "send_slack": "notify",
+    # simple field-test tools (no side effects, safe defaults)
+    "get_weather": "search",
+    "get_current_time": "search",
+    "add": "search",
+    "echo": "search",
 }
 
 #: Conservative action-class for a verb we have not seen before. An unknown

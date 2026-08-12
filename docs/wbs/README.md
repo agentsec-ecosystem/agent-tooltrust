@@ -9,7 +9,7 @@ Work Breakdown Structure — milestone plans and task breakdowns for all version
 | [wbs-v0.1.0-part1-engine.md](wbs-v0.1.0-part1-engine.md) | M1-M2 (Engine + Policy) | v0.1.0 | #1-23 | **Complete ✅** |
 | [wbs-v0.1.0-part2-audit-adapters.md](wbs-v0.1.0-part2-audit-adapters.md) | M3-M4 (Audit + Adapters) | v0.1.0 | #24-43 | **Complete ✅** |
 | [wbs-v0.1.0-part3-cli-mcp.md](wbs-v0.1.0-part3-cli-mcp.md) | M5-M6 (MCP + CLI) | v0.1.0 | #44-57 | **Complete ✅** |
-| [wbs-v0.1.0-part4-field-ship.md](wbs-v0.1.0-part4-field-ship.md) | M7-M8 (Field + Ship) | v0.1.0 | #58-76 | Pending |
+| [wbs-v0.1.0-part4-field-ship.md](wbs-v0.1.0-part4-field-ship.md) | M7-M8 (Field + Ship) | v0.1.0 | #58-76 | **In Progress** (1/10 frameworks) |
 | [wbs-v0.1.0-enhancements.md](wbs-v0.1.0-enhancements.md) | M19-M23 (Security, OTel, Extensibility, Governance, SWE-bench) | v0.1.0 | #123-136 | **Complete ✅** |
 | [wbs-v0.1.0-docker.md](wbs-v0.1.0-docker.md) | M24 (Docker + Container Tests) | v0.1.0 | #137-141 | **Complete ✅** |
 | [wbs-v0.2.0.md](wbs-v0.2.0.md) | M9-M18 (Session, Escalation, Dispatcher, Delegation, Packs, Governance) | v0.2.0 | #81, #83-86, #88-89, #91, #93, #95, #97, #100-101, #103-104, #106-108, #110-117, #119-122 | Pending |
@@ -22,7 +22,7 @@ Work Breakdown Structure — milestone plans and task breakdowns for all version
 | M3-M4 | v0.1.0 Audit + Adapters | 20 | 20 | #24-43 |
 | M5 | v0.1.0 MCP Server | 6 | 6 | #44-49 |
 | M6 | v0.1.0 CLI + Explanation | 8 | 8 | #50-57 |
-| M7-M8 | v0.1.0 Field + Ship | 19 | 0 | #58-76 |
+| M7-M8 | v0.1.0 Field + Ship | 19 | 6 | #58-76 |
 | M19-M22 | v0.1.0 Enhancements | 12 | 12 | #123-134 |
 | M23 | v0.1.0 SWE-bench | 1 | 1 | #135 |
 | M20 (extra) | v0.1.0 Rate limits | 1 | 1 | #136 |
@@ -32,7 +32,7 @@ Work Breakdown Structure — milestone plans and task breakdowns for all version
 
 ## v0.1.0 Milestone Summary
 
-> **Status: M1-M6, M19-M24 Complete ✅ (92/141 closed). M7-M8 (Field/Ship) remaining.**
+> **Status: M1-M6, M19-M24 Complete ✅ (97/141 closed). M7 (Field Test) — 1/10 frameworks done (LangGraph). 9 frameworks + M8 (Ship) remaining.**
 
 | M# | Name | Features | CUJs | Exit gate |
 |----|------|----------|------|-----------|
@@ -42,7 +42,7 @@ Work Breakdown Structure — milestone plans and task breakdowns for all version
 | M4 | Integration Adapters | F-40-F-42 | CUJ 2 | 6 adapters pass integration tests — **COMPLETE ✅** |
 | M5 | MCP Server | F-11, session state, /audit HTTP | CUJ 2 | Server starts, 3 tools, session tracking, audit emitted — **COMPLETE ✅** |
 | M6 | CLI + Explanation | F-23, F-51, F-52, F-74, F-85 | CUJ 3, 8 | All CLI commands working, quickstart verified, CUJ 3 actionability passes — **COMPLETE ✅** |
-| M7 | Field Tests | F-75 | CUJ 7, 11 | 10-agent sweep, 300 assertions pass |
+| M7 | Field Tests | F-75 | CUJ 7, 11 | 10-framework sweep (83 agents), real LLM via OMLX |
 | M8 | Demo + Hardening + Ship | F-50, F-91 | All P0 CUJs | PyPI v0.1.0, OpenSSF Silver, OWASP 5/10 |
 | **M19** | **Security Depth** | Scanner, Output inspector, OWASP 9/10 | — | **v0.1.0 pull-forward (#123-125)** |
 | **M20** | **Observability** | OTel, Rate limits, CI regression | — | **v0.1.0 pull-forward (#126-128)** |

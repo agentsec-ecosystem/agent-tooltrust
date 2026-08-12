@@ -1,0 +1,199 @@
+# Field Test Report
+
+- **Total cases:** 180
+- **Passed:** 180
+- **Failed:** 0
+- **Overall pass rate:** 100.0%
+- **Decision matrix:** 120 cases, 100.0% pass
+- **Adversarial sub-matrix:** 60 cases, 100.0% pass
+
+## Pass Rate by Framework
+
+| Framework | Pass rate |
+|-----------|-----------|
+| langgraph | 100.0% |
+
+## Scenario Matrix
+
+| Scenario | Type | Agent | Framework | Class | Expected | Actual | Pass | Notes |
+|----------|------|-------|-----------|-------|----------|--------|------|-------|
+| decision-allow-01 | decision | lg-01 | langgraph | ci-bot | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-02 | decision | lg-01 | langgraph | ci-bot | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-03 | decision | lg-01 | langgraph | ci-bot | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-04 | decision | lg-01 | langgraph | ci-bot | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-05 | decision | lg-01 | langgraph | ci-bot | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-audit-01 | decision | lg-01 | langgraph | ci-bot | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-02 | decision | lg-01 | langgraph | ci-bot | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-audit-03 | decision | lg-01 | langgraph | ci-bot | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-04 | decision | lg-01 | langgraph | ci-bot | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-05 | decision | lg-01 | langgraph | ci-bot | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-escalate-01 | decision | lg-01 | langgraph | ci-bot | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-02 | decision | lg-01 | langgraph | ci-bot | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-03 | decision | lg-01 | langgraph | ci-bot | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-04 | decision | lg-01 | langgraph | ci-bot | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-05 | decision | lg-01 | langgraph | ci-bot | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-deny-01 | decision | lg-01 | langgraph | ci-bot | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-02 | decision | lg-01 | langgraph | ci-bot | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-03 | decision | lg-01 | langgraph | ci-bot | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-04 | decision | lg-01 | langgraph | ci-bot | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-05 | decision | lg-01 | langgraph | ci-bot | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| adversarial-injection-01 | adversarial | lg-01 | langgraph | ci-bot | decision=deny | criticality=critical | reason_code=deny_unknown_tool | deny/critical/deny_unknown_tool | PASS | - |
+| adversarial-unicode-02 | adversarial | lg-01 | langgraph | ci-bot | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| adversarial-unicode-03 | adversarial | lg-01 | langgraph | ci-bot | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| adversarial-case-04 | adversarial | lg-01 | langgraph | ci-bot | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| adversarial-whitespace-05 | adversarial | lg-01 | langgraph | ci-bot | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| adversarial-unknown-06 | adversarial | lg-01 | langgraph | ci-bot | decision=deny | criticality=critical | reason_code=deny_unknown_tool | deny/critical/deny_unknown_tool | PASS | - |
+| adversarial-blank-tool-07 | adversarial | lg-01 | langgraph | ci-bot | decision=deny | criticality=critical | reason_code=deny_malformed_input | deny/critical/deny_malformed_input | PASS | - |
+| adversarial-nonstring-08 | adversarial | lg-01 | langgraph | ci-bot | decision=deny | criticality=critical | reason_code=deny_malformed_input | deny/critical/deny_malformed_input | PASS | - |
+| adversarial-blank-env-09 | adversarial | lg-01 | langgraph | ci-bot | decision=deny | criticality=critical | reason_code=deny_malformed_input | deny/critical/deny_malformed_input | PASS | - |
+| adversarial-grant-bypass-10 | adversarial | lg-01 | langgraph | ci-bot | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-allow-01 | decision | lg-02 | langgraph | engineer | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-02 | decision | lg-02 | langgraph | engineer | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-03 | decision | lg-02 | langgraph | engineer | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-04 | decision | lg-02 | langgraph | engineer | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-05 | decision | lg-02 | langgraph | engineer | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-audit-01 | decision | lg-02 | langgraph | engineer | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-02 | decision | lg-02 | langgraph | engineer | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-audit-03 | decision | lg-02 | langgraph | engineer | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-04 | decision | lg-02 | langgraph | engineer | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-05 | decision | lg-02 | langgraph | engineer | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-escalate-01 | decision | lg-02 | langgraph | engineer | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-02 | decision | lg-02 | langgraph | engineer | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-03 | decision | lg-02 | langgraph | engineer | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-04 | decision | lg-02 | langgraph | engineer | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-05 | decision | lg-02 | langgraph | engineer | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-deny-01 | decision | lg-02 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-02 | decision | lg-02 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-03 | decision | lg-02 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-04 | decision | lg-02 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-05 | decision | lg-02 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| adversarial-injection-01 | adversarial | lg-02 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_unknown_tool | deny/critical/deny_unknown_tool | PASS | - |
+| adversarial-unicode-02 | adversarial | lg-02 | langgraph | engineer | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| adversarial-unicode-03 | adversarial | lg-02 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| adversarial-case-04 | adversarial | lg-02 | langgraph | engineer | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| adversarial-whitespace-05 | adversarial | lg-02 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| adversarial-unknown-06 | adversarial | lg-02 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_unknown_tool | deny/critical/deny_unknown_tool | PASS | - |
+| adversarial-blank-tool-07 | adversarial | lg-02 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_malformed_input | deny/critical/deny_malformed_input | PASS | - |
+| adversarial-nonstring-08 | adversarial | lg-02 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_malformed_input | deny/critical/deny_malformed_input | PASS | - |
+| adversarial-blank-env-09 | adversarial | lg-02 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_malformed_input | deny/critical/deny_malformed_input | PASS | - |
+| adversarial-grant-bypass-10 | adversarial | lg-02 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-allow-01 | decision | lg-03 | langgraph | general | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-02 | decision | lg-03 | langgraph | general | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-03 | decision | lg-03 | langgraph | general | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-04 | decision | lg-03 | langgraph | general | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-05 | decision | lg-03 | langgraph | general | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-audit-01 | decision | lg-03 | langgraph | general | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-02 | decision | lg-03 | langgraph | general | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-03 | decision | lg-03 | langgraph | general | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-04 | decision | lg-03 | langgraph | general | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-05 | decision | lg-03 | langgraph | general | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-escalate-01 | decision | lg-03 | langgraph | general | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-02 | decision | lg-03 | langgraph | general | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-03 | decision | lg-03 | langgraph | general | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-04 | decision | lg-03 | langgraph | general | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-05 | decision | lg-03 | langgraph | general | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-deny-01 | decision | lg-03 | langgraph | general | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-02 | decision | lg-03 | langgraph | general | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-03 | decision | lg-03 | langgraph | general | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-04 | decision | lg-03 | langgraph | general | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-05 | decision | lg-03 | langgraph | general | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| adversarial-injection-01 | adversarial | lg-03 | langgraph | general | decision=deny | criticality=critical | reason_code=deny_unknown_tool | deny/critical/deny_unknown_tool | PASS | - |
+| adversarial-unicode-02 | adversarial | lg-03 | langgraph | general | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| adversarial-unicode-03 | adversarial | lg-03 | langgraph | general | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| adversarial-case-04 | adversarial | lg-03 | langgraph | general | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| adversarial-whitespace-05 | adversarial | lg-03 | langgraph | general | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| adversarial-unknown-06 | adversarial | lg-03 | langgraph | general | decision=deny | criticality=critical | reason_code=deny_unknown_tool | deny/critical/deny_unknown_tool | PASS | - |
+| adversarial-blank-tool-07 | adversarial | lg-03 | langgraph | general | decision=deny | criticality=critical | reason_code=deny_malformed_input | deny/critical/deny_malformed_input | PASS | - |
+| adversarial-nonstring-08 | adversarial | lg-03 | langgraph | general | decision=deny | criticality=critical | reason_code=deny_malformed_input | deny/critical/deny_malformed_input | PASS | - |
+| adversarial-blank-env-09 | adversarial | lg-03 | langgraph | general | decision=deny | criticality=critical | reason_code=deny_malformed_input | deny/critical/deny_malformed_input | PASS | - |
+| adversarial-grant-bypass-10 | adversarial | lg-03 | langgraph | general | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-allow-01 | decision | lg-04 | langgraph | analyst | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-02 | decision | lg-04 | langgraph | analyst | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-03 | decision | lg-04 | langgraph | analyst | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-04 | decision | lg-04 | langgraph | analyst | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-allow-05 | decision | lg-04 | langgraph | analyst | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-audit-01 | decision | lg-04 | langgraph | analyst | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-02 | decision | lg-04 | langgraph | analyst | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-03 | decision | lg-04 | langgraph | analyst | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-04 | decision | lg-04 | langgraph | analyst | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-05 | decision | lg-04 | langgraph | analyst | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-escalate-01 | decision | lg-04 | langgraph | analyst | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-02 | decision | lg-04 | langgraph | analyst | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-03 | decision | lg-04 | langgraph | analyst | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-04 | decision | lg-04 | langgraph | analyst | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-05 | decision | lg-04 | langgraph | analyst | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-deny-01 | decision | lg-04 | langgraph | analyst | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-02 | decision | lg-04 | langgraph | analyst | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-03 | decision | lg-04 | langgraph | analyst | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-04 | decision | lg-04 | langgraph | analyst | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-05 | decision | lg-04 | langgraph | analyst | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| adversarial-injection-01 | adversarial | lg-04 | langgraph | analyst | decision=deny | criticality=critical | reason_code=deny_unknown_tool | deny/critical/deny_unknown_tool | PASS | - |
+| adversarial-unicode-02 | adversarial | lg-04 | langgraph | analyst | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| adversarial-unicode-03 | adversarial | lg-04 | langgraph | analyst | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| adversarial-case-04 | adversarial | lg-04 | langgraph | analyst | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| adversarial-whitespace-05 | adversarial | lg-04 | langgraph | analyst | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| adversarial-unknown-06 | adversarial | lg-04 | langgraph | analyst | decision=deny | criticality=critical | reason_code=deny_unknown_tool | deny/critical/deny_unknown_tool | PASS | - |
+| adversarial-blank-tool-07 | adversarial | lg-04 | langgraph | analyst | decision=deny | criticality=critical | reason_code=deny_malformed_input | deny/critical/deny_malformed_input | PASS | - |
+| adversarial-nonstring-08 | adversarial | lg-04 | langgraph | analyst | decision=deny | criticality=critical | reason_code=deny_malformed_input | deny/critical/deny_malformed_input | PASS | - |
+| adversarial-blank-env-09 | adversarial | lg-04 | langgraph | analyst | decision=deny | criticality=critical | reason_code=deny_malformed_input | deny/critical/deny_malformed_input | PASS | - |
+| adversarial-grant-bypass-10 | adversarial | lg-04 | langgraph | analyst | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-allow-01 | decision | lg-05 | langgraph | sensitive | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-02 | decision | lg-05 | langgraph | sensitive | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-03 | decision | lg-05 | langgraph | sensitive | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-04 | decision | lg-05 | langgraph | sensitive | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-allow-05 | decision | lg-05 | langgraph | sensitive | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-01 | decision | lg-05 | langgraph | sensitive | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-02 | decision | lg-05 | langgraph | sensitive | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-03 | decision | lg-05 | langgraph | sensitive | decision=escalate | criticality=high | reason_code=escalate_high_risk | escalate/high/escalate_high_risk | PASS | - |
+| decision-audit-04 | decision | lg-05 | langgraph | sensitive | decision=escalate | criticality=high | reason_code=escalate_high_risk | escalate/high/escalate_high_risk | PASS | - |
+| decision-audit-05 | decision | lg-05 | langgraph | sensitive | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-escalate-01 | decision | lg-05 | langgraph | sensitive | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-02 | decision | lg-05 | langgraph | sensitive | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-03 | decision | lg-05 | langgraph | sensitive | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-04 | decision | lg-05 | langgraph | sensitive | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-05 | decision | lg-05 | langgraph | sensitive | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-deny-01 | decision | lg-05 | langgraph | sensitive | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-02 | decision | lg-05 | langgraph | sensitive | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-03 | decision | lg-05 | langgraph | sensitive | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-04 | decision | lg-05 | langgraph | sensitive | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-05 | decision | lg-05 | langgraph | sensitive | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| adversarial-injection-01 | adversarial | lg-05 | langgraph | sensitive | decision=deny | criticality=critical | reason_code=deny_unknown_tool | deny/critical/deny_unknown_tool | PASS | - |
+| adversarial-unicode-02 | adversarial | lg-05 | langgraph | sensitive | decision=escalate | criticality=high | reason_code=escalate_high_risk | escalate/high/escalate_high_risk | PASS | - |
+| adversarial-unicode-03 | adversarial | lg-05 | langgraph | sensitive | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| adversarial-case-04 | adversarial | lg-05 | langgraph | sensitive | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| adversarial-whitespace-05 | adversarial | lg-05 | langgraph | sensitive | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| adversarial-unknown-06 | adversarial | lg-05 | langgraph | sensitive | decision=deny | criticality=critical | reason_code=deny_unknown_tool | deny/critical/deny_unknown_tool | PASS | - |
+| adversarial-blank-tool-07 | adversarial | lg-05 | langgraph | sensitive | decision=deny | criticality=critical | reason_code=deny_malformed_input | deny/critical/deny_malformed_input | PASS | - |
+| adversarial-nonstring-08 | adversarial | lg-05 | langgraph | sensitive | decision=deny | criticality=critical | reason_code=deny_malformed_input | deny/critical/deny_malformed_input | PASS | - |
+| adversarial-blank-env-09 | adversarial | lg-05 | langgraph | sensitive | decision=deny | criticality=critical | reason_code=deny_malformed_input | deny/critical/deny_malformed_input | PASS | - |
+| adversarial-grant-bypass-10 | adversarial | lg-05 | langgraph | sensitive | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-allow-01 | decision | lg-06 | langgraph | engineer | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-02 | decision | lg-06 | langgraph | engineer | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-03 | decision | lg-06 | langgraph | engineer | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-04 | decision | lg-06 | langgraph | engineer | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-allow-05 | decision | lg-06 | langgraph | engineer | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-audit-01 | decision | lg-06 | langgraph | engineer | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-02 | decision | lg-06 | langgraph | engineer | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| decision-audit-03 | decision | lg-06 | langgraph | engineer | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-04 | decision | lg-06 | langgraph | engineer | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-audit-05 | decision | lg-06 | langgraph | engineer | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| decision-escalate-01 | decision | lg-06 | langgraph | engineer | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-02 | decision | lg-06 | langgraph | engineer | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-03 | decision | lg-06 | langgraph | engineer | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-04 | decision | lg-06 | langgraph | engineer | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-escalate-05 | decision | lg-06 | langgraph | engineer | decision=escalate | criticality=high | reason_code=escalate_prod_write | escalate/high/escalate_prod_write | PASS | - |
+| decision-deny-01 | decision | lg-06 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-02 | decision | lg-06 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-03 | decision | lg-06 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-04 | decision | lg-06 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| decision-deny-05 | decision | lg-06 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| adversarial-injection-01 | adversarial | lg-06 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_unknown_tool | deny/critical/deny_unknown_tool | PASS | - |
+| adversarial-unicode-02 | adversarial | lg-06 | langgraph | engineer | decision=audit | criticality=medium | reason_code=audit_sensitive_data | audit/medium/audit_sensitive_data | PASS | - |
+| adversarial-unicode-03 | adversarial | lg-06 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| adversarial-case-04 | adversarial | lg-06 | langgraph | engineer | decision=allow | criticality=low | reason_code=allow_low_risk | allow/low/allow_low_risk | PASS | - |
+| adversarial-whitespace-05 | adversarial | lg-06 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
+| adversarial-unknown-06 | adversarial | lg-06 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_unknown_tool | deny/critical/deny_unknown_tool | PASS | - |
+| adversarial-blank-tool-07 | adversarial | lg-06 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_malformed_input | deny/critical/deny_malformed_input | PASS | - |
+| adversarial-nonstring-08 | adversarial | lg-06 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_malformed_input | deny/critical/deny_malformed_input | PASS | - |
+| adversarial-blank-env-09 | adversarial | lg-06 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_malformed_input | deny/critical/deny_malformed_input | PASS | - |
+| adversarial-grant-bypass-10 | adversarial | lg-06 | langgraph | engineer | decision=deny | criticality=critical | reason_code=deny_critical_op | deny/critical/deny_critical_op | PASS | - |
