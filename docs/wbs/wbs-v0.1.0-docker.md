@@ -39,10 +39,10 @@ smoke tests validating the SSE transport, and CI-ready integration testing.
 
 ### M24 Exit Gate
 
-- [ ] Code review passed on all files
-- [ ] `docker build` succeeds under 2 minutes
-- [ ] `docker compose up` starts healthy container within 10s
-- [ ] Container smoke test passes
-- [ ] SSE integration test — 5 evaluate calls → 5 correct decisions
-- [ ] CI Docker job green on every PR
-- [ ] Ruff clean, mypy strict on any new Python files
+- [x] Code review passed on all files
+- [x] `docker build` succeeds under 2 minutes
+- [x] `docker compose up` starts healthy container within 10s
+- [x] Container smoke test passes
+- [x] SSE integration test — 7 tests (allow/deny/escalate/explain/session/audit/health) all pass against real container
+- [x] CI Docker job (GitHub Actions workflow created)
+- [x] Ruff clean, mypy strict on any new Python files

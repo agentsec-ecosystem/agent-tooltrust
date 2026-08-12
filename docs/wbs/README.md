@@ -11,7 +11,7 @@ Work Breakdown Structure — milestone plans and task breakdowns for all version
 | [wbs-v0.1.0-part3-cli-mcp.md](wbs-v0.1.0-part3-cli-mcp.md) | M5-M6 (MCP + CLI) | v0.1.0 | #44-57 | **Complete ✅** |
 | [wbs-v0.1.0-part4-field-ship.md](wbs-v0.1.0-part4-field-ship.md) | M7-M8 (Field + Ship) | v0.1.0 | #58-76 | Pending |
 | [wbs-v0.1.0-enhancements.md](wbs-v0.1.0-enhancements.md) | M19-M22 (Security, OTel, Extensibility, Governance) complete + M23 (SWE-bench) pending | v0.1.0 | #123-136 | **M19-M22 done ✅** |
-| [wbs-v0.1.0-docker.md](wbs-v0.1.0-docker.md) | M24 (Docker + Container Tests) | v0.1.0 | #137-141 | Pending |
+| [wbs-v0.1.0-docker.md](wbs-v0.1.0-docker.md) | M24 (Docker + Container Tests) | v0.1.0 | #137-141 | **Complete ✅** |
 | [wbs-v0.2.0.md](wbs-v0.2.0.md) | M9-M18 (Session, Escalation, Dispatcher, Delegation, Packs, Governance) | v0.2.0 | #81, #83-86, #88-89, #91, #93, #95, #97, #100-101, #103-104, #106-108, #110-117, #119-122 | Pending |
 
 ## Issue Summary
@@ -25,15 +25,14 @@ Work Breakdown Structure — milestone plans and task breakdowns for all version
 | M7-M8 | v0.1.0 Field + Ship | 19 | 0 | #58-76 |
 | M19-M22 | v0.1.0 Enhancements | 12 | 12 | #123-134 |
 | M23 | v0.1.0 SWE-bench | 1 | 0 | #135 |
-| M24 | v0.1.0 Docker + Tests | 5 | 0 | #137-141 |
 | M20 (extra) | v0.1.0 Rate limits | 1 | 1 | #136 |
+| M24 | v0.1.0 Docker + Tests | 5 | 5 | #137-141 |
 | M9-M18 | v0.2.0 All remaining | 44 | 17 | #77-122 |
-| M24 | v0.1.0 Docker + Tests | 5 | 0 | #137-141 |
-| **Total** | | **142** | **86** | #1-141 |
+| **Total** | | **142** | **91** | #1-141 |
 
 ## v0.1.0 Milestone Summary
 
-> **Status: v0.1.0 M1-M6 + M19-M22 Complete (86/141 closed). M23 (SWE-bench) + M24 (Docker) + M7-M8 (Field/Ship) pending.**
+> **Status: M1-M6, M19-M22, M24 Complete ✅ (91/141 closed). M23 (SWE-bench) + M7-M8 (Field/Ship) remaining.**
 
 | M# | Name | Features | CUJs | Exit gate |
 |----|------|----------|------|-----------|
@@ -50,7 +49,7 @@ Work Breakdown Structure — milestone plans and task breakdowns for all version
 | **M21** | **Extensibility & UX** | Arg validators, Custom dims, test runner | — | **v0.1.0 pull-forward (#129-132)** |
 | **M22** | **Governance** | Reports, Tamper-evident audit | — | **v0.1.0 pull-forward (#133-134)** |
 | **M23** | **SWE-bench** | Wrapper + 5 task runs | — | **v0.1.0 pull-forward (#135)** |
-| **M24** | **Docker + Container Tests** | Dockerfile, Makefile, smoke, SSE integration, CI | — | **#137-141** |
+| **M24** | **Docker + Container Tests** | Dockerfile, Makefile, smoke, SSE integration, CI | — | **COMPLETE ✅ (#137-141)** |
 
 ## Exit Gate Checklist (Every Milestone)
 
