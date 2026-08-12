@@ -7,13 +7,16 @@ environment, data_class, agent_id, decision, reason_code, and latency.
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
 
 from agent_tooltrust.types import Decision
+
+if TYPE_CHECKING:
+    from agent_tooltrust.engine.engine import Engine
 
 _TRACER_NAME = "agent_tooltrust"
 
@@ -35,7 +38,7 @@ def setup_tracing(
 
 
 def trace_evaluate(
-    engine: Any,
+    engine: Engine,
     tracer_provider: TracerProvider | None = None,
 ) -> Any:
     """Return a traced version of engine.evaluate().
