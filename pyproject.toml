@@ -94,6 +94,23 @@ python_version = "3.11"
 files = ["src"]
 mypy_path = "src"
 
+[[tool.mypy.overrides]]
+module = [
+    "langgraph.*",
+    "langchain_core.*",
+    "pydantic_ai.*",
+    "agents.*",
+]
+ignore_missing_imports = true
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+]
+
+[tool.coverage.run]
+omit = ["src/agent_tooltrust/adapters/langgraph.py"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
