@@ -8,6 +8,7 @@ LLM explainer may enrich the explanation text.
 from dataclasses import replace
 from typing import Any
 
+from agent_tooltrust.audit.logger import AuditLogger
 from agent_tooltrust.engine.decide import decide
 from agent_tooltrust.engine.explain import explain
 from agent_tooltrust.engine.fail_closed import fail_closed
@@ -34,6 +35,7 @@ class Engine:
         policy: Policy,
         explainer: Explainer = template_explainer,
         dry_run: bool = False,
+        audit_logger: AuditLogger | None = None,
     ):
         #: The declarative policy in force for every evaluation. Immutable for
         #: the Engine's lifetime; swap engines to change policy.
@@ -44,6 +46,10 @@ class Engine:
         #: the audit record so operators can see what would have happened
         #: without risk of accidentally blocking a call.
         self._dry_run = dry_run
+        #: Optional audit destination. When set, every decision (allow and
+        #: deny alike) is recorded after stage 5. A sink failure is reported to
+        #: stderr by the logger and never changes or blocks the decision.
+        self._audit_logger = audit_logger
 
     @fail_closed
     def evaluate(
@@ -86,6 +92,11 @@ class Engine:
         # 5. Enrich explanation (optional plugin). Always re-set the text so
         #    the explainer's output is what callers and the audit trail see.
         decision = replace(decision, explanation=self._explainer(decision, call))
+        # 5b. Audit. Record the *real* (pre-dry-run) decision so the audit
+        #     trail shows what would have been enforced in shadow mode. The
+        #     logger swallows its own failures, so this never raises.
+        if self._audit_logger is not None:
+            self._audit_logger.log(decision, call, dry_run=bool(self._dry_run))
         # 6. Shadow / dry-run mode: return ``allow`` but keep the real verdict
         #    in the audit trail (callers can inspect ``decision.dry_run`` and
         #    the original decision details).

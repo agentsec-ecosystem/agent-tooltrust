@@ -13,7 +13,7 @@ import sys
 from collections.abc import Sequence
 from typing import NoReturn
 
-from agent_tooltrust.cli import check, diff, init
+from agent_tooltrust.cli import audit, check, diff, init
 from agent_tooltrust.cli.errors import CliError
 
 
@@ -32,6 +32,7 @@ def _build_parser() -> argparse.ArgumentParser:
     init.add_parser(subparsers)
     check.add_parser(subparsers)
     diff.add_parser(subparsers)
+    audit.add_parser(subparsers)
     return parser
 
 

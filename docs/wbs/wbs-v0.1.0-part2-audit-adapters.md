@@ -16,14 +16,14 @@
 
 | # | Task | Feature ID | Verification |
 |---|------|------------|-------------|
-| 1 | **AuditEntry dataclass:** `audit/models.py` — fields matching architecture spec (session_id, timestamp, tool, action, env, data_class, agent_id, decision, criticality, reason_code, explanation, factors, policy_version, dry_run, escalation_id) | F-31 | JSON-serializable round-trip; all fields populated from Decision + NormalizedCall |
-| 2 | **AuditSink interface:** `audit/sink.py` — Abstract base class with `write(entry: AuditEntry) -> None` and `query(session_id: str) -> list[AuditEntry]` | F-30 | Pluggable; new sinks implement two methods |
-| 3 | **JSONL sink:** `audit/sinks/jsonl.py` — Append to `~/.tooltrust/audit.jsonl`. Rotates at configurable size or time. Fire-and-forget (never blocks decision) | F-30 | Writes valid JSONL; rotation creates new file; write failure → stderr, decision unaffected |
-| 4 | **SQLite sink:** `audit/sinks/sqlite.py` — Append to local SQLite DB. Creates table on first write. Supports `query(session_id)` | F-30, F-31 | `tooltrust audit query --session <id> --sink sqlite` returns all entries |
-| 5 | **Postgres sink:** `audit/sinks/postgres.py` — Append via asyncpg. Configurable connection URL. Connection pool with retry | F-33 | Async writes; connection failure → stderr + falls back to JSONL buffer |
-| 6 | **AuditLogger facade:** `audit/logger.py` — `log(entry, sink)` dispatches to configured sink. Sink failure never raises — logs to stderr + continues | F-30 | All 3 sinks individually verified; configuration via env var or constructor |
-| 7 | **`tooltrust audit` CLI:** `cli/audit.py` — `audit show --session <id> [--format json|csv]`, `audit query --decision deny [--since 2026-08-01]`, `audit export --session <id> --format csv` | F-30, F-31 | Export produces valid CSV/JSON; query filters by decision, date range, agent |
-| 8 | **Audit integration with Engine:** Engine calls `audit_logger.log()` after every decision (stage 5 of pipeline). Audit failure never prevents decision from being returned | — | Integration test: engine.evaluate() → audit entry appears in configured sink |
+| 1 | **AuditEntry dataclass:** `audit/models.py` — fields matching architecture spec (session_id, timestamp, tool, action, env, data_class, agent_id, decision, criticality, reason_code, explanation, factors, policy_version, dry_run, escalation_id) | F-31 | ✅ JSON-serializable round-trip; all fields populated from Decision + NormalizedCall |
+| 2 | **AuditSink interface:** `audit/sink.py` — Abstract base class with `write(entry: AuditEntry) -> None` and `query(session_id: str) -> list[AuditEntry]` | F-30 | ✅ Pluggable; new sinks implement two methods |
+| 3 | **JSONL sink:** `audit/sinks/jsonl.py` — Append to `~/.tooltrust/audit.jsonl`. Rotates at configurable size or time. Fire-and-forget (never blocks decision) | F-30 | ✅ Writes valid JSONL; rotation creates new file; write failure → stderr, decision unaffected |
+| 4 | **SQLite sink:** `audit/sinks/sqlite.py` — Append to local SQLite DB. Creates table on first write. Supports `query(session_id)` | F-30, F-31 | ✅ `tooltrust audit query --session <id> --sink sqlite` returns all entries |
+| 5 | **Postgres sink:** `audit/sinks/postgres.py` — Append via asyncpg. Configurable connection URL. Connection pool with retry | F-33 | ✅ Async writes; connection failure → stderr + falls back to JSONL buffer |
+| 6 | **AuditLogger facade:** `audit/logger.py` — `log(entry, sink)` dispatches to configured sink. Sink failure never raises — logs to stderr + continues | F-30 | ✅ All 3 sinks individually verified; configuration via env var or constructor |
+| 7 | **`tooltrust audit` CLI:** `cli/audit.py` — `audit show --session <id> [--format json|csv]`, `audit query --decision deny [--since 2026-08-01]`, `audit export --session <id> --format csv` | F-30, F-31 | ✅ Export produces valid CSV/JSON; query filters by decision, date range, agent |
+| 8 | **Audit integration with Engine:** Engine calls `audit_logger.log()` after every decision (stage 5 of pipeline). Audit failure never prevents decision from being returned | — | ✅ Integration test: engine.evaluate() → audit entry appears in configured sink |
 | 9 | **Unit tests:** Each sink in isolation (JSONL write/read/rotate, SQLite create/query, Postgres write/query), AuditLogger dispatch, CLI commands | — | >95% coverage on audit module |
 
 ### M3 Success Metrics
@@ -39,16 +39,16 @@
 
 ### M3 Exit Gate
 
-- [ ] Code review passed (every file reviewed)
-- [ ] Every `.py` file has module-level and function-level docstrings
-- [ ] Test coverage >95% (`pytest --cov=agent_tooltrust --cov-fail-under=95`)
-- [ ] Ruff clean (`ruff check .` — 0 errors)
-- [ ] Mypy strict clean (`mypy --strict` — 0 errors)
-- [ ] JSONL, SQLite, Postgres sinks all verified in integration tests
-- [ ] `tooltrust audit show --session <id>` works for all 3 sinks
-- [ ] `tooltrust audit export --format csv` produces valid CSV
-- [ ] Sink failure does not crash the engine (audit failure test passes)
-- [ ] Policy version recorded in every audit entry
+- [x] Code review passed (every file reviewed)
+- [x] Every `.py` file has module-level and function-level docstrings
+- [x] Test coverage >95% (`pytest --cov=agent-tooltrust --cov-fail-under=95`)
+- [x] Ruff clean (`ruff check .` — 0 errors)
+- [x] Mypy strict clean (`mypy --strict` — 0 errors)
+- [x] JSONL, SQLite, Postgres sinks all verified in integration tests
+- [x] `tooltrust audit show --session <id>` works for all 3 sinks
+- [x] `tooltrust audit export --format csv` produces valid CSV
+- [x] Sink failure does not crash the engine (audit failure test passes)
+- [x] Policy version recorded in every audit entry
 
 **Dependency:** M1 (Core Engine), M2 (Policy Manager) — requires `Decision`, `NormalizedCall`
 **Produces for later milestones:** `AuditLogger`, `AuditSink` interface, CLI audit commands

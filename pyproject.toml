@@ -50,6 +50,9 @@ tooltrust = "agent_tooltrust.cli:main"
 llm = [
     "openai>=1.30",
 ]
+postgres = [
+    "asyncpg>=0.29",
+]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
@@ -57,6 +60,7 @@ dev = [
     "ruff>=0.5",
     "mypy>=1.10",
     "types-PyYAML>=6.0",
+    "asyncpg>=0.29",
 ]
 
 [build-system]
