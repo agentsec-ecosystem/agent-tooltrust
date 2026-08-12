@@ -15,6 +15,7 @@ from typing import NoReturn
 
 from agent_tooltrust.cli import audit, check, diff, init
 from agent_tooltrust.cli.errors import CliError
+from agent_tooltrust.server import cli as serve_cli
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -33,6 +34,7 @@ def _build_parser() -> argparse.ArgumentParser:
     check.add_parser(subparsers)
     diff.add_parser(subparsers)
     audit.add_parser(subparsers)
+    serve_cli.add_parser(subparsers)
     return parser
 
 

@@ -19,6 +19,7 @@ from agent_tooltrust.audit.sink import AuditSink
 
 _COLUMNS = (
     "session_id",
+    "call_id",
     "timestamp",
     "tool",
     "tool_category",
@@ -77,6 +78,7 @@ class SqliteSink(AuditSink):
             with self._connect() as conn:
                 params = [
                     entry.session_id,
+                    entry.call_id,
                     entry.timestamp,
                     entry.tool,
                     entry.tool_category,

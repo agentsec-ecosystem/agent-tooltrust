@@ -8,6 +8,7 @@ self-contained and replayable without reprocessing.
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -44,6 +45,7 @@ class AuditEntry:
     criticality: str
     reason_code: str
     explanation: str
+    call_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     factors: list[Factor] = field(default_factory=list)
     policy_version: str = "0.0.0"
     dry_run: bool = False
@@ -105,7 +107,7 @@ class AuditEntry:
     def from_dict(cls, data: dict[str, Any]) -> AuditEntry:
         """Rebuild an entry from a ``to_dict()`` payload (JSONL/CSV import)."""
         factors = [Factor(**f) for f in data.get("factors") or []]
-        return cls(
+        kwargs: dict[str, Any] = dict(
             session_id=data.get("session_id"),
             timestamp=data["timestamp"],
             tool=data["tool"],
@@ -126,3 +128,6 @@ class AuditEntry:
             escalation_id=data.get("escalation_id"),
             approver=data.get("approver"),
         )
+        if "call_id" in data:
+            kwargs["call_id"] = data["call_id"]
+        return cls(**kwargs)

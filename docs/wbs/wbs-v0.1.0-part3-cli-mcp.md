@@ -7,22 +7,23 @@
 
 ## Milestone 5: ToolTrust MCP Server
 
-**Objective:** Expose ToolTrust as an MCP server so any MCP-compatible agent can query authorization through its own tool stack. Ships two tools: `tooltrust.evaluate` and `tooltrust.explain`.
+**Objective:** Expose ToolTrust as an MCP server so any MCP-compatible agent can query authorization through its own tool stack. Ships three tools: `tooltrust.evaluate`, `tooltrust.explain`, and `tooltrust.session_status`, plus a `/audit` HTTP endpoint with session state tracking.
 
-**PRD coverage:** F-11
+**PRD coverage:** F-11, session state (F-08 family)
 **CUJs covered:** CUJ 2 (MCP integration path)
+**Status:** **COMPLETE ✅** — 51 tests, FastMCP SSE server, 3 tools, /audit endpoint, session tracking, ruff clean, mypy strict.
 
 ### M5 Task Checklist
 
-| # | Task | Feature ID | Verification |
-|---|------|------------|-------------|
-| 1 | **MCP server scaffold:** `server/mcp_server.py` — FastMCP or `mcp` SDK server. Registers two tools: `tooltrust.evaluate` and `tooltrust.explain`. Loads policy on startup | F-11 | Server starts; lists tools via MCP discovery |
-| 2 | **`tooltrust.evaluate` tool:** Accepts JSON `ToolCall` (tool, action, env, data_class, agent_id, session_id, arguments, context). Returns `Decision` as JSON | F-11 | MCP call returns same Decision as library `evaluate()` |
-| 3 | **`tooltrust.explain` tool:** Accepts `call_id` or raw call JSON. Returns explanation string. Optional `use_llm: bool` parameter | F-11 | MCP call returns explanation matching library `explain()` |
-| 4 | **Policy loading on startup:** Server loads `TOOLTRUST_POLICY_PATH` or defaults. Validates with `tooltrust check` equivalent. Refuses to start on invalid policy | F-11, F-67 | Server refuses start with malformed policy; logs line/column error |
-| 5 | **MCP server tests:** Start server, connect MCP client, call evaluate/explain tools, verify decisions match in-process engine | — | 20 MCP tool calls → 20 correct decisions; explain matches library output |
-| 6 | **Server error handling:** Internal error → `isError: true` with reason. Engine crash → tool returns deny. Audit entries emitted for all calls | — | Server stays up; tools return errors not crashes |
-| 7 | **MCP server documentation:** `docs/explanation/mcp-server.md` — how to configure, connect, and use the ToolTrust MCP server | — | Doc covers server start, tool discovery, example calls |
+| # | Task | Feature ID | Verification | Status |
+|---|------|------------|-------------|--------|
+| 1 | **MCP server scaffold:** `server/mcp_server.py` — FastMCP or `mcp` SDK server. Registers three tools: `tooltrust.evaluate`, `tooltrust.explain`, `tooltrust.session_status`. Loads policy on startup | F-11 | Server starts; lists tools via MCP discovery | ✅ Implemented as `server/` package |
+| 2 | **`tooltrust.evaluate` tool:** Accepts JSON `ToolCall` (tool, action, env, data_class, agent_id, session_id, arguments, context). Returns `Decision` as JSON | F-11 | MCP call returns same Decision as library `evaluate()` | ✅ 9 tests pass |
+| 3 | **`tooltrust.explain` tool:** Accepts `call_id` or raw call JSON. Returns explanation string. Optional `use_llm: bool` parameter | F-11 | MCP call returns explanation matching library `explain()` | ✅ Lookup by call_id works |
+| 4 | **Policy loading on startup:** Server loads `TOOLTRUST_POLICY_PATH` or defaults. Validates with `tooltrust check` equivalent. Refuses to start on invalid policy | F-11, F-67 | Server refuses start with malformed policy; logs line/column error | ✅ `tooltrust serve --policy-path` or --posture |
+| 5 | **MCP server tests:** Start server, connect MCP client, call evaluate/explain/session_status tools, verify decisions match in-process engine | — | 51 test calls → 51 correct decisions; explain matches library output | ✅ test_mcp_tools.py + test_server_core.py + test_server_integration.py |
+| 6 | **Server error handling:** Internal error → `isError: true` with reason. Engine crash → tool returns deny. Audit entries emitted for all calls | — | Server stays up; tools return errors not crashes | ✅ Fail-closed via Engine, budget/consent overrides |
+| 7 | **MCP server documentation:** `docs/explanation/mcp-server.md` — how to configure, connect, and use the ToolTrust MCP server | — | Doc covers server start, tool discovery, example calls | ✅ docs/explanation/mcp-server.md |
 
 ### M5 Success Metrics
 
@@ -35,14 +36,16 @@
 
 ### M5 Exit Gate
 
-- [ ] Code review passed (every file reviewed)
-- [ ] Every `.py` file has module-level and function-level docstrings
-- [ ] Test coverage >95% (`pytest --cov=agent_tooltrust --cov-fail-under=95`)
-- [ ] Ruff clean (`ruff check .` — 0 errors)
-- [ ] Mypy strict clean (`mypy --strict` — 0 errors)
-- [ ] MCP server starts, registers tools, responds to evaluate/explain
-- [ ] MCP server refuses to start with malformed policy
-- [ ] MCP server emits audit entries for all calls
+- [x] Code review passed (every file reviewed)
+- [x] Every `.py` file has module-level and function-level docstrings
+- [x] Test coverage >95% (`pytest --cov=agent_tooltrust --cov-fail-under=95`)
+- [x] Ruff clean (`ruff check .` — 0 errors)
+- [x] Mypy strict clean (`mypy --strict` — 0 errors)
+- [x] MCP server starts, registers tools, responds to evaluate/explain/session_status
+- [x] MCP server refuses to start with malformed policy
+- [x] MCP server emits audit entries for all calls
+- [x] /audit HTTP endpoint serves data + health check
+- [x] Session state tracks risk accumulation, budget enforcement, consent scopes
 
 **Dependency:** M1 (Core Engine), M2 (Policy Manager), M3 (Audit Logger)
 **Produces for later milestones:** MCP server consumed by field tests (M7)
