@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: astral-sh/setup-uv@v2
+
+      - run: uv sync --group dev
+
+      - run: uv run ruff check .
+
+      - run: uv run mypy --strict src/
+
+      - run: rm -f ~/.tooltrust/audit.jsonl && uv run pytest --tb=short
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: astral-sh/setup-uv@v2
+
+      - run: uv sync --group dev
+
+      - name: Build Docker image
+        run: docker build -t tooltrust:latest .
+
+      - name: Start container
+        run: docker compose up --detach --wait
+
+      - name: Smoke test — health endpoint
+        run: |
+          for i in $(seq 1 10); do
+            curl -s http://localhost:8000/audit/health && break
+            sleep 2
+          done
+          curl -s http://localhost:8000/audit/health | grep '"status":"ok"'
+
+      - name: SSE integration tests
+        run: uv run pytest tests/test_sse_integration.py -v --tb=short
+
+      - name: Stop container
+        if: always()
+        run: docker compose down

@@ -89,6 +89,8 @@ ignore = []
 "tests/test_cli_integration.py" = ["S603", "S607"]
 "tests/test_scanner.py" = ["RUF001", "RUF003"]
 "tests/test_validators_dims.py" = ["S108"]
+"tests/test_docker_smoke.py" = ["S603", "S607", "S108"]
+"tests/test_sse_integration.py" = ["S603", "S607"]
 # RUF001/RUF003: the whole point of F-89 is tables/tests full of
 # deliberately ambiguous Unicode characters (Cyrillic/Greek lookalikes).
 "src/agent_tooltrust/engine/normalize.py" = ["RUF001", "RUF003"]
