@@ -144,6 +144,7 @@ node = ToolTrustToolNode(tools, engine=engine)
 | **PydanticAI** | `@tooltrust_guard(engine)` on `@agent.tool` | Tool decorator |
 | **OpenAI Agents SDK** | `tooltrust_guardrail(engine)` → `@tool_input_guardrail` | Native guardrail API |
 | **CrewAI** | `wrap_tool(tool, engine)` | Tool `_run()` wrapper |
+| **SWE-bench** | `SWEBenchGuard(engine)` / `tooltrust swebench` | Coding-agent benchmark wrapper + per-task decision trace |
 
 ---
 
@@ -168,7 +169,7 @@ See [SECURITY.md](SECURITY.md) for the full OWASP mapping and [SECURITY_BASELINE
 | [PRD](docs/design/PRD.md) | Product requirements: why, what, 11 CUJs, 92+ features |
 | [Architecture](docs/architecture/architecture-v0.1.0.md) | System design, 5-stage pipeline, components, data model |
 | [Design Decisions](docs/design/design-decisions.md) | 14 recorded design decisions with rationale |
-| [API Reference](docs/reference/api.md) | Engine API, CLI, MCP tools, framework adapters, error codes |
+| [API Reference](docs/reference/api.md) | Engine API, CLI, MCP tools, framework adapters, SWE-bench integration, error codes |
 | [Demo Scenario](docs/design/demo-scenario.md) | 5-call narrative: allow→audit→escalate→deny→replan |
 | [DB Schema](docs/architecture/db-schema-sketch.md) | Postgres + SQLite audit tables, JSONL format |
 | [WBS](docs/wbs/README.md) | 6 files, 18 milestones across v0.1-v0.4 |
@@ -182,8 +183,8 @@ See [SECURITY.md](SECURITY.md) for the full OWASP mapping and [SECURITY_BASELINE
 
 | Version | Scope | Ship target |
 |---------|-------|-------------|
-| **v0.1.0** | Core engine, 6 adapters, MCP server, 3 posture presets, YAML+OPA/Rego dual backend, audit (JSONL/SQLite/Postgres), CLI, field tests (10 agents, 300 assertions), demo agent, OpenSSF Silver, OWASP 5/10 | ~Week 5-6 |
-| **v0.2.0** | Session/context state, argument validation, escalation round-trip, tool scanning, tool hiding, CI policy suite, rate limits, SWE-bench, OWASP 9/10, ToolTrust Hardened | TBD |
+| **v0.1.0** | Core engine, 6 adapters, MCP server, 3 posture presets, YAML+OPA/Rego dual backend, audit (JSONL/SQLite/Postgres), CLI, field tests (10 agents, 300 assertions), demo agent, OpenSSF Silver, OWASP 5/10, SWE-bench wrapper | ~Week 5-6 |
+| **v0.2.0** | Session/context state, argument validation, escalation round-trip, tool scanning, tool hiding, CI policy suite, rate limits, OWASP 9/10, ToolTrust Hardened | TBD |
 | **v0.3.0** | Output inspection, dispatcher safety, child delegation, tamper-evident audit, policy packs catalog, OWASP 10/10, Certified baseline | TBD |
 | **v0.4.0** | Governance reports, distributed policy sync, OpenSSF Gold aspirational | TBD |
 

@@ -130,6 +130,9 @@ tooltrust diff
 # Run field tests
 tooltrust field-test [--framework all|langgraph|openai|...] [--verbose]
 
+# Run SWE-bench fixture tasks with decision traces
+tooltrust swebench [--fixtures tests/fixtures/swe_bench_tasks.yaml] [--posture strict|balanced|permissive] [--json]
+
 # Query audit log
 tooltrust audit show --session sess_abc123 [--format json|csv]
 
@@ -239,6 +242,43 @@ from agent_tooltrust import guard
 def my_tool(args):
     ...
 ```
+
+---
+
+## SWE-bench Integration
+
+ToolTrust wraps SWE-bench coding-agent runs: every raw tool call (bash /
+str_replace_editor / write) is classified, evaluated against policy, and
+recorded in a per-task decision trace.
+
+```python
+from agent_tooltrust.engine.engine import Engine
+from agent_tooltrust.integrations.swe_bench import (
+    SWEBenchGuard,
+    SWEBenchRunner,
+    swe_bench_policy,
+)
+
+engine = Engine(swe_bench_policy("balanced"))  # swe_bench env declared low-risk
+
+guard = SWEBenchGuard(engine)
+guard.start_task("django__django-11099")
+entry = guard.evaluate_tool_call("bash", "cat django/core/management/base.py")
+print(entry["decision"])   # "allow"
+guard.evaluate_tool_call("bash", "git push --force origin main")
+print(entry["violation"])  # True for destructive / denied / escalated calls
+result = guard.finish_task()
+print(result.total_calls)  # 2
+print(result.to_report())  # JSON-friendly decision trace with violations
+
+# Replay a whole fixture (5 tasks) through the CLI:
+#   tooltrust swebench --fixtures tests/fixtures/swe_bench_tasks.yaml [--posture strict] [--json]
+```
+
+`SWEBenchToolMapper` classifies each command into a read/write/delete action and
+flags destructive patterns (root/absolute-path `rm`, forced git operations, fork
+bombs). `SWEBenchRunner` replays task lists from YAML fixtures or in-memory
+specs and aggregates per-task traces into a combined report.
 
 ---
 

@@ -5,7 +5,7 @@
 
 | File | Milestones | Version | GitHub Issues | Status |
 |------|-----------|---------|---------------|--------|
-| [wbs-v0.1.0-enhancements.md](wbs-v0.1.0-enhancements.md) | M19-M23 (Security, OTel, Extensibility, Governance, SWE-bench) | v0.1.0 | #123-135 | Pending |
+| [wbs-v0.1.0-enhancements.md](wbs-v0.1.0-enhancements.md) | M19-M23 (Security, OTel, Extensibility, Governance, SWE-bench) | v0.1.0 | #123-135 | **Complete ✅** |
 
 ## Issue Summary
 
@@ -26,7 +26,7 @@
 | M20 | Observability & Limits | OTel spans, Rate/burst limits, CI regression suite | M11 | Spans visible, limits enforced, CI catches drift |
 | M21 | Extensibility & UX | Arg validators, Custom risk dims, Policy test runner, Case studies | M9, M11 | Validators work, custom dims score, `tooltrust test` green |
 | M22 | Compliance & Governance | Governance reports, Tamper-evident audit chain | M14, M17 | Reports generate, audit verify passes |
-| M23 | SWE-bench | Wrapper + 5 benchmark task runs | M11 | 5/5 SWE-bench tasks with ToolTrust |
+| M23 | SWE-bench | Wrapper + 5 benchmark task runs | M11 | **COMPLETE ✅ — 5/5 tasks, 2 violations flagged** |
 
 ## Exit Gate Checklist (Every Milestone)
 
@@ -128,13 +128,13 @@
 
 ### M23 Task Checklist
 
-| # | Task | Exit criteria |
-|---|------|---------------|
-| 1 | **SWE-bench wrapper:** ToolTrust wraps SWE-bench coding agent runs. Tool policy enforced during benchmark; decision trace per task. Run on 5 benchmark tasks | 5/5 SWE-bench tasks run with ToolTrust; all tool calls logged; violations flagged |
+| # | Task | Exit criteria | Status |
+|---|------|---------------|--------|
+| 1 | **SWE-bench wrapper:** ToolTrust wraps SWE-bench coding agent runs. Tool policy enforced during benchmark; decision trace per task. Run on 5 benchmark tasks | 5/5 SWE-bench tasks run with ToolTrust; all tool calls logged; violations flagged | **Done ✅** — `SWEBenchGuard`/`SWEBenchRunner` in `agent_tooltrust.integrations.swe_bench`, `tooltrust swebench` CLI, 5-task fixture, 2 violations flagged |
 
 ### M23 Exit Gate
 
-- [ ] Code review, >95% coverage, ruff clean, mypy strict
-- [ ] ToolTrust wraps SWE-bench agent runs
-- [ ] 5 benchmark tasks complete with decision traces
-- [ ] Violations flagged in trace output
+- [x] Code review, >95% coverage, ruff clean, mypy strict
+- [x] ToolTrust wraps SWE-bench agent runs
+- [x] 5 benchmark tasks complete with decision traces
+- [x] Violations flagged in trace output
