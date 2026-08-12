@@ -40,6 +40,10 @@ class SessionState:
     decision_history: list[dict[str, Any]] = field(default_factory=list)
     created_at: float = field(default_factory=time.monotonic)
     last_updated: float = field(default_factory=time.monotonic)
+    rate_limit: float | None = None
+    burst_limit: int | None = None
+    _bucket: float = 0.0
+    _last_bucket_fill: float = 0.0
 
 
 class SessionStore:
@@ -205,3 +209,29 @@ class SessionStore:
             state = self._sessions.get(session_id)
             if state is not None and state.decision_history:
                 state.decision_history[-1]["call_id"] = call_id
+
+    def exceeds_rate_limit(
+        self, session_id: str, rate: float, burst: int
+    ) -> tuple[bool, str | None]:
+        """Check if a call exceeds the rate limit using token bucket.
+
+        Args:
+            session_id: Unique session identifier.
+            rate: Calls allowed per second.
+            burst: Maximum burst size (tokens in bucket).
+
+        Returns:
+            A tuple of ``(exceeded: bool, reason: str | None)``.
+        """
+        with self._lock:
+            state = self._sessions.get(session_id)
+            if state is None:
+                return False, None
+            now = time.monotonic()
+            elapsed = now - state._last_bucket_fill
+            state._bucket = min(burst, state._bucket + elapsed * rate)
+            state._last_bucket_fill = now
+            if state._bucket < 1.0:
+                return True, f"rate limit exceeded ({rate}/s, burst {burst})"
+            state._bucket -= 1.0
+            return False, None
