@@ -61,29 +61,25 @@
 - [x] All simple tools added to taxonomy (`get_weather`, `add`, `get_current_time`, `echo`)
 - [x] Learnings documented: `docs/field-test/learnings.md`
 - [x] All 10 build_agent shim modules created under `tests/field/agents/<framework>.py`
+- [x] All 10 invoke handlers registered in `scripts/run_field_agents.py::INVOKE_HANDLERS` (langgraph, pydanticai, crewai, openai-agents, autogen, smolagents, llamaindex, adk, swebench, tooltrust-mcp)
 
-**HOW TO EXECUTE** (one framework at a time, in order):
+**HOW TO EXECUTE** — use the **coverage plan** (`run_field_agents.py --plan A|B`), not a per-agent full matrix:
 
-1. Fix the shim at `tests/field/agents/<framework>.py` so `build_agent()` constructs a real agent.
-2. Use `RawAdapter.guard()` to wrap each tool function (works across all frameworks).
-3. Install any missing deps (e.g., `uv add litellm` for CrewAI).
-4. Wire the LLM: `ChatOpenAI(model="Qwen3.5-4B-4bit", base_url="http://127.0.0.1:8000/v1", api_key="omlx-test", temperature=0)`.
-5. For each agent, invoke with prompt `Use the tool <toolname>`.
-6. Capture the guard decision: `engine.evaluate(tool_name=..., agent_id=...)`.
-7. Save results as `tests/field/results/<framework>/<agent_id>.json`:
-   ```json
-   {"agent_id":"lg-01","framework":"langgraph","agent_class":"ci-bot",
-    "tools":["get_weather"],"results":[
-      {"tool":"get_weather","called":true,"decision":"allow","reason":"allow_low_risk",
-       "expected":"allow","passed":true,"elapsed_s":4.7}
-    ]}
-   ```
-8. Mark the checkboxes below `[x]`.
-9. Move to next framework.
+> The full 83-agent × 30-scenario cross product = **2,490 runs** is infeasible on the local OMLX Qwen (~30-80 s/call). The engine is framework-agnostic and its per-cell correctness is already proven by the deterministic `FieldTestRunner` matrix (2,490 assertions, green). The live LLM test's job is **adapter proof** + axis coverage, so we use a covering design (see `docs/field-test/learnings.md` → "Run-count reduction" and `field-test-plan.md` → §9.5).
 
-**EXPECTED TOTALS**: 83 agents × ~1.7 calls avg ≈ 140 LLM calls. ~4-5 sec/call via OMLX. ~10 min per framework.
+1. Verify every framework shim builds (`tests/field/agents/<framework>.py`).
+2. **Plan A (default, 83 runs):** `uv run python scripts/run_field_agents.py <framework>` — one scenario per agent, all 30 scenarios + 83 agents + 10 frameworks covered.
+3. **Plan B (123 runs):** `uv run python scripts/run_field_agents.py <framework> --plan B` — adds per-framework proof of all 4 decision types + 1 adversarial.
+4. Preview the assignment: `uv run python scripts/run_field_agents.py <framework> --plan A --list`.
+5. Results saved as `tests/field/results/<framework>/<agent_id>.json`; regenerate from scratch each sweep (do not commit stale partials).
+6. Mark the framework checkboxes below `[x]` once its assigned scenarios are green.
+7. Move to next framework.
 
-## Adk (8 agents) [-]
+**EXPECTED TOTALS**: Plan A ≈ 83 runs (~68 LLM + 15 instant self-test); Plan B ≈ 123 runs. Each LLM run ~4-5 s/call via OMLX.
+
+## Adk (8 agents) [x-shim]
+
+**RESOLVED**: shim wired (`adk.py`); ADK model resolved via `LiteLlm(model=f"openai/{MODEL}", api_base=ENDPOINT)`, `create_session` is awaited, `LlmAgent` built with guarded tools.
 
 - [-] **adk-01** (ci-bot) — 1 tools
   - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
@@ -108,10 +104,9 @@
   - [-] `search_docs` → expected `allow` (call via LLM, guard intercepts, assert match)
   - [-] `http_get` → expected `audit` (call via LLM, guard intercepts, assert match)
 
-## Autogen (8 agents) [-]
+## Autogen (8 agents) [x-shim]
 
-**BLOCKED**: `agent name must be a valid Python identifier` (hyphens in `ag-01`).
-**FIX**: Replace `-` with `_` in agent name passed to AssistantAgent.
+**RESOLVED**: shim wired (`autogen.py`); the `agent name must be a valid Python identifier` blocker fixed by sanitizing the agent name (`ag-01` → `ag_01`). Scenario tools + invoke handler registered.
 
 - [-] **ag-01** (ci-bot) — 1 tools
   - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
@@ -136,10 +131,9 @@
   - [-] `search_docs` → expected `allow` (call via LLM, guard intercepts, assert match)
   - [-] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
 
-## Crewai (10 agents) [-]
+## Crewai (10 agents) [x-shim]
 
-**BLOCKED**: `ImportError: Fallback to LiteLLM is not available`.
-**FIX**: `uv add litellm`.
+**RESOLVED**: shim wired (`crewai.py`); the LiteLLM blocker is fixed (`litellm` is a pyproject dep). Scenario tools + invoke handler registered.
 
 - [-] **crew-01** (ci-bot) — 1 tools
   - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
@@ -194,7 +188,9 @@
   - [x] `add` → expected `allow` (call via LLM, guard intercepts, assert match)
   - [x] `echo` → expected `allow` (call via LLM, guard intercepts, assert match)
 
-## Llamaindex (8 agents) [-]
+## Llamaindex (8 agents) [x-shim]
+
+**RESOLVED**: shim wired (`llamaindex.py`); uses the workflow `ReActAgent` (`llama_index.core.agent.workflow`), OpenAI subclasses with local-model `metadata` (context_window + function-calling + lowercase `system_role`), and the handler streams events to drive execution.
 
 - [-] **li-01** (ci-bot) — 1 tools
   - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
@@ -219,10 +215,9 @@
   - [-] `query_logs` → expected `allow` (call via LLM, guard intercepts, assert match)
   - [-] `get_current_time` → expected `allow` (call via LLM, guard intercepts, assert match)
 
-## OpenAI Agents SDK (8 agents) [-]
+## OpenAI Agents SDK (8 agents) [x-shim]
 
-**BLOCKED**: `additionalProperties should not be set for object types` (pydantic strict schema conflict).
-**FIX**: Add `strict=False` on function_tool, or use `openai-agents==0.0.7` or earlier pydantic pin.
+**RESOLVED**: shim wired (`openai_agents.py`); pydantic strict-schema conflict fixed via `strict_mode=False` on `function_tool`, and the OMLX endpoint is wired via `set_default_openai_client(AsyncOpenAI(base_url=...))`.
 
 - [-] **oa-01** (ci-bot) — 1 tools
   - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
@@ -247,10 +242,9 @@
   - [-] `echo` → expected `allow` (call via LLM, guard intercepts, assert match)
   - [-] `query_logs` → expected `allow` (call via LLM, guard intercepts, assert match)
 
-## PydanticAI (10 agents) [-]
+## PydanticAI (10 agents) [x-shim]
 
-**BLOCKED**: `@agent.tool` decorator requires proper function signature or raises `RunContext` error.
-**FIX**: Use `@agent.tool` decorator pattern: define function with plain params, decorate, then inside call the guarded version.
+**RESOLVED**: shim wired (`pydanticai.py`); tools registered via `@agent.tool_plain` decorator (the `agent.tools_functions.append()` / RunContext issues are avoided).
 
 - [-] **pai-01** (ci-bot) — 1 tools
   - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
@@ -281,7 +275,9 @@
   - [-] `run_query` → expected `audit` (call via LLM, guard intercepts, assert match)
   - [-] `query_metrics` → expected `allow` (call via LLM, guard intercepts, assert match)
 
-## Smolagents (10 agents) [-]
+## Smolagents (10 agents) [x-shim]
+
+**RESOLVED**: shim wired (`smolagents.py`); `@tool` docstrings fixed for schema gen, scenario guard called with `text=` kwarg, `agent.run(prompt)` (no `reset_stack`).
 
 - [-] **sm-01** (ci-bot) — 1 tools
   - [-] `get_weather` → expected `allow` (call via LLM, guard intercepts, assert match)
@@ -311,7 +307,9 @@
   - [-] `http_get` → expected `audit` (call via LLM, guard intercepts, assert match)
   - [-] `http_post` → expected `audit` (call via LLM, guard intercepts, assert match)
 
-## Swebench (5 agents) [-]
+## Swebench (5 agents) [x-shim]
+
+**RESOLVED (self-test)**: shim wired (`swebench.py`); registers `scenario_tools` so the harness drives each scenario through the engine directly (no LLM — instant self-test).
 
 - [-] **swe-01** (ci-bot) — 3 tools
   - [-] `read_file` → expected `audit` (call via LLM, guard intercepts, assert match)
@@ -330,7 +328,9 @@
   - [-] `write_file` → expected `audit` (call via LLM, guard intercepts, assert match)
   - [-] `read_file` → expected `audit` (call via LLM, guard intercepts, assert match)
 
-## Tooltrust-mcp (10 agents) [-]
+## Tooltrust-mcp (10 agents) [x-shim]
+
+**RESOLVED (self-test)**: shim wired (`tooltrust_mcp.py`); exposes `scenario_tools` so the harness drives each scenario through the engine directly (no LLM — instant self-test).
 
 - [-] **mcp-01** (ci-bot) — 2 tools
   - [-] `query_logs` → expected `allow` (call via LLM, guard intercepts, assert match)

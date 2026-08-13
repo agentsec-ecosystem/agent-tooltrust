@@ -6,7 +6,14 @@ from typing import Any
 
 from agent_tooltrust.engine.engine import Engine
 from agent_tooltrust.policy.models import default_policy
-from tests.field.agents import MODEL, MissingFrameworkError, _tool_arg
+from tests.field.agents import (
+    API_KEY,
+    ENDPOINT,
+    MODEL,
+    MissingFrameworkError,
+    _tool_arg,
+    scenario_bound_tools,
+)
 
 
 def build_agent(agent_id: str = "adk-01", payload: dict[str, Any] | None = None) -> Any:
@@ -28,6 +35,8 @@ def build_agent(agent_id: str = "adk-01", payload: dict[str, Any] | None = None)
             "adk shim requires google-adk; install with `pip install google-adk`"
         ) from exc
 
+    from google.adk.models.lite_llm import LiteLlm
+
     from agent_tooltrust.adapters.adk import AdkAdapter
 
     engine = (payload or {}).get("engine") or Engine(default_policy("balanced"))
@@ -38,7 +47,15 @@ def build_agent(agent_id: str = "adk-01", payload: dict[str, Any] | None = None)
         for name in _agent_tools(agent_id)
     ]
 
-    agent = Agent(name=agent_id.replace("-", "_"), model=MODEL, tools=tools)
+    for spec in (payload or {}).get("scenarios", []):
+        entry = scenario_bound_tools(engine, [spec], agent_id)[0]
+        tools.append(entry["fn"])
+
+    agent = Agent(
+        name=agent_id.replace("-", "_"),
+        model=LiteLlm(model=f"openai/{MODEL}", api_base=ENDPOINT, api_key=API_KEY),
+        tools=tools,
+    )
     agent._tool_names = _agent_tools(agent_id)  # type: ignore[attr-defined]
     return agent
 

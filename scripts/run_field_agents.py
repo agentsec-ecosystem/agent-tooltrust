@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import threading
 import time
@@ -202,10 +203,403 @@ def _pydanticai_run(agent: Any, prompt: str) -> dict[str, Any]:
     }
 
 
+def _crewai_run(agent: Any, prompt: str) -> dict[str, Any]:
+    """Run a crewai crew; report what the LLM did.
+
+    Args:
+        agent: The built crewai Crew.
+        prompt: The user prompt.
+
+    Returns:
+        Dict with ``llm_responded`` and ``response``.
+    """
+    try:
+        result = agent.kickoff(inputs={"input": prompt})
+    except Exception:
+        return {"llm_responded": True, "response": ""}
+    text = str(
+        getattr(result, "raw", None)
+        or getattr(result, "output", None)
+        or getattr(result, "tasks_output", None)
+        or ""
+    )
+    return {
+        "llm_responded": bool(text),
+        "response": text[:RESPONSE_CAP],
+    }
+
+
+def _openai_agents_run(agent: Any, prompt: str) -> dict[str, Any]:
+    """Run an openai-agents Agent via Runner; report what the LLM did.
+
+    Args:
+        agent: The built openai-agents Agent.
+        prompt: The user prompt.
+
+    Returns:
+        Dict with ``llm_responded`` and ``response``.
+    """
+    try:
+        from agents import Runner
+
+        result = Runner.run_sync(agent, input=prompt)
+    except Exception:
+        return {"llm_responded": True, "response": ""}
+    text = str(getattr(result, "final_output", None) or "")
+    return {
+        "llm_responded": bool(text),
+        "response": text[:RESPONSE_CAP],
+    }
+
+
+def _autogen_run(agent: Any, prompt: str) -> dict[str, Any]:
+    """Run an autogen agent; report what the LLM did.
+
+    Args:
+        agent: The built autogen AssistantAgent.
+        prompt: The user prompt.
+
+    Returns:
+        Dict with ``llm_responded`` and ``response``.
+    """
+    import asyncio
+
+    from autogen_agentchat.messages import TextMessage
+    from autogen_core import CancellationToken
+
+    async def _run() -> str:
+        response = await agent.on_messages(
+            [TextMessage(content=prompt, source="user")], CancellationToken()
+        )
+        return str(getattr(response, "chat_message", None) and response.chat_message.content or "")
+
+    try:
+        text = asyncio.run(_run())
+    except Exception:
+        return {"llm_responded": True, "response": ""}
+    return {
+        "llm_responded": bool(text),
+        "response": text[:RESPONSE_CAP],
+    }
+
+
+def _smolagents_run(agent: Any, prompt: str) -> dict[str, Any]:
+    """Run a smolagents agent; report what the LLM did.
+
+    Args:
+        agent: The built smolagents ToolCallingAgent.
+        prompt: The user prompt.
+
+    Returns:
+        Dict with ``llm_responded`` and ``response``.
+    """
+    try:
+        result = agent.run(prompt)
+    except Exception:
+        return {"llm_responded": True, "response": ""}
+    text = str(result or "")
+    return {
+        "llm_responded": bool(text),
+        "response": text[:RESPONSE_CAP],
+    }
+
+
+def _llamaindex_run(agent: Any, prompt: str) -> dict[str, Any]:
+    """Run a llamaindex agent; report what the LLM did.
+
+    Args:
+        agent: The built llamaindex ReActAgent workflow.
+        prompt: The user prompt.
+
+    Returns:
+        Dict with ``llm_responded`` and ``response``.
+    """
+    import asyncio
+
+    from llama_index.core.workflow import Context
+
+    ctx = Context(workflow=agent)
+
+    def _response_text(event: Any) -> str:
+        response = getattr(event, "response", None)
+        if response is None:
+            return ""
+        from llama_index.core.agent.workflow import AgentStream
+
+        if isinstance(event, AgentStream):
+            return getattr(response, "delta", "") or ""
+        return str(getattr(response, "text", "") or response or "")
+
+    async def _run() -> str:
+        handler = agent.run(user_msg=prompt, ctx=ctx)
+        texts: list[str] = []
+        async for event in handler.stream_events():
+            text = _response_text(event)
+            if text:
+                texts.append(text)
+        return "".join(texts)
+
+    try:
+        text = asyncio.run(_run())
+    except Exception:
+        return {"llm_responded": True, "response": ""}
+    return {
+        "llm_responded": bool(text),
+        "response": text[:RESPONSE_CAP],
+    }
+
+
+def _adk_run(agent: Any, prompt: str) -> dict[str, Any]:
+    """Run a google-adk Agent; report what the LLM did.
+
+    Args:
+        agent: The built google.adk Agent.
+        prompt: The user prompt.
+
+    Returns:
+        Dict with ``llm_responded`` and ``response``.
+    """
+    import asyncio
+
+    from google.adk.runners import Runner as AdkRunner
+    from google.adk.sessions import InMemorySessionService
+    from google.genai import types as genai_types
+
+    async def _run() -> str:
+        session_service = InMemorySessionService()
+        app_name = "field-test"
+        await session_service.create_session(
+            app_name=app_name, user_id="user", session_id="session-1"
+        )
+        runner = AdkRunner(agent=agent, app_name=app_name, session_service=session_service)
+        texts: list[str] = []
+        async for event in runner.run_async(
+            user_id="user",
+            session_id="session-1",
+            new_message=genai_types.Content(role="user", parts=[genai_types.Part(text=prompt)]),
+        ):
+            if event.is_final_response():
+                texts.append(str(event.content or ""))
+        return " | ".join(texts)
+
+    try:
+        text = asyncio.run(_run())
+    except Exception:
+        return {"llm_responded": True, "response": ""}
+    return {
+        "llm_responded": bool(text),
+        "response": text[:RESPONSE_CAP],
+    }
+
+
+def _self_test_run(agent: Any, prompt: str) -> dict[str, Any]:
+    """Drive a self-test agent through a scenario tool by name (no LLM).
+
+    Non-interactive frameworks (SWE-bench, ToolTrust MCP) attach a
+    ``scenario_tools`` mapping built from :func:`scenario_bound_tools`. The
+    field harness prompt carries the scenario tool id (``scn_<scenario-id>``),
+    which we parse and invoke directly so the engine records the decision for
+    the scenario's raw context.
+
+    Args:
+        agent: The built self-test agent.
+        prompt: The user prompt, which names the ``scn_<id>`` tool to call.
+
+    Returns:
+        Dict with ``llm_responded`` and ``response``.
+    """
+    match = re.search(r"`(scn_[a-z0-9_-]+)`", prompt)
+    scenario_tools: dict[str, Any] = getattr(agent, "scenario_tools", None)
+    if scenario_tools is None:
+        scenario_tools = getattr(agent, "_scenario_tools", None)
+    if match is None or scenario_tools is None:
+        return {"llm_responded": True, "response": "no scenario tool bound"}
+    fn = scenario_tools.get(match.group(1))
+    if fn is None:
+        return {"llm_responded": True, "response": f"tool {match.group(1)} not bound"}
+    try:
+        fn_result = fn(text="field-test")
+    except TypeError:
+        fn_result = fn()
+    return {
+        "llm_responded": True,
+        "response": f"self-test {match.group(1)} invoked -> {fn_result}",
+    }
+
+
+def _swebench_run(agent: Any, prompt: str) -> dict[str, Any]:
+    """Run a SWE-bench self-test agent; report what the engine decided.
+
+    SWE-bench is a replay harness, not an interactive LLM agent, so the field
+    harness drives the scenario tool directly through the engine.
+
+    Args:
+        agent: The built SWEBenchRunner.
+        prompt: The user prompt (named scenario tool).
+
+    Returns:
+        Dict with ``llm_responded`` and ``response``.
+    """
+    return _self_test_run(agent, prompt)
+
+
+def _mcp_run(agent: Any, prompt: str) -> dict[str, Any]:
+    """Run a ToolTrust MCP self-test agent; report what the engine decided.
+
+    The tooltrust-mcp shim exposes a ``scenario_tools`` mapping rather than an
+    interactive LLM agent; the field harness drives the scenario tool directly.
+
+    Args:
+        agent: The built MCP SimpleNamespace agent.
+        prompt: The user prompt (named scenario tool).
+
+    Returns:
+        Dict with ``llm_responded`` and ``response``.
+    """
+    return _self_test_run(agent, prompt)
+
+
 INVOKE_HANDLERS: dict[str, Any] = {
     "langgraph": _langgraph_run,
     "pydanticai": _pydanticai_run,
+    "crewai": _crewai_run,
+    "openai-agents": _openai_agents_run,
+    "autogen": _autogen_run,
+    "smolagents": _smolagents_run,
+    "llamaindex": _llamaindex_run,
+    "adk": _adk_run,
+    "swebench": _swebench_run,
+    "tooltrust-mcp": _mcp_run,
 }
+
+
+def _representative_scenario_ids(scenarios: list[FieldScenario]) -> list[str]:
+    """Pick one scenario id per decision type + one adversarial.
+
+    Used by Plan B tier-1 to prove each adapter surfaces all decision types.
+
+    Args:
+        scenarios: The full scenario matrix.
+
+    Returns:
+        Five scenario ids: one allow, one audit, one escalate, one deny, one
+        adversarial. Falls back to the first available of each kind.
+    """
+    wanted = ["allow", "audit", "escalate", "deny"]
+    picked: list[str] = []
+    for decision in wanted:
+        sid = next(
+            (s.id for s in scenarios
+             if s.type == "decision"
+             and (s.expected_for("general") or {}).get("decision") == decision),
+            None,
+        )
+        if sid:
+            picked.append(sid)
+    adv = next((s.id for s in scenarios if s.type == "adversarial"), None)
+    if adv:
+        picked.append(adv)
+    return picked
+
+
+def plan_assignment(
+    roster: list[dict[str, Any]],
+    scenarios: list[FieldScenario],
+    plan: str = "full",
+) -> dict[str, list[str]]:
+    """Build a (agent_id -> [scenario_id]) covering assignment.
+
+    ``full``  — every agent runs every scenario (the 2,490-cell cross product).
+    ``A``     — each agent runs exactly ONE scenario; scenarios are distributed
+                round-robin across the globally-sorted roster so every scenario
+                id is assigned at least once (83 agents / 30 scenarios => full
+                coverage). Class-specific scenarios are preferentially paired
+                with an agent of that class so the class branch is exercised.
+    ``B``     — tier-1: one representative agent per framework runs the 5
+                representative scenarios (allow/audit/escalate/deny +
+                adversarial) so each adapter individually proves all decision
+                types; tier-2: every other agent runs ONE scenario, distributed
+                to cover any scenario not hit by tier-1.
+
+    Args:
+        roster: The full agent roster (any order; sorted internally).
+        scenarios: The full scenario matrix.
+        plan: ``full`` | ``A`` | ``B``.
+
+    Returns:
+        Mapping of agent_id -> list of scenario ids to run for that agent.
+    """
+    all_ids = [s.id for s in scenarios]
+    by_id: dict[str, FieldScenario] = {s.id: s for s in scenarios}
+
+    if plan == "full":
+        return {a["agent_id"]: list(all_ids) for a in roster}
+
+    # Global deterministic ordering: framework, then agent_id.
+    ordered = sorted(roster, key=lambda a: (a["framework"], a["agent_id"]))
+
+    if plan == "A":
+        assignment: dict[str, list[str]] = {a["agent_id"]: [] for a in ordered}
+        # Pair class-specific scenarios with a matching-class agent first so
+        # the class-specific expectation branch is exercised where possible.
+        class_specific = [
+            s for s in scenarios
+            if any(k != "*" for k in s.expected)
+        ]
+        generic = [s for s in scenarios if s not in class_specific]
+        cover_queue = list(class_specific) + list(generic)
+
+        assigned_agents = set()
+        for scn in cover_queue:
+            classes = [k for k in scn.expected if k != "*"]
+            match = next(
+                (a for a in ordered
+                 if a["agent_id"] not in assigned_agents
+                 and a.get("agent_class", "general") in classes),
+                None,
+            )
+            if match is None:
+                match = next(
+                    (a for a in ordered if a["agent_id"] not in assigned_agents),
+                    None,
+                )
+            if match is not None:
+                assignment[match["agent_id"]] = [scn.id]
+                assigned_agents.add(match["agent_id"])
+
+        # Distribute any remaining agents round-robin across all scenarios so
+        # every agent still runs exactly one scenario and coverage is dense.
+        remaining = [a for a in ordered if a["agent_id"] not in assigned_agents]
+        for i, a in enumerate(remaining):
+            scn = all_ids[i % len(all_ids)]
+            assignment[a["agent_id"]] = [scn]
+        return assignment
+
+    if plan == "B":
+        reps = _representative_scenario_ids(scenarios)
+        assignment = {a["agent_id"]: [] for a in ordered}
+        tier1: set[str] = set()
+        by_framework: dict[str, list[dict[str, Any]]] = {}
+        for a in ordered:
+            by_framework.setdefault(a["framework"], []).append(a)
+        for fw, agents in by_framework.items():
+            rep = agents[0]
+            assignment[rep["agent_id"]] = list(reps)
+            tier1.add(rep["agent_id"])
+
+        # Tier-2: cover every scenario not in reps, then round-robin the rest.
+        covered = set(reps)
+        to_cover = [sid for sid in all_ids if sid not in covered]
+        tier2 = [a for a in ordered if a["agent_id"] not in tier1]
+        for i, a in enumerate(tier2):
+            if i < len(to_cover):
+                scn = to_cover[i]
+            else:
+                scn = all_ids[i % len(all_ids)]
+            assignment[a["agent_id"]] = [scn]
+        return assignment
+
+    raise ValueError(f"unknown plan {plan!r}; use full|A|B")
 
 
 def run_framework(
@@ -213,13 +607,19 @@ def run_framework(
     engine: RecordingEngine,
     agent_filter: list[str] | None = None,
     workers: int = 6,
+    assignment: dict[str, list[str]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Run a framework's roster agents across the full scenario matrix.
+    """Run a framework's roster agents across their assigned scenarios.
 
     Args:
         framework: Framework name (as it appears in the roster).
         engine: Recording engine whose inner policy knows every roster agent.
         agent_filter: Optional filter of agent ids (all if ``None``).
+        workers: Max parallel scenario rows per agent.
+        assignment: Optional ``plan_assignment`` output mapping agent_id ->
+            scenario_id list. When provided, each agent only runs its assigned
+            scenarios (Plan A/B). When ``None``, every agent runs all scenarios
+            (Plan full / legacy behavior).
 
     Returns:
         The list of run summaries (one per agent). Each is also written to
@@ -243,15 +643,27 @@ def run_framework(
 
     scenario_dicts = _load_scenario_dicts()
     scenarios = _load_field_scenarios()
+    by_id: dict[str, FieldScenario] = {s.id: s for s in scenarios}
+    dict_by_id: dict[str, dict[str, Any]] = {s["id"]: s for s in scenario_dicts}
     out_dir = RESULTS_ROOT / framework
     out_dir.mkdir(parents=True, exist_ok=True)
     summaries: list[dict[str, Any]] = []
 
     for agent in roster:
-        target = out_dir / f"{agent['agent_id']}.json"
+        agent_id = agent["agent_id"]
+        if assignment is not None:
+            wanted_ids = assignment.get(agent_id, [])
+            agent_scenarios = [by_id[i] for i in wanted_ids if i in by_id]
+            agent_dicts = [dict_by_id[i] for i in wanted_ids if i in dict_by_id]
+            if not agent_scenarios:
+                continue
+        else:
+            agent_scenarios = scenarios
+            agent_dicts = scenario_dicts
+        target = out_dir / f"{agent_id}.json"
         recorded = _run_agent(
-                handler, agent, engine, scenario_dicts, scenarios, target, workers=workers
-            )
+            handler, agent, engine, agent_dicts, agent_scenarios, target, workers=workers
+        )
         summaries.append(recorded)
 
     return summaries
@@ -545,15 +957,59 @@ def main() -> int:
         "--workers", type=int, default=6,
         help="Max parallel LLM calls (default 6)",
     )
+    parser.add_argument(
+        "--plan", choices=("full", "A", "B"), default="A",
+        help=(
+            "Coverage plan (default A): A=one scenario per agent, all "
+            "scenarios/agents/frameworks covered (~83 runs); B=per-framework "
+            "5-decision-type proof + roster smoke (~123 runs); full=every agent "
+            "x every scenario (2,490 runs, overkill)."
+        ),
+    )
+    parser.add_argument(
+        "--list", action="store_true",
+        help="Print the planned (agent -> scenarios) assignment and exit.",
+    )
     args = parser.parse_args()
 
     roster = registry.load_roster()
+    scenarios = _load_field_scenarios()
+
+    assignment: dict[str, list[str]] | None = None
+    if args.plan != "full":
+        assignment = plan_assignment(roster, scenarios, args.plan)
+
+    if args.list:
+        print(f"# plan={args.plan} framework={args.framework}")
+        if assignment is None:
+            total = len(roster) * len(scenarios)
+            print(f"# full cross product: {len(roster)} agents x {len(scenarios)} "
+                  f"scenarios = {total} runs")
+        else:
+            fw_agents = [a for a in roster if a["framework"] == args.framework]
+            fw_runs = sum(len(assignment.get(a["agent_id"], [])) for a in fw_agents)
+            all_runs = sum(len(v) for v in assignment.values())
+            covered = set()
+            for v in assignment.values():
+                covered.update(v)
+            print(f"# {args.plan}: {all_runs} runs total; this framework "
+                  f"{fw_runs} runs; scenarios covered={len(covered)}/{len(scenarios)}")
+            for a in sorted(fw_agents, key=lambda x: x["agent_id"]):
+                ids = assignment.get(a["agent_id"], [])
+                if ids:
+                    print(f"  {a['agent_id']:8} ({a.get('agent_class','general'):8}) "
+                          f"-> {ids}")
+        return 0
+
     policy = default_field_policy(args.posture, _field_agents(roster))
     engine = RecordingEngine(Engine(policy))
 
     agents = args.agents.split(",") if args.agents else None
     try:
-        summaries = run_framework(args.framework, engine, agents, workers=args.workers)
+        summaries = run_framework(
+            args.framework, engine, agents,
+            workers=args.workers, assignment=assignment,
+        )
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

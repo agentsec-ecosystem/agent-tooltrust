@@ -190,6 +190,82 @@ GitHub Actions on every PR:
 
 ---
 
+## 9.5 Coverage Plan — full cross product is unnecessary (covering design)
+
+Running the matrix as written — every agent × every scenario — on the local OMLX
+Qwen model is infeasible: **83 agents × 30 scenarios = 2,490 runs**, ~30-80 s per
+LLM call → ~2.7 h wall time at 10 workers (often worse when the model answers
+textually and retries).
+
+### Why the full cross product is overkill
+
+1. **The engine is framework-agnostic.** `Engine.evaluate(tool, action, env,
+   data_class, agent_id)` knows nothing about langgraph/crewai/etc. A scenario's
+   expected decision depends only on `(scenario, agent_class)`, never the
+   framework.
+2. **Engine correctness is already proven deterministically.** The engine-only
+   `FieldTestRunner` matrix (2,490 assertions, 100% green, no LLM) already
+   validates every `(scenario × agent_class)` cell against the golden
+   expectations. Re-running every cell through the LLM re-validates the engine —
+   redundant.
+3. **The live LLM test's real job is adapter proof** — that each framework
+   surfaces allow/audit/escalate/deny (and adversarial fail-closed) correctly
+   inside a real agent loop (DD-11's "deny surfaced as a protocol crash vs a
+   ToolMessage" class of bug). That is a per-framework property, not a per-cell
+   property.
+4. **Roster shape makes covering cheap.** Every one of the 10 frameworks already
+   contains all 5 agent classes; the scenario set only branches on 4 classes
+   (ci-bot, engineer, analyst, sensitive) plus the `*` default — all present in
+   every framework.
+
+So we use a **covering design**: every scenario id ≥1×, every agent runs ≥1×,
+every framework runs ≥1×. Per-cell engine correctness stays with the
+deterministic matrix.
+
+### Plans (implemented in `scripts/run_field_agents.py --plan`)
+
+| Plan | Runs | Reduction | What it proves |
+|------|------|-----------|----------------|
+| **A** (default) | **83** | ~30× | one scenario per agent, distributed so all 30 scenarios, all 83 agents, all 10 frameworks are covered; class-specific scenarios paired with a matching-class agent |
+| **B** | ~123 | ~12× | + each framework individually proves all 4 decision types + 1 adversarial (tier-1: 1 agent/fw × 5 representative scenarios; tier-2: remaining agents × 1 scenario to fill gaps) |
+| full | 2,490 | 1× | every cell (overkill — engine already deterministically validated) |
+
+**Coverage guarantees (verified):**
+
+| Axis | Plan A | Plan B | full |
+|------|--------|--------|------|
+| All 30 scenarios run ≥1× | ✅ | ✅ | ✅ |
+| All 83 agents run ≥1× | ✅ | ✅ | ✅ |
+| All 10 frameworks run | ✅ | ✅ | ✅ |
+| Each framework proves all decision types individually | — | ✅ | ✅ |
+| Every (scenario × class) cell re-validated via LLM | — | — | ✅ (redundant) |
+
+Of the 83 runs in Plan A, ~68 are real-LLM frameworks; SWE-bench + ToolTrust-MCP
+(15 agents) are instant self-tests (no LLM — they evaluate scenarios directly
+through the engine).
+
+### Usage
+
+```
+# default — Plan A (83 runs)
+uv run python scripts/run_field_agents.py <framework>
+
+# richer — Plan B (each adapter proves all decision types)
+uv run python scripts/run_field_agents.py <framework> --plan B
+
+# full cross product (2,490 runs; overkill)
+uv run python scripts/run_field_agents.py <framework> --plan full
+
+# preview the assignment without running
+uv run python scripts/run_field_agents.py <framework> --plan A --list
+```
+
+The assignment is computed once across the full 83-agent roster so that running
+all frameworks collectively achieves full coverage; a single-framework call
+runs that framework's slice of the assignment.
+
+---
+
 ## 10. Exit Gate (inherits M7, revised for scale)
 
 - [ ] 10 frameworks × 10 agents = 100 agents run in harness

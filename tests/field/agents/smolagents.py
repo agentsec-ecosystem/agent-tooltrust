@@ -15,6 +15,7 @@ from tests.field.agents import (
     NATIVE_ENVIRONMENT,
     TEMPERATURE,
     MissingFrameworkError,
+    scenario_bound_tools,
 )
 
 
@@ -69,8 +70,25 @@ def build_agent(agent_id: str = "sm-01", payload: dict[str, Any] | None = None) 
         agent_id=agent_id,
     )
 
+    tools = [guarded]
+
+    for spec in (payload or {}).get("scenarios", []):
+        entry = scenario_bound_tools(engine, [spec], agent_id)[0]
+
+        @tool
+        def _scn(text: str = "x") -> str:  # type: ignore[no-redef]
+            """Run a single scenario tool call.
+
+            Args:
+                text: The raw input to pass through to the guard.
+            """
+            return str(entry["fn"](text=text))
+
+        _scn.name = entry["name"]
+        tools.append(_scn)
+
     agent = ToolCallingAgent(
-        tools=[guarded],
+        tools=tools,
         model=model,
         max_steps=6,
     )

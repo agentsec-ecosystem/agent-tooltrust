@@ -14,6 +14,8 @@ from tests.field.agents import (
     NATIVE_DATA_CLASS,
     NATIVE_ENVIRONMENT,
     MissingFrameworkError,
+    _tool_arg,
+    scenario_bound_tools,
 )
 
 
@@ -57,21 +59,27 @@ def build_agent(agent_id: str = "crew-01", payload: dict[str, Any] | None = None
         """Get the current weather for a city."""
         return f"The weather in {city} is sunny at 20C."
 
-    guarded = adapter.wrap_tool(
-        get_weather,
-        tool_name=names[0],
-        action=NATIVE_ACTION,
-        environment=NATIVE_ENVIRONMENT,
-        data_class=NATIVE_DATA_CLASS,
-        agent_id=agent_id,
-    )
+    tools = [
+        adapter.wrap_tool(
+            get_weather,
+            tool_name=names[0],
+            action=NATIVE_ACTION,
+            environment=NATIVE_ENVIRONMENT,
+            data_class=NATIVE_DATA_CLASS,
+            agent_id=agent_id,
+        )
+    ]
+
+    for spec in (payload or {}).get("scenarios", []):
+        entry = scenario_bound_tools(engine, [spec], agent_id)[0]
+        tools.append(crew_tool(entry["name"])(entry["fn"]))
 
     agent = Agent(
         role="Helpful Assistant",
-        goal=f"Answer accurately, using {names[0]} when relevant.",
-        backstory="A simple assistant with one tool.",
+        goal="Answer accurately, using the requested tool.",
+        backstory="A simple assistant with tools.",
         llm=llm,
-        tools=[guarded],
+        tools=tools,
         verbose=False,
     )
     task = Task(

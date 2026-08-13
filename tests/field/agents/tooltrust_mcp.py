@@ -11,6 +11,7 @@ from tests.field.agents import (
     NATIVE_DATA_CLASS,
     NATIVE_ENVIRONMENT,
     MissingFrameworkError,
+    scenario_bound_tools,
 )
 
 
@@ -25,7 +26,9 @@ def build_agent(agent_id: str = "mcp-01", payload: dict[str, Any] | None = None)
         payload: Optional overrides (engine, policy).
 
     Returns:
-        A ``SimpleNamespace`` exposing ``evaluate(...)`` and ``describe()``.
+        A ``SimpleNamespace`` exposing ``evaluate(...)``, ``describe()`` and a
+        ``scenario_tools`` mapping (scenario id -> guarded callable) used by the
+        field harness to drive every scenario through the engine.
     """
     try:
         from types import SimpleNamespace
@@ -37,6 +40,11 @@ def build_agent(agent_id: str = "mcp-01", payload: dict[str, Any] | None = None)
     engine = (payload or {}).get("engine") or Engine(default_policy("balanced"))
     wrapper = ToolTrustMCPWrapper(_NullMCPClient(), engine)
     tools = _agent_tools(agent_id)
+
+    scenario_tools: dict[str, Any] = {}
+    for spec in (payload or {}).get("scenarios", []):
+        entry = scenario_bound_tools(engine, [spec], agent_id)[0]
+        scenario_tools[entry["name"]] = entry["fn"]
 
     def evaluate(call: dict[str, Any]) -> Any:
         return engine.evaluate(
@@ -52,6 +60,7 @@ def build_agent(agent_id: str = "mcp-01", payload: dict[str, Any] | None = None)
         tools=tools,
         wrapper=wrapper,
         evaluate=evaluate,
+        scenario_tools=scenario_tools,
         describe=lambda: {"agent_id": agent_id, "tools": tools},
     )
 

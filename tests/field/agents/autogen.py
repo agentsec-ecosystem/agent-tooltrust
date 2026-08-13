@@ -12,6 +12,7 @@ from tests.field.agents import (
     MODEL,
     MissingFrameworkError,
     _tool_arg,
+    scenario_bound_tools,
 )
 
 
@@ -60,6 +61,10 @@ def build_agent(agent_id: str = "ag-01", payload: dict[str, Any] | None = None) 
         adapter.wrap_tool(_tool_arg(name, name), agent_id=agent_id)
         for name in _agent_tools(agent_id)
     ]
+
+    for spec in (payload or {}).get("scenarios", []):
+        entry = scenario_bound_tools(engine, [spec], agent_id)[0]
+        tools.append(entry["fn"])
 
     agent = AssistantAgent(
         name=agent_id.replace("-", "_"),

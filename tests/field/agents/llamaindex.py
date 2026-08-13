@@ -12,6 +12,7 @@ from tests.field.agents import (
     MODEL,
     MissingFrameworkError,
     _tool_arg,
+    scenario_bound_tools,
 )
 
 
@@ -29,7 +30,7 @@ def build_agent(agent_id: str = "li-01", payload: dict[str, Any] | None = None) 
         A ``llama_index.core.AgentRunner`` (ReActAgent).
     """
     try:
-        from llama_index.core.agent import ReActAgent
+        from llama_index.core.agent.workflow import ReActAgent
         from llama_index.core.tools import FunctionTool
         from llama_index.llms.openai import OpenAI
     except ImportError as exc:
@@ -42,15 +43,38 @@ def build_agent(agent_id: str = "li-01", payload: dict[str, Any] | None = None) 
     engine = (payload or {}).get("engine") or Engine(default_policy("balanced"))
     adapter = LlamaIndexAdapter(engine=engine)
 
-    tools = [
-        FunctionTool.from_defaults(
-            adapter.wrap_tool(_tool_arg(name, name), agent_id=agent_id),
-            name=name,
+    tools = []
+    for name in _agent_tools(agent_id):
+        tools.append(
+            FunctionTool.from_defaults(
+                adapter.wrap_tool(_tool_arg(name, name), agent_id=agent_id),
+                name=name,
+            )
         )
-        for name in _agent_tools(agent_id)
-    ]
 
-    llm = OpenAI(model=MODEL, api_key=API_KEY, api_base=ENDPOINT)
+    for spec in (payload or {}).get("scenarios", []):
+        entry = scenario_bound_tools(engine, [spec], agent_id)[0]
+        tools.append(
+            FunctionTool.from_defaults(entry["fn"], name=entry["name"])
+        )
+
+    class _FieldOpenAI(OpenAI):
+        """OpenAI LLM whose metadata describes the local field-test model."""
+
+        @property
+        def metadata(self):
+            from llama_index.core.base.llms.types import LLMMetadata
+
+            return LLMMetadata(
+                context_window=32768,
+                num_output=self.max_tokens or 2048,
+                is_chat_model=True,
+                is_function_calling_model=True,
+                model_name=self.model,
+                system_role="system",
+            )
+
+    llm = _FieldOpenAI(model=MODEL, api_key=API_KEY, api_base=ENDPOINT)
 
     agent = ReActAgent(tools=tools, llm=llm, verbose=False)
     agent._tool_names = _agent_tools(agent_id)  # type: ignore[attr-defined]
