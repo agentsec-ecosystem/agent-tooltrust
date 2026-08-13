@@ -19,10 +19,16 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
+
+import yaml
 
 from agent_tooltrust.audit.logger import AuditLogger
 from agent_tooltrust.engine.engine import Engine
+
+#: Default agent roster used by the replan sweep when none is provided.
+_DEFAULT_ROSTER = "tests/field/agents.yaml"
 
 
 def _evaluate(engine: Engine, agent_id: str, call: dict[str, str]) -> Any:
@@ -334,6 +340,7 @@ def run_replan_sweep(
     posture: str = "balanced",
     endpoint: str | None = None,
     model: str | None = None,
+    roster_path: str = _DEFAULT_ROSTER,
 ) -> ReplanSweepResult:
     """Run a scripted or live replan round-trip for each LLM framework.
 
@@ -357,14 +364,13 @@ def run_replan_sweep(
     Raises:
         ValueError: When no roster agent exists for an LLM framework.
     """
-    from tests.field.agents.build import load_roster
-
     from agent_tooltrust.audit.logger import AuditLogger
     from agent_tooltrust.engine.engine import Engine
     from agent_tooltrust.field.models import FieldAgent
     from agent_tooltrust.field.runner import default_field_policy
 
-    roster = load_roster()
+    data = yaml.safe_load(Path(roster_path).read_text(encoding="utf-8"))
+    roster = data["agents"] if isinstance(data, dict) else data
     by_fw: dict[str, list[dict[str, Any]]] = {}
     for agent in roster:
         by_fw.setdefault(agent["framework"], []).append(agent)

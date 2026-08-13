@@ -59,6 +59,12 @@ class TestRoster:
         assert len(ids) == len(set(ids))
 
     def test_roster_sources_resolve_when_vendored(self):
+        # Vendor checkouts are gitignored and fetched locally by
+        # scripts/download_field_agents.sh; CI never checks them out. Only
+        # meaningful when the checkout is present on disk.
+        vendor_root = Path("tests/field/agents/vendor")
+        if not vendor_root.exists():
+            pytest.skip("vendor checkout not present (download_field_agents.sh)")
         from tests.field.agents.build import assert_sources_resolve
 
         unresolved = assert_sources_resolve()
