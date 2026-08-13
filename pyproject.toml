@@ -81,6 +81,17 @@ dev = [
     "asyncpg>=0.29",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "hypothesis>=6.100",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "types-PyYAML>=6.0",
+    "asyncpg>=0.29",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -131,6 +142,8 @@ module = [
 ignore_missing_imports = true
 
 [tool.coverage.report]
+# Baseline accepted for v0.1.0 ship gate (WBS M8.8). Nudged upward in v0.2.
+fail_under = 85
 exclude_also = [
     "if TYPE_CHECKING:",
 ]
