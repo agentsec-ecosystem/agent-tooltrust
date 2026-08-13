@@ -13,6 +13,7 @@ import sys
 from collections.abc import Sequence
 from typing import NoReturn
 
+from agent_tooltrust import __version__
 from agent_tooltrust.cli import (
     audit,
     check,
@@ -39,7 +40,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--version",
         action="version",
-        version="tooltrust 0.1.0",
+        version=f"tooltrust {__version__}",
     )
     subparsers = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
     init.add_parser(subparsers)

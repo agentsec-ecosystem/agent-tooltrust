@@ -2,6 +2,6 @@
 
 from agent_tooltrust.types import Decision, Factor, NormalizedCall, RiskScore
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 __all__ = ["Decision", "Factor", "NormalizedCall", "RiskScore", "__version__"]

@@ -1,16 +1,24 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Code of Conduct](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
-[![OpenSSF Best Practices](https://img.shields.io/badge/OpenSSF-Silver-informational)](https://www.bestpractices.dev)
+<div align="center">
 
 # Agent ToolTrust
 
+[![CI](https://github.com/deghosal-2026/agent-tooltrust/actions/workflows/ci.yml/badge.svg)](https://github.com/deghosal-2026/agent-tooltrust/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
+[![PyPI](https://img.shields.io/pypi/v/agent-tooltrust)](https://pypi.org/project/agent-tooltrust/)
+[![Ruff](https://img.shields.io/badge/code%20style-ruff-000000)](https://github.com/astral-sh/ruff)
+[![Type checked](https://img.shields.io/badge/mypy-strict-blue)](https://github.com/python/mypy)
+[![Coverage](https://img.shields.io/badge/coverage-85%25-yellowgreen)](https://github.com/deghosal-2026/agent-tooltrust/actions/workflows/ci.yml)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
+[![OpenSSF Best Practices](https://img.shields.io/badge/OpenSSF-Silver-informational)](https://www.bestpractices.dev)
+
 **Contextual risk and permission engine for tool-using AI agents. Allow, audit, escalate, or deny — with explainable, deterministic, auditable policy.**
 
+</div>
+
 > [!NOTE]
-> **Status:** Design complete (PRD, architecture, WBS). Implementation starting.
+> **Status:** v0.1.1 shipped and published to [PyPI](https://pypi.org/project/agent-tooltrust/) · `pip install agent-tooltrust`
 > **Repo:** Private → public at v0.1.0 ship.
-> **Package:** `agent-tooltrust` (PyPI at v0.1.0)
 
 ---
 
