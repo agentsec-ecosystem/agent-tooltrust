@@ -14,7 +14,6 @@ from tests.field.agents import (
     NATIVE_DATA_CLASS,
     NATIVE_ENVIRONMENT,
     MissingFrameworkError,
-    _tool_arg,
     scenario_bound_tools,
 )
 

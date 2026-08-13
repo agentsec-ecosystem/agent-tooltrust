@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 #: OpenAI-compatible endpoint for local model serving (OMLX default).
 ENDPOINT = (
@@ -86,14 +86,17 @@ def _tool_arg(name: str, spec: str = "", docstring: str = "") -> Callable[..., A
         """Return recent log entries."""
         return [f"log line {i}" for i in range(limit)]
 
-    fn = {
-        "get_weather": _fn,
-        "add": _add,
-        "get_current_time": _time,
-        "echo": _echo,
-        "search_docs": _search,
-        "query_logs": _logs,
-    }.get(name, _echo)
+    fn: Callable[..., Any] = cast(
+        Callable[..., Any],
+        {
+            "get_weather": _fn,
+            "add": _add,
+            "get_current_time": _time,
+            "echo": _echo,
+            "search_docs": _search,
+            "query_logs": _logs,
+        }.get(name, _echo),
+    )
     fn.__name__ = name
     if docstring:
         fn.__doc__ = docstring

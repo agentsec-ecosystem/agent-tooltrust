@@ -271,7 +271,8 @@ def _autogen_run(agent: Any, prompt: str) -> dict[str, Any]:
         response = await agent.on_messages(
             [TextMessage(content=prompt, source="user")], CancellationToken()
         )
-        return str(getattr(response, "chat_message", None) and response.chat_message.content or "")
+        msg = getattr(response, "chat_message", None)
+        return str((msg and msg.content) or "")
 
     try:
         text = asyncio.run(_run())
@@ -532,7 +533,6 @@ def plan_assignment(
         Mapping of agent_id -> list of scenario ids to run for that agent.
     """
     all_ids = [s.id for s in scenarios]
-    by_id: dict[str, FieldScenario] = {s.id: s for s in scenarios}
 
     if plan == "full":
         return {a["agent_id"]: list(all_ids) for a in roster}
@@ -584,7 +584,7 @@ def plan_assignment(
         by_framework: dict[str, list[dict[str, Any]]] = {}
         for a in ordered:
             by_framework.setdefault(a["framework"], []).append(a)
-        for fw, agents in by_framework.items():
+        for _fw, agents in by_framework.items():
             rep = agents[0]
             assignment[rep["agent_id"]] = list(reps)
             tier1.add(rep["agent_id"])

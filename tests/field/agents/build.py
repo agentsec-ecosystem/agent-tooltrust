@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from importlib import import_module
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -63,7 +63,9 @@ def builder_for(agent_id: str) -> Callable[[str, dict[str, Any] | None], Any]:
     Raises:
         ImportError: When the framework package is not installed.
     """
-    return import_module(module_for(agent_id)).build_agent
+    module = import_module(module_for(agent_id))
+    builder = module.build_agent
+    return cast(Callable[[str, dict[str, Any] | None], Any], builder)
 
 
 def build_agent(agent_id: str, payload: dict[str, Any] | None = None) -> Any:
@@ -92,7 +94,8 @@ def load_roster(path: str | Path = "tests/field/agents.yaml") -> list[dict[str, 
         The list of agent dicts from the roster.
     """
     data = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
-    return data["agents"] if isinstance(data, dict) else data
+    items: Any = data["agents"] if isinstance(data, dict) else data
+    return list(items)
 
 
 def assert_sources_resolve(

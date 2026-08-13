@@ -76,13 +76,14 @@ def build_agent(agent_id: str = "sm-01", payload: dict[str, Any] | None = None) 
         entry = scenario_bound_tools(engine, [spec], agent_id)[0]
 
         @tool
-        def _scn(text: str = "x") -> str:  # type: ignore[no-redef]
+        def _scn(text: str = "x", _entry: dict[str, Any] = entry) -> str:  # type: ignore[no-redef]
             """Run a single scenario tool call.
 
             Args:
                 text: The raw input to pass through to the guard.
+                _entry: Bound scenario entry for this tool.
             """
-            return str(entry["fn"](text=text))
+            return str(_entry["fn"](text=text))
 
         _scn.name = entry["name"]
         tools.append(_scn)
