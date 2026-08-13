@@ -6,7 +6,12 @@ from typing import Any
 
 from agent_tooltrust.engine.engine import Engine
 from agent_tooltrust.policy.models import default_policy
-from tests.field.agents import MissingFrameworkError
+from tests.field.agents import (
+    NATIVE_ACTION,
+    NATIVE_DATA_CLASS,
+    NATIVE_ENVIRONMENT,
+    MissingFrameworkError,
+)
 
 
 def build_agent(agent_id: str = "mcp-01", payload: dict[str, Any] | None = None) -> Any:
@@ -36,9 +41,9 @@ def build_agent(agent_id: str = "mcp-01", payload: dict[str, Any] | None = None)
     def evaluate(call: dict[str, Any]) -> Any:
         return engine.evaluate(
             tool_name=str(call.get("tool", "")),
-            action=str(call.get("action", "call")),
-            environment=str(call.get("environment", "staging")),
-            data_class=str(call.get("data_class", "internal")),
+            action=str(call.get("action", NATIVE_ACTION)),
+            environment=str(call.get("environment", NATIVE_ENVIRONMENT)),
+            data_class=str(call.get("data_class", NATIVE_DATA_CLASS)),
             agent_id=agent_id,
         )
 

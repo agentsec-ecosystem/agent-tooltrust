@@ -6,7 +6,17 @@ from typing import Any
 
 from agent_tooltrust.engine.engine import Engine
 from agent_tooltrust.policy.models import default_policy
-from tests.field.agents import ENDPOINT, MODEL, MissingFrameworkError, _tool_arg
+from tests.field.agents import (
+    API_KEY,
+    ENDPOINT,
+    MODEL,
+    NATIVE_ACTION,
+    NATIVE_DATA_CLASS,
+    NATIVE_ENVIRONMENT,
+    MissingFrameworkError,
+    _tool_arg,
+    scenario_bound_tools,
+)
 
 _TOOLS = {
     "pai-01": ["get_weather"],
@@ -20,6 +30,14 @@ _TOOLS = {
     "pai-09": ["echo"],
     "pai-10": ["get_weather", "add"],
 }
+
+
+def _register_tool(agent: Any, fn: Any, name: str = "") -> None:
+    """Register a guarded callable as an agent tool, capturing fn by value."""
+
+    @agent.tool_plain(name=name or None)
+    def _tool(**kwargs: Any) -> Any:  # noqa: ANN401
+        return fn(**kwargs)
 
 
 def build_agent(agent_id: str = "pai-01", payload: dict[str, Any] | None = None) -> Any:
@@ -39,20 +57,21 @@ def build_agent(agent_id: str = "pai-01", payload: dict[str, Any] | None = None)
     engine = (payload or {}).get("engine") or Engine(default_policy("balanced"))
     adapter = RawAdapter(engine=engine)
 
-    client = AsyncOpenAI(base_url=ENDPOINT, api_key="omlx-test")
+    client = AsyncOpenAI(base_url=ENDPOINT, api_key=API_KEY)
     model = OpenAIChatModel(MODEL, provider=OpenAIProvider(openai_client=client))
     agent = Agent(model=model)
 
     for name in _TOOLS.get(agent_id, ["get_weather"]):
         fn = _tool_arg(name, name)
         guarded = adapter.guard(
-            tool_name=name, action="call",
-            environment="staging", data_class="internal",
+            tool_name=name, action=NATIVE_ACTION,
+            environment=NATIVE_ENVIRONMENT, data_class=NATIVE_DATA_CLASS,
             agent_id=agent_id,
         )(fn)
+        _register_tool(agent, guarded, name=name)
 
-        @agent.tool
-        def _tool(**kwargs: Any) -> Any:  # noqa: ANN401
-            return fn(**kwargs)  # noqa: F821
+    for spec in (payload or {}).get("scenarios", []):
+        entry = scenario_bound_tools(engine, [spec], agent_id)[0]
+        _register_tool(agent, entry["fn"], name=entry["name"])
 
     return agent

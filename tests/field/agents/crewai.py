@@ -6,7 +6,15 @@ from typing import Any
 
 from agent_tooltrust.engine.engine import Engine
 from agent_tooltrust.policy.models import default_policy
-from tests.field.agents import ENDPOINT, MODEL, MissingFrameworkError
+from tests.field.agents import (
+    API_KEY,
+    ENDPOINT,
+    MODEL,
+    NATIVE_ACTION,
+    NATIVE_DATA_CLASS,
+    NATIVE_ENVIRONMENT,
+    MissingFrameworkError,
+)
 
 
 def build_agent(agent_id: str = "crew-01", payload: dict[str, Any] | None = None) -> Any:
@@ -37,7 +45,7 @@ def build_agent(agent_id: str = "crew-01", payload: dict[str, Any] | None = None
     llm = CrewLLM(
         model=f"openai/{MODEL}",
         base_url=ENDPOINT,
-        api_key="omlx-test",
+        api_key=API_KEY,
     )
 
     from crewai.tools import tool as crew_tool
@@ -52,9 +60,9 @@ def build_agent(agent_id: str = "crew-01", payload: dict[str, Any] | None = None
     guarded = adapter.wrap_tool(
         get_weather,
         tool_name=names[0],
-        action="call",
-        environment="staging",
-        data_class="internal",
+        action=NATIVE_ACTION,
+        environment=NATIVE_ENVIRONMENT,
+        data_class=NATIVE_DATA_CLASS,
         agent_id=agent_id,
     )
 

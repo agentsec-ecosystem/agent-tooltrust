@@ -133,6 +133,33 @@ class TestAgentShims:
         for agent in load_roster():
             builder_for(agent["agent_id"])
 
+    def test_scenario_bound_tools_preserve_nonstring_action(self):
+        """Guard must receive scenario fields raw, not str()-coerced.
+
+        The ``adversarial-nonstring-08`` scenario declares ``action: 12345``
+        (an int) so the engine fails closed with ``deny_malformed_input``.
+        Coercing to ``"12345"`` would make it a valid low-risk verb instead.
+        """
+        from pytest import raises
+
+        from agent_tooltrust.adapters.raw import ToolTrustDecisionError
+        from tests.field.agents import scenario_bound_tools
+
+        engine = Engine(default_field_policy("balanced"))
+        scenario = {
+            "id": "adversarial-nonstring-08",
+            "tool": "query_logs",
+            "action": 12345,
+            "environment": "development",
+            "data_class": "public",
+        }
+        entry = scenario_bound_tools(engine, [scenario], "lg-01")[0]
+        with raises(ToolTrustDecisionError) as excinfo:
+            entry["fn"](text="x")
+        decision = excinfo.value.decision
+        assert decision.decision == "deny"
+        assert decision.reason_code == "deny_malformed_input"
+
     def test_tooltrust_mcp_api(self):
         from tests.field.agents import tooltrust_mcp
 

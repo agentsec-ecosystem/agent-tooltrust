@@ -9,17 +9,30 @@
   "results": [
     {
       "tool": "add",
-      "called": false,
+      "called": true,
+      "llm_called": true,
+      "llm_responded": true,
+      "response": "The result of adding 1 and 2 is 3.",
+      "elapsed_s": 6.26,
       "decision": "allow",
-      "reason": "allow_low_risk",
-      "elapsed_s": 3.64
+      "reason_code": "allow_low_risk",
+      "expected": "allow",
+      "status": "ok",
+      "passed": true
     },
     {
       "tool": "echo",
       "called": true,
+      "llm_called": true,
+      "llm_responded": true,
+      "response": "The tool call was successful. The echo function returned \"Hello\" as expected.",
+      "elapsed_s": 6.73,
       "decision": "allow",
-      "reason": "allow_low_risk",
-      "elapsed_s": 5.6
+      "reason_code": "allow_low_risk",
+      "expected": "allow",
+      "status": "ok",
+      "passed": true
     }
-  ]
+  ],
+  "build_error": null
 }

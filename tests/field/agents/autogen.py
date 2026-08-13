@@ -6,7 +6,13 @@ from typing import Any
 
 from agent_tooltrust.engine.engine import Engine
 from agent_tooltrust.policy.models import default_policy
-from tests.field.agents import ENDPOINT, MODEL, MissingFrameworkError, _tool_arg
+from tests.field.agents import (
+    API_KEY,
+    ENDPOINT,
+    MODEL,
+    MissingFrameworkError,
+    _tool_arg,
+)
 
 
 def build_agent(agent_id: str = "ag-01", payload: dict[str, Any] | None = None) -> Any:
@@ -40,7 +46,7 @@ def build_agent(agent_id: str = "ag-01", payload: dict[str, Any] | None = None) 
     model_client = OpenAIChatCompletionClient(
         model=MODEL,
         base_url=ENDPOINT,
-        api_key="omlx-test",
+        api_key=API_KEY,
         model_info=ModelInfo(
             vision=False,
             function_calling=True,

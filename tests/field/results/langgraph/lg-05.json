@@ -10,16 +10,29 @@
     {
       "tool": "query_logs",
       "called": true,
+      "llm_called": true,
+      "llm_responded": true,
+      "response": "I have retrieved the recent log entries. Here are the 10 most recent log lines:\n\n- log line 0\n- log line 1\n- log line 2\n- log line 3\n- log line 4\n- log line 5\n- log line 6\n- log line 7\n- log line 8\n- log line 9\n\nThese are the most recent entries from the system logs.",
+      "elapsed_s": 7.07,
       "decision": "audit",
-      "reason": "audit_sensitive_data",
-      "elapsed_s": 7.09
+      "reason_code": "audit_sensitive_data",
+      "expected": "audit",
+      "status": "ok",
+      "passed": true
     },
     {
       "tool": "get_current_time",
       "called": true,
+      "llm_called": true,
+      "llm_responded": true,
+      "response": "2026-08-12 15:58:12",
+      "elapsed_s": 4.26,
       "decision": "audit",
-      "reason": "audit_sensitive_data",
-      "elapsed_s": 4.65
+      "reason_code": "audit_sensitive_data",
+      "expected": "audit",
+      "status": "ok",
+      "passed": true
     }
-  ]
+  ],
+  "build_error": null
 }
