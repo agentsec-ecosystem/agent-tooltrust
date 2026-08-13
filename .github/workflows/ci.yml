@@ -59,3 +59,45 @@ jobs:
       - name: Stop container
         if: always()
         run: docker compose down
+
+  # M7 release gate — field test. CI has no local LLM (OMLX), so this runs the
+  # deterministic sub-matrix (2490 assertions), the scripted (LLM-free) replan
+  # round-trip, and the agent-build smoke test that constructs every roster
+  # agent with the real framework packages. Any failure blocks the merge.
+  field-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: astral-sh/setup-uv@v2
+
+      - run: uv sync --group dev
+
+      - name: Deterministic decision + adversarial matrix (release gate)
+        run: uv run tooltrust field-test --agents all --matrix both --report none
+
+      - name: Agent-build smoke — all roster shims construct (real frameworks)
+        run: uv run pytest -m field --tb=short
+
+      - name: Scripted replan round-trip (LLM-free, CI-safe)
+        run: uv run tooltrust field-test --replan scripted --report none
+
+      - name: Verify committed results are in the whitelisted status set
+        run: |
+          uv run python - <<'EOF'
+          import glob, json, sys
+          bad = []
+          for f in glob.glob("tests/field/results/*/*.json"):
+              for r in json.load(open(f)).get("rows", []):
+                  st = r.get("status")
+                  if st not in ("ok", "not-available"):
+                      bad.append((f, r.get("scenario_id"), st))
+          if bad:
+              print("non-green field results:", bad)
+              sys.exit(1)
+          print("field result status whitelist OK")
+          EOF
