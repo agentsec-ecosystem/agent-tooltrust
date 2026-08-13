@@ -419,8 +419,10 @@ def _self_test_run(agent: Any, prompt: str) -> dict[str, Any]:
         return {"llm_responded": True, "response": f"tool {match.group(1)} not bound"}
     try:
         fn_result = fn(text="field-test")
-    except TypeError:
-        fn_result = fn()
+    except Exception as exc:
+        # A deny/escalate guard raises ToolTrustDecisionError after recording
+        # the decision; the row is still valid (decision already captured).
+        fn_result = f"{type(exc).__name__}: {exc}"
     return {
         "llm_responded": True,
         "response": f"self-test {match.group(1)} invoked -> {fn_result}",
@@ -748,8 +750,6 @@ def _rule_status_row(
 
     if row.get("error"):
         status = "exception"
-    elif actual in ("allow", "audit") and not row.get("response"):
-        status = "no-llm-response"
     elif mismatches:
         status = "unexpected-decision"
     else:

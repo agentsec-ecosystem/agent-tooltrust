@@ -59,13 +59,13 @@
 - [x] Field harness package (`src/agent_tooltrust/field/`: runner, report, replan)
 - [x] CLI: `tooltrust field-test --framework <name>`
 - [x] All simple tools added to taxonomy (`get_weather`, `add`, `get_current_time`, `echo`)
-- [x] Learnings documented: `docs/field-test/learnings.md`
+- [x] Learnings documented: `docs/field-test/FIELD_TEST_REPORT.md` (§5 Learnings, §8 Coverage design)
 - [x] All 10 build_agent shim modules created under `tests/field/agents/<framework>.py`
 - [x] All 10 invoke handlers registered in `scripts/run_field_agents.py::INVOKE_HANDLERS` (langgraph, pydanticai, crewai, openai-agents, autogen, smolagents, llamaindex, adk, swebench, tooltrust-mcp)
 
 **HOW TO EXECUTE** — use the **coverage plan** (`run_field_agents.py --plan A|B`), not a per-agent full matrix:
 
-> The full 83-agent × 30-scenario cross product = **2,490 runs** is infeasible on the local OMLX Qwen (~30-80 s/call). The engine is framework-agnostic and its per-cell correctness is already proven by the deterministic `FieldTestRunner` matrix (2,490 assertions, green). The live LLM test's job is **adapter proof** + axis coverage, so we use a covering design (see `docs/field-test/learnings.md` → "Run-count reduction" and `field-test-plan.md` → §9.5).
+> The full 83-agent × 30-scenario cross product = **2,490 runs** is infeasible on the local OMLX Qwen (~30-80 s/call). The engine is framework-agnostic and its per-cell correctness is already proven by the deterministic `FieldTestRunner` matrix (2,490 assertions, green). The live LLM test's job is **adapter proof** + axis coverage, so we use a covering design (see `docs/field-test/FIELD_TEST_REPORT.md` → §8 and `field-test-plan.md` → §9.5).
 
 1. Verify every framework shim builds (`tests/field/agents/<framework>.py`).
 2. **Plan A (default, 83 runs):** `uv run python scripts/run_field_agents.py <framework>` — one scenario per agent, all 30 scenarios + 83 agents + 10 frameworks covered.
