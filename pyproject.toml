@@ -124,7 +124,7 @@ ignore = []
 
 [tool.mypy]
 strict = true
-python_version = "3.11"
+python_version = "3.13"
 files = ["src"]
 mypy_path = "src"
 
