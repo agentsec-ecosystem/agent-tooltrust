@@ -170,6 +170,8 @@ See [SECURITY.md](SECURITY.md) for the full OWASP mapping and [SECURITY_BASELINE
 | [Architecture](docs/architecture/architecture-v0.1.0.md) | System design, 5-stage pipeline, components, data model |
 | [Design Decisions](docs/design/design-decisions.md) | 14 recorded design decisions with rationale |
 | [API Reference](docs/reference/api.md) | Engine API, CLI, MCP tools, framework adapters, SWE-bench integration, error codes |
+| [Release Notes v0.1.0](docs/reference/release-notes-v0.1.0.md) | What shipped in v0.1.0, quality gates, known limitations, roadmap |
+| [CHANGELOG](CHANGELOG.md) | Keep a Changelog–formatted history of all releases |
 | [Demo Scenario](docs/design/demo-scenario.md) | 5-call narrative: allow→audit→escalate→deny→replan |
 | [Demo Agent Example](examples/demo-agent/README.md) | Runnable demo agent + adversarial variant, with captured output |
 | [DB Schema](docs/architecture/db-schema-sketch.md) | Postgres + SQLite audit tables, JSONL format |
