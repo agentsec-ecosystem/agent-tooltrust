@@ -1,0 +1,228 @@
+[project]
+name = "agent-tooltrust"
+version = "0.1.1"
+description = "A pre-execution, deterministic policy decision point for tool-using AI agents. Evaluate every proposed tool call against declarative policy and return allow / audit / escalate / deny."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "deghosal-2026" }]
+keywords = [
+    "agent",
+    "policy",
+    "authorization",
+    "safety",
+    "llm",
+    "ai",
+    "risk",
+    "governance",
+    "tool-use",
+    "mcp",
+    "security",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Security",
+    "Typing :: Typed",
+]
+urls.Homepage = "https://github.com/deghosal-2026/agent-tooltrust"
+urls.Repository = "https://github.com/deghosal-2026/agent-tooltrust"
+urls.Issues = "https://github.com/deghosal-2026/agent-tooltrust/issues"
+dependencies = [
+    "cryptography>=50.0.0",
+    "opentelemetry-api>=1.44.0",
+    "opentelemetry-sdk>=1.44.0",
+    "pydantic>=2.7",
+    "PyYAML>=6.0",
+    "starlette>=0.37",
+    "watchfiles>=0.22",
+]
+
+[project.scripts]
+tooltrust = "agent_tooltrust.cli:main"
+
+[project.optional-dependencies]
+llm = [
+    "openai>=1.30",
+]
+postgres = [
+    "asyncpg>=0.29",
+]
+mcp = [
+    "fastmcp>=3.4",
+    "mcp>=1.28",
+]
+langgraph = [
+    "langgraph>=1.2.11",
+    "langchain-core>=1.5.4",
+]
+pydanticai = [
+    "pydantic-ai>=2.28.0",
+]
+openai-agents = [
+    "openai-agents>=0.20.0",
+]
+crewai = [
+    "crewai>=1.6.1",
+]
+autogen = [
+    "autogen-agentchat>=0.7.5",
+    "autogen-ext[openai]>=0.7.5",
+]
+smolagents = [
+    "smolagents>=1.26.0",
+]
+llamaindex = [
+    "llama-index-core>=0.14.23",
+    "llama-index-llms-openai>=0.7.10",
+]
+adk = [
+    "google-adk>=1.10.0",
+]
+litellm = [
+    "litellm>=1.96.2",
+]
+#: All framework adapters + MCP, for the full-fidelity install.
+all = [
+    "fastmcp>=3.4",
+    "mcp>=1.28",
+    "langgraph>=1.2.11",
+    "langchain-core>=1.5.4",
+    "pydantic-ai>=2.28.0",
+    "openai-agents>=0.20.0",
+    "crewai>=1.6.1",
+    "autogen-agentchat>=0.7.5",
+    "autogen-ext[openai]>=0.7.5",
+    "smolagents>=1.26.0",
+    "llama-index-core>=0.14.23",
+    "llama-index-llms-openai>=0.7.10",
+    "google-adk>=1.10.0",
+    "litellm>=1.96.2",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "hypothesis>=6.100",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "types-PyYAML>=6.0",
+    "asyncpg>=0.29",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "hypothesis>=6.100",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "types-PyYAML>=6.0",
+    "asyncpg>=0.29",
+    "fastmcp>=3.4",
+    "mcp>=1.28",
+    "langgraph>=1.2.11",
+    "langchain-core>=1.5.4",
+    "langchain-openai>=1.4.3",
+    "pydantic-ai>=2.28.0",
+    "openai-agents>=0.20.0",
+    "crewai>=1.6.1",
+    "autogen-agentchat>=0.7.5",
+    "autogen-ext[openai]>=0.7.5",
+    "smolagents>=1.26.0",
+    "llama-index-core>=0.14.23",
+    "llama-index-llms-openai>=0.7.10",
+    "google-adk>=1.10.0",
+    "litellm>=1.96.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_tooltrust"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "tests/field/agents/vendor",
+    ".venv",
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".coverage",
+    "dist",
+    "*.log",
+]
+
+[tool.ruff]
+target-version = "py311"
+src = ["src", "tests"]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "RUF"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+"tests/test_cli_integration.py" = ["S603", "S607"]
+"tests/test_scanner.py" = ["RUF001", "RUF003"]
+"tests/test_validators_dims.py" = ["S108"]
+"tests/test_docker_smoke.py" = ["S603", "S607", "S108", "S310"]
+"tests/test_sse_integration.py" = ["S603", "S607"]
+# RUF001/RUF003: the whole point of F-89 is tables/tests full of
+# deliberately ambiguous Unicode characters (Cyrillic/Greek lookalikes).
+"src/agent_tooltrust/engine/normalize.py" = ["RUF001", "RUF003"]
+# RUF003: the confusable check intentionally embeds Cyrillic lookalikes.
+"src/agent_tooltrust/cli/baseline.py" = ["RUF003"]
+"tests/test_normalize.py" = ["RUF001", "RUF003"]
+"tests/test_engine.py" = ["RUF001"]
+"tests/test_acceptance_matrix.py" = ["RUF001"]
+
+[tool.mypy]
+strict = true
+python_version = "3.13"
+files = ["src"]
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = [
+    "langgraph.*",
+    "langchain_core.*",
+    "pydantic_ai.*",
+    "agents.*",
+    "autogen.*",
+    "smolagents.*",
+    "llama_index.*",
+    "google.adk.*",
+]
+ignore_missing_imports = true
+
+[tool.coverage.report]
+# Baseline accepted for v0.1.0 ship gate (WBS M8.8). Nudged upward in v0.2.
+fail_under = 85
+exclude_also = [
+    "if TYPE_CHECKING:",
+]
+
+[tool.coverage.run]
+omit = ["src/agent_tooltrust/adapters/langgraph.py"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -m 'not field' --ignore=tests/field/agents/vendor"
+norecursedirs = ["tests/field/agents/vendor"]
+markers = [
+    "slow: tests that may take longer to complete",
+    "field: field tests against real agents from GitHub",
+]

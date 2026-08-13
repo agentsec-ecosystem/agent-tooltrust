@@ -1,0 +1,652 @@
+version: 1.0.0
+agents:
+- agent_id: lg-01
+  framework: langgraph
+  agent_class: ci-bot
+  domain: langgraph
+  tools:
+  - get_weather
+  - get_current_time
+  source: _awesome-quickstart/langgraph/helloworld.py
+- agent_id: lg-02
+  framework: langgraph
+  agent_class: engineer
+  domain: langgraph
+  tools:
+  - add
+  - get_weather
+  source: _awesome-quickstart/langgraph/config.py
+- agent_id: lg-03
+  framework: langgraph
+  agent_class: general
+  domain: langgraph
+  tools:
+  - get_weather
+  - search_docs
+  source: langgraph/examples/chatbot-simulation-evaluation/simulation_utils.py
+- agent_id: lg-04
+  framework: langgraph
+  agent_class: analyst
+  domain: langgraph
+  tools:
+  - add
+  - get_weather
+  - get_current_time
+  source: langgraph/examples/delta-channel-dump/dump.py
+- agent_id: lg-05
+  framework: langgraph
+  agent_class: sensitive
+  domain: langgraph
+  tools:
+  - query_logs
+  - get_current_time
+  source: langgraph/examples/chatbots/
+- agent_id: lg-06
+  framework: langgraph
+  agent_class: engineer
+  domain: langgraph
+  tools:
+  - add
+  - echo
+  source: langgraph/examples/rag/
+- agent_id: pai-01
+  framework: pydanticai
+  agent_class: ci-bot
+  domain: pydanticai
+  tools:
+  - get_weather
+  source: pydantic-ai/examples/pydantic_ai_examples/weather_agent.py
+- agent_id: pai-02
+  framework: pydanticai
+  agent_class: engineer
+  domain: pydanticai
+  tools:
+  - add
+  - get_current_time
+  source: pydantic-ai/examples/pydantic_ai_examples/stream_markdown.py
+- agent_id: pai-03
+  framework: pydanticai
+  agent_class: general
+  domain: pydanticai
+  tools:
+  - get_weather
+  - search_docs
+  source: pydantic-ai/examples/pydantic_ai_examples/pydantic_model.py
+- agent_id: pai-04
+  framework: pydanticai
+  agent_class: analyst
+  domain: pydanticai
+  tools:
+  - echo
+  - get_current_time
+  source: pydantic-ai/examples/pydantic_ai_examples/stream_whales.py
+- agent_id: pai-05
+  framework: pydanticai
+  agent_class: sensitive
+  domain: pydanticai
+  tools:
+  - query_logs
+  source: pydantic-ai/examples/pydantic_ai_examples/data_analyst.py
+- agent_id: pai-06
+  framework: pydanticai
+  agent_class: engineer
+  domain: pydanticai
+  tools:
+  - run_query
+  - write_file
+  source: pydantic-ai/examples/pydantic_ai_examples/sql_gen.py
+- agent_id: pai-07
+  framework: pydanticai
+  agent_class: general
+  domain: pydanticai
+  tools:
+  - http_get
+  - http_post
+  source: pydantic-ai/examples/pydantic_ai_examples/flight_booking.py
+- agent_id: pai-08
+  framework: pydanticai
+  agent_class: analyst
+  domain: pydanticai
+  tools:
+  - read_email
+  - send_slack
+  source: pydantic-ai/examples/pydantic_ai_examples/bank_support.py
+- agent_id: pai-09
+  framework: pydanticai
+  agent_class: ci-bot
+  domain: pydanticai
+  tools:
+  - query_database
+  - send_slack
+  source: pydantic-ai/examples/pydantic_ai_examples/medical_agent_delegation.py
+- agent_id: pai-10
+  framework: pydanticai
+  agent_class: general
+  domain: pydanticai
+  tools:
+  - run_query
+  - query_metrics
+  source: pydantic-ai/examples/pydantic_ai_examples/roulette_wheel.py
+- agent_id: crew-01
+  framework: crewai
+  agent_class: ci-bot
+  domain: crewai
+  tools:
+  - get_weather
+  source: _awesome-quickstart/crewai/helloworld
+- agent_id: crew-02
+  framework: crewai
+  agent_class: engineer
+  domain: crewai
+  tools:
+  - add
+  source: crewAI-examples/crews/stock_analysis
+- agent_id: crew-03
+  framework: crewai
+  agent_class: general
+  domain: crewai
+  tools:
+  - get_weather
+  - search_docs
+  source: crewAI-examples/crews/trip_planner
+- agent_id: crew-04
+  framework: crewai
+  agent_class: analyst
+  domain: crewai
+  tools:
+  - get_weather
+  - get_current_time
+  source: crewAI-examples/crews/recruitment
+- agent_id: crew-05
+  framework: crewai
+  agent_class: sensitive
+  domain: crewai
+  tools:
+  - query_logs
+  source: crewAI-examples/crews/job-posting
+- agent_id: crew-06
+  framework: crewai
+  agent_class: engineer
+  domain: crewai
+  tools:
+  - add
+  - echo
+  source: crewAI-examples/crews/game-builder-crew
+- agent_id: crew-07
+  framework: crewai
+  agent_class: general
+  domain: crewai
+  tools:
+  - http_get
+  - run_query
+  source: crewAI-examples/crews/surprise_trip
+- agent_id: crew-08
+  framework: crewai
+  agent_class: analyst
+  domain: crewai
+  tools:
+  - get_weather
+  - add
+  - echo
+  source: crewAI-examples/crews/screenplay_writer
+- agent_id: crew-09
+  framework: crewai
+  agent_class: ci-bot
+  domain: crewai
+  tools:
+  - echo
+  source: crewAI-examples/crews/instagram_post
+- agent_id: crew-10
+  framework: crewai
+  agent_class: general
+  domain: crewai
+  tools:
+  - search_docs
+  - send_slack
+  source: crewAI-examples/crews/marketing_strategy
+- agent_id: oa-01
+  framework: openai-agents
+  agent_class: ci-bot
+  domain: openai
+  tools:
+  - get_weather
+  source: _awesome-quickstart/openai-agents/helloworld.py
+- agent_id: oa-02
+  framework: openai-agents
+  agent_class: engineer
+  domain: openai
+  tools:
+  - add
+  source: openai-agents-python/examples/basic/tools.py
+- agent_id: oa-03
+  framework: openai-agents
+  agent_class: general
+  domain: openai
+  tools:
+  - get_weather
+  - get_current_time
+  source: openai-agents-python/examples/basic/tool_guardrails.py
+- agent_id: oa-04
+  framework: openai-agents
+  agent_class: analyst
+  domain: openai
+  tools:
+  - add
+  - get_weather
+  - echo
+  source: openai-agents-python/examples/basic/stream_text.py
+- agent_id: oa-05
+  framework: openai-agents
+  agent_class: sensitive
+  domain: openai
+  tools:
+  - query_logs
+  source: openai-agents-python/examples/basic/dynamic_system_prompt.py
+- agent_id: oa-06
+  framework: openai-agents
+  agent_class: engineer
+  domain: openai
+  tools:
+  - search_docs
+  - get_current_time
+  source: openai-agents-python/examples/basic/local_file.py
+- agent_id: oa-07
+  framework: openai-agents
+  agent_class: general
+  domain: openai
+  tools:
+  - get_weather
+  - add
+  source: openai-agents-python/examples/basic/prompt_template.py
+- agent_id: oa-08
+  framework: openai-agents
+  agent_class: analyst
+  domain: openai
+  tools:
+  - echo
+  - query_logs
+  source: openai-agents-python/examples/basic/usage_tracking.py
+- agent_id: ag-01
+  framework: autogen
+  agent_class: ci-bot
+  domain: autogen
+  tools:
+  - get_weather
+  source: _awesome-quickstart/autogen/helloworld.py
+- agent_id: ag-02
+  framework: autogen
+  agent_class: engineer
+  domain: autogen
+  tools:
+  - add
+  source: _awesome-quickstart/autogen/team.py
+- agent_id: ag-03
+  framework: autogen
+  agent_class: general
+  domain: autogen
+  tools:
+  - get_weather
+  - get_current_time
+  source: ag2/examples/a2a/
+- agent_id: ag-04
+  framework: autogen
+  agent_class: analyst
+  domain: autogen
+  tools:
+  - add
+  - get_current_time
+  source: ag2/examples/acp/
+- agent_id: ag-05
+  framework: autogen
+  agent_class: sensitive
+  domain: autogen
+  tools:
+  - query_logs
+  source: ag2/examples/live_playground/
+- agent_id: ag-06
+  framework: autogen
+  agent_class: engineer
+  domain: autogen
+  tools:
+  - get_weather
+  - add
+  source: ag2/examples/mcp/
+- agent_id: ag-07
+  framework: autogen
+  agent_class: general
+  domain: autogen
+  tools:
+  - add
+  - get_weather
+  - echo
+  source: ag2/examples/sandbox/
+- agent_id: ag-08
+  framework: autogen
+  agent_class: analyst
+  domain: autogen
+  tools:
+  - search_docs
+  - get_current_time
+  source: ag2/examples/stt_tts.py
+- agent_id: sm-01
+  framework: smolagents
+  agent_class: ci-bot
+  domain: smolagents
+  tools:
+  - get_weather
+  source: _awesome-quickstart/smolagents/helloworld.py
+- agent_id: sm-02
+  framework: smolagents
+  agent_class: engineer
+  domain: smolagents
+  tools:
+  - add
+  - get_current_time
+  source: _awesome-quickstart/smolagents/any_llm.py
+- agent_id: sm-03
+  framework: smolagents
+  agent_class: general
+  domain: smolagents
+  tools:
+  - execute_shell
+  - read_file
+  source: _awesome-quickstart/smolagents/code_execution.py
+- agent_id: sm-04
+  framework: smolagents
+  agent_class: analyst
+  domain: smolagents
+  tools:
+  - get_weather
+  - search_docs
+  source: _awesome-quickstart/smolagents/multi_agents.py
+- agent_id: sm-05
+  framework: smolagents
+  agent_class: sensitive
+  domain: smolagents
+  tools:
+  - query_logs
+  source: _awesome-quickstart/smolagents/skip_proxy.py
+- agent_id: sm-06
+  framework: smolagents
+  agent_class: engineer
+  domain: smolagents
+  tools:
+  - search_docs
+  - http_get
+  source: sm-deepsearch/src/agents/react_agent.py
+- agent_id: sm-07
+  framework: smolagents
+  agent_class: general
+  domain: smolagents
+  tools:
+  - http_get
+  - query_logs
+  source: sm-deepsearch/src/agents/codact_agent.py
+- agent_id: sm-08
+  framework: smolagents
+  agent_class: analyst
+  domain: smolagents
+  tools:
+  - read_file
+  - write_file
+  source: sm-deepsearch/src/agents/manager_agent.py
+- agent_id: sm-09
+  framework: smolagents
+  agent_class: ci-bot
+  domain: smolagents
+  tools:
+  - echo
+  source: sm-deepsearch/src/tools/academic_retrieval.py
+- agent_id: sm-10
+  framework: smolagents
+  agent_class: general
+  domain: smolagents
+  tools:
+  - http_get
+  - http_post
+  source: sm-deepsearch/src/tools/github_qa.py
+- agent_id: li-01
+  framework: llamaindex
+  agent_class: ci-bot
+  domain: llamaindex
+  tools:
+  - get_weather
+  source: llama_index/docs/examples/agent/react_agent.ipynb
+- agent_id: li-02
+  framework: llamaindex
+  agent_class: engineer
+  domain: llamaindex
+  tools:
+  - add
+  source: llama_index/docs/examples/agent/custom_multi_agent.ipynb
+- agent_id: li-03
+  framework: llamaindex
+  agent_class: general
+  domain: llamaindex
+  tools:
+  - get_weather
+  - get_current_time
+  source: llama_index/docs/examples/agent/react_agent_with_query_engine.ipynb
+- agent_id: li-04
+  framework: llamaindex
+  agent_class: analyst
+  domain: llamaindex
+  tools:
+  - add
+  - get_weather
+  - echo
+  source: llama_index/docs/examples/agent/agent_with_structured_output.ipynb
+- agent_id: li-05
+  framework: llamaindex
+  agent_class: sensitive
+  domain: llamaindex
+  tools:
+  - query_logs
+  source: llama_index/docs/examples/agent/agents_as_tools.ipynb
+- agent_id: li-06
+  framework: llamaindex
+  agent_class: engineer
+  domain: llamaindex
+  tools:
+  - search_docs
+  - get_current_time
+  source: llama_index/docs/examples/agent/return_direct_agent.ipynb
+- agent_id: li-07
+  framework: llamaindex
+  agent_class: general
+  domain: llamaindex
+  tools:
+  - add
+  - echo
+  source: llama_index/docs/examples/workflow/react_agent.ipynb
+- agent_id: li-08
+  framework: llamaindex
+  agent_class: analyst
+  domain: llamaindex
+  tools:
+  - query_logs
+  - get_current_time
+  source: llama_index/docs/examples/workflow/function_calling_agent.ipynb
+- agent_id: adk-01
+  framework: adk
+  agent_class: ci-bot
+  domain: adk
+  tools:
+  - get_weather
+  source: _awesome-quickstart/google-adk/multi_tool_agent
+- agent_id: adk-02
+  framework: adk
+  agent_class: engineer
+  domain: adk
+  tools:
+  - add
+  source: adk-sokart/chapter1_main_basic.py
+- agent_id: adk-03
+  framework: adk
+  agent_class: general
+  domain: adk
+  tools:
+  - get_weather
+  - get_current_time
+  source: adk-sokart/chapter2_main_single_agent.py
+- agent_id: adk-04
+  framework: adk
+  agent_class: analyst
+  domain: adk
+  tools:
+  - add
+  - get_weather
+  - echo
+  source: adk-sokart/chapter3_main_multi_agent.py
+- agent_id: adk-05
+  framework: adk
+  agent_class: sensitive
+  domain: adk
+  tools:
+  - query_logs
+  source: adk-sokart/chapter4_agent_deployment.py
+- agent_id: adk-06
+  framework: adk
+  agent_class: engineer
+  domain: adk
+  tools:
+  - run_query
+  - read_file
+  source: adk-sokart/agent_grammar/
+- agent_id: adk-07
+  framework: adk
+  agent_class: general
+  domain: adk
+  tools:
+  - deploy_service
+  - query_logs
+  source: adk-sokart/agent_maths/
+- agent_id: adk-08
+  framework: adk
+  agent_class: analyst
+  domain: adk
+  tools:
+  - search_docs
+  - http_get
+  source: adk-sokart/agent_summary/
+- agent_id: swe-01
+  framework: swebench
+  agent_class: ci-bot
+  domain: swebench
+  tools:
+  - read_file
+  - write_file
+  - execute_shell
+  source: tests/fixtures/swe_bench_tasks.yaml (task 0)
+- agent_id: swe-02
+  framework: swebench
+  agent_class: engineer
+  domain: swebench
+  tools:
+  - read_file
+  - write_file
+  source: tests/fixtures/swe_bench_tasks.yaml (task 1)
+- agent_id: swe-03
+  framework: swebench
+  agent_class: general
+  domain: swebench
+  tools:
+  - read_file
+  - run_shell
+  source: tests/fixtures/swe_bench_tasks.yaml (task 2)
+- agent_id: swe-04
+  framework: swebench
+  agent_class: analyst
+  domain: swebench
+  tools:
+  - execute_shell
+  - read_file
+  source: tests/fixtures/swe_bench_tasks.yaml (task 3)
+- agent_id: swe-05
+  framework: swebench
+  agent_class: sensitive
+  domain: swebench
+  tools:
+  - write_file
+  - read_file
+  source: tests/fixtures/swe_bench_tasks.yaml (task 4)
+- agent_id: mcp-01
+  framework: tooltrust-mcp
+  agent_class: ci-bot
+  domain: tooltrust
+  tools:
+  - query_logs
+  - get_weather
+  source: agent_tooltrust.server.mcp_tools
+- agent_id: mcp-02
+  framework: tooltrust-mcp
+  agent_class: engineer
+  domain: tooltrust
+  tools:
+  - add
+  - get_current_time
+  source: agent_tooltrust.server.server_core
+- agent_id: mcp-03
+  framework: tooltrust-mcp
+  agent_class: general
+  domain: tooltrust
+  tools:
+  - get_weather
+  - search_docs
+  source: agent_tooltrust.server.session_store
+- agent_id: mcp-04
+  framework: tooltrust-mcp
+  agent_class: analyst
+  domain: tooltrust
+  tools:
+  - get_weather
+  - get_current_time
+  - add
+  source: agent_tooltrust.server.audit_routes
+- agent_id: mcp-05
+  framework: tooltrust-mcp
+  agent_class: sensitive
+  domain: tooltrust
+  tools:
+  - query_logs
+  source: agent_tooltrust.audit.logger
+- agent_id: mcp-06
+  framework: tooltrust-mcp
+  agent_class: engineer
+  domain: tooltrust
+  tools:
+  - add
+  - echo
+  source: agent_tooltrust.engine.decide
+- agent_id: mcp-07
+  framework: tooltrust-mcp
+  agent_class: general
+  domain: tooltrust
+  tools:
+  - search_docs
+  - get_current_time
+  source: agent_tooltrust.engine.scanner
+- agent_id: mcp-08
+  framework: tooltrust-mcp
+  agent_class: analyst
+  domain: tooltrust
+  tools:
+  - add
+  - get_weather
+  - echo
+  source: agent_tooltrust.cli.check
+- agent_id: mcp-09
+  framework: tooltrust-mcp
+  agent_class: ci-bot
+  domain: tooltrust
+  tools:
+  - echo
+  source: agent_tooltrust.cli.field_test
+- agent_id: mcp-10
+  framework: tooltrust-mcp
+  agent_class: general
+  domain: tooltrust
+  tools:
+  - get_weather
+  - add
+  source: agent_tooltrust.engine.engine

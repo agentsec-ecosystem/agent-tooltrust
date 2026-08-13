@@ -1,0 +1,46 @@
+# Golden acceptance matrix, M1.11/M1.12. Do not edit by hand —
+# regenerate from the balanced default policy + engine behavior.
+version: "1.0.0"
+policy: balanced
+agent_id: release-bot
+cells:
+  - {tool: query_logs, action: read, environment: development, data_class: public, decision: allow, reason_code: allow_low_risk}
+  - {tool: query_logs, action: read, environment: development, data_class: internal, decision: allow, reason_code: allow_low_risk}
+  - {tool: query_logs, action: read, environment: staging, data_class: internal, decision: allow, reason_code: allow_low_risk}
+  - {tool: query_logs, action: read, environment: pre_prod, data_class: restricted, decision: allow, reason_code: allow_low_risk}
+  - {tool: query_metrics, action: read, environment: staging, data_class: public, decision: allow, reason_code: allow_low_risk}
+  - {tool: query_metrics, action: read, environment: production, data_class: public, decision: allow, reason_code: allow_low_risk}
+  - {tool: search_docs, action: read, environment: development, data_class: internal, decision: allow, reason_code: allow_low_risk}
+  - {tool: search_docs, action: read, environment: staging, data_class: restricted, decision: allow, reason_code: allow_low_risk}
+  - {tool: read_secrets, action: read, environment: staging, data_class: restricted, decision: audit, reason_code: audit_sensitive_data}
+  - {tool: read_secrets, action: read, environment: pre_prod, data_class: restricted, decision: audit, reason_code: audit_sensitive_data}
+  - {tool: read_secrets, action: read, environment: production, data_class: restricted, decision: audit, reason_code: audit_sensitive_data}
+  - {tool: read_secrets, action: read, environment: production, data_class: customer_pii, decision: escalate, reason_code: escalate_prod_write}
+  - {tool: read_file, action: read, environment: staging, data_class: internal, decision: allow, reason_code: allow_low_risk}
+  - {tool: read_file, action: read, environment: production, data_class: internal, decision: audit, reason_code: audit_sensitive_data}
+  - {tool: describe_instances, action: read, environment: pre_prod, data_class: internal, decision: audit, reason_code: audit_sensitive_data}
+  - {tool: describe_instances, action: read, environment: production, data_class: restricted, decision: audit, reason_code: audit_sensitive_data}
+  - {tool: send_slack, action: write, environment: development, data_class: public, decision: allow, reason_code: allow_low_risk}
+  - {tool: send_slack, action: write, environment: staging, data_class: public, decision: allow, reason_code: allow_low_risk}
+  - {tool: send_slack, action: write, environment: production, data_class: public, decision: escalate, reason_code: escalate_prod_write}
+  - {tool: commit_changes, action: write, environment: staging, data_class: internal, decision: allow, reason_code: allow_low_risk}
+  - {tool: push_changes, action: write, environment: staging, data_class: internal, decision: allow, reason_code: allow_low_risk}
+  - {tool: push_changes, action: write, environment: pre_prod, data_class: internal, decision: audit, reason_code: audit_sensitive_data}
+  - {tool: push_changes, action: write, environment: production, data_class: internal, decision: escalate, reason_code: escalate_prod_write}
+  - {tool: write_file, action: write, environment: staging, data_class: internal, decision: allow, reason_code: allow_low_risk}
+  - {tool: write_file, action: write, environment: development, data_class: internal, decision: allow, reason_code: allow_low_risk}
+  - {tool: deploy_service, action: write, environment: staging, data_class: internal, decision: audit, reason_code: audit_sensitive_data}
+  - {tool: deploy_service, action: write, environment: pre_prod, data_class: internal, decision: audit, reason_code: audit_sensitive_data}
+  - {tool: deploy_service, action: write, environment: production, data_class: internal, decision: escalate, reason_code: escalate_prod_write}
+  - {tool: deploy_service, action: write, environment: production, data_class: restricted, decision: escalate, reason_code: escalate_prod_write}
+  - {tool: write_secret, action: write, environment: production, data_class: restricted, decision: escalate, reason_code: escalate_prod_write}
+  - {tool: scale_cluster, action: write, environment: production, data_class: internal, decision: escalate, reason_code: escalate_prod_write}
+  - {tool: run_migration, action: write, environment: production, data_class: restricted, decision: escalate, reason_code: escalate_prod_write}
+  - {tool: assign_role, action: grant, environment: development, data_class: public, decision: deny, reason_code: deny_critical_op}
+  - {tool: assign_role, action: grant, environment: staging, data_class: internal, decision: deny, reason_code: deny_critical_op}
+  - {tool: assign_role, action: grant, environment: production, data_class: restricted, decision: deny, reason_code: deny_critical_op}
+  - {tool: assign_role, action: grant, environment: staging, data_class: restricted, decision: deny, reason_code: deny_critical_op}
+  - {tool: delete_file, action: delete, environment: development, data_class: internal, decision: audit, reason_code: audit_sensitive_data}
+  - {tool: delete_file, action: delete, environment: staging, data_class: internal, decision: audit, reason_code: audit_sensitive_data}
+  - {tool: force_push, action: delete, environment: staging, data_class: internal, decision: audit, reason_code: audit_sensitive_data}
+  - {tool: drop_database, action: delete, environment: production, data_class: customer_pii, decision: deny, reason_code: deny_critical_op}
