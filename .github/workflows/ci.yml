@@ -48,10 +48,10 @@ jobs:
       - name: Smoke test — health endpoint
         run: |
           for i in $(seq 1 10); do
-            curl -s http://localhost:8000/audit/health && break
+            curl -s http://localhost:9000/audit/health && break
             sleep 2
           done
-          curl -s http://localhost:8000/audit/health | grep '"status":"ok"'
+          curl -s http://localhost:9000/audit/health | grep '"status":"ok"'
 
       - name: SSE integration tests
         run: uv run pytest tests/test_sse_integration.py -v --tb=short

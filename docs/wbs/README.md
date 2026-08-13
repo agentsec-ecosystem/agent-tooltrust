@@ -9,7 +9,7 @@ Work Breakdown Structure — milestone plans and task breakdowns for all version
 | [wbs-v0.1.0-part1-engine.md](wbs-v0.1.0-part1-engine.md) | M1-M2 (Engine + Policy) | v0.1.0 | #1-23 | **Complete ✅** |
 | [wbs-v0.1.0-part2-audit-adapters.md](wbs-v0.1.0-part2-audit-adapters.md) | M3-M4 (Audit + Adapters) | v0.1.0 | #24-43 | **Complete ✅** |
 | [wbs-v0.1.0-part3-cli-mcp.md](wbs-v0.1.0-part3-cli-mcp.md) | M5-M6 (MCP + CLI) | v0.1.0 | #44-57 | **Complete ✅** |
-| [wbs-v0.1.0-part4-field-ship.md](wbs-v0.1.0-part4-field-ship.md) | M7-M8 (Field + Ship) | v0.1.0 | #58-76 | **M7 90%** (Plan A 83/83 ✅, Plan B 116/123 ⚠️ 7 no-call, results+report committed; CI pending) → M8 |
+| [wbs-v0.1.0-part4-field-ship.md](wbs-v0.1.0-part4-field-ship.md) | M7-M8 (Field + Ship) | v0.1.0 | #58-76 | **M7 Complete ✅** (Plan A 83/83, replan 8/8, CI gate; Plan B 116/123 w/ 7 doc'd no-call) → M8 |
 | [wbs-v0.1.0-enhancements.md](wbs-v0.1.0-enhancements.md) | M19-M23 (Security, OTel, Extensibility, Governance, SWE-bench) | v0.1.0 | #123-136 | **Complete ✅** |
 | [wbs-v0.1.0-docker.md](wbs-v0.1.0-docker.md) | M24 (Docker + Container Tests) | v0.1.0 | #137-141 | **Complete ✅** |
 | [wbs-v0.2.0.md](wbs-v0.2.0.md) | M9-M18 (Session, Escalation, Dispatcher, Delegation, Packs, Governance) | v0.2.0 | #81, #83-86, #88-89, #91, #93, #95, #97, #100-101, #103-104, #106-108, #110-117, #119-122 | Pending |
@@ -32,7 +32,7 @@ Work Breakdown Structure — milestone plans and task breakdowns for all version
 
 ## v0.1.0 Milestone Summary
 
-> **Status: M1-M6, M19-M24 Complete ✅. M7 (Field Test) — all 10 frameworks wired; Plan A sweep GREEN 83/83 (100%), Plan B 116/123 (94%, 7 `not-available` = LLM no-call with documented retry path). Results + consolidated `FIELD_TEST_REPORT.md` committed. Remaining: close Plan B no-call rows, CI integration (M7 task 9), then M8 (Ship).**
+> **Status: M1-M7, M19-M24 Complete ✅. M7 (Field Test) — all 10 frameworks wired; Plan A 83/83 (100%), replan 8/8, LLM-free CI gate; Plan B 116/123 (7 `not-available` = LLM no-call, documented). Results + consolidated `FIELD_TEST_REPORT.md` committed. Remaining: M8 (Ship).**
 
 | M# | Name | Features | CUJs | Exit gate |
 |----|------|----------|------|-----------|
