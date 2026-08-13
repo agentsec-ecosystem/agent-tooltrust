@@ -179,6 +179,35 @@ class TestAgentShims:
         assert swebench.build_agent("swe-01") is not None
 
 
+class TestReplanSweepScripted:
+    """Replan sweep, scripted (deterministic, engine-only — no LLM/framework)."""
+
+    def test_sweep_scripted_all_llm_frameworks_pass(self):
+        from agent_tooltrust.field.replan import REPLAN_FRAMEWORKS, run_replan_sweep
+
+        sweep = run_replan_sweep(live=False)
+        assert sweep.total == len(REPLAN_FRAMEWORKS)
+        assert sweep.total > 0
+        assert sweep.passed == sweep.total
+        for result in sweep.results:
+            assert result.denied == "deny", f"{result.agent_id}: {result.notes}"
+            assert result.replacement in ("allow", "audit")
+            assert result.passed, f"{result.agent_id}: {result.notes}"
+
+    def test_sweep_live_without_llm_reports_failure(self):
+        """Live replan with an unreachable endpoint must fail-closed: each
+        result is non-passing with the cause in notes (never a crash/skip)."""
+        from agent_tooltrust.field.replan import REPLAN_FRAMEWORKS, run_replan_sweep
+
+        sweep = run_replan_sweep(
+            live=True,
+            endpoint="http://127.0.0.1:9/v1",  # nothing listens here
+        )
+        assert sweep.total == len(REPLAN_FRAMEWORKS)
+        assert sweep.passed == 0
+        assert all("model call failed" in r.notes for r in sweep.results)
+
+
 @pytest.mark.field
 def test_installed_frameworks_build_agents():
     """Build a real agent for every roster id — must not skip.

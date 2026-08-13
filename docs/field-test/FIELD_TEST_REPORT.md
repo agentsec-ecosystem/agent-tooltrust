@@ -64,6 +64,29 @@
 
 ---
 
+## 2.5 Model replan round-trip — 8/8 live ✅
+
+The deny→replan→allow safety loop (issue #62, M7 task 6): a blocked destructive
+call is denied, the client/library replans to a different (benign read) tool,
+the engine allows it, and the audit trail records both calls.
+
+Implemented in `src/agent_tooltrust/field/replan.py`:
+- `ScriptedReplan` — deterministic, LLM-free, CI-safe.
+- `LiveReplan` — drives the local OMLX LLM to pick the replacement tool.
+- `run_replan_sweep(live=...)` — one round-trip per LLM framework (langgraph,
+  pydanticai, crewai, openai-agents, autogen, smolagents, llamaindex, adk).
+- CLI: `tooltrust field-test --replan scripted|live` (writes
+  `tests/field/results/replan/<mode>.json`).
+
+Results: **live 8/8, scripted 8/8** — every LLM framework denied `drop_database`
+(`deny_critical_op`) and replanned to a benign tool (`audit`), both calls audited.
+
+```
+lg-01  deny=deny    replan=audit   PASS     (… and 7 more frameworks)
+```
+
+---
+
 ## 3. Observations
 
 1. **The covering design works.** 83 runs (Plan A) gave 100% coverage of scenarios, agents, and frameworks and a 100% pass — a ~30× reduction vs the 2,490-run cross product, and it caught the same class of adapter bugs the full matrix would (deny surfaced as no-call, tool not registered, LLM answering textually instead of calling).

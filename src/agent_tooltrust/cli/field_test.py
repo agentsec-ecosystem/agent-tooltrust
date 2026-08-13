@@ -67,6 +67,17 @@ def add_parser(subparsers: Any) -> None:
     )
     parser.add_argument("--json", action="store_true", help="Output summary as JSON")
     parser.add_argument("--verbose", action="store_true", help="Print per-framework pass rates")
+    parser.add_argument(
+        "--replan",
+        choices=["off", "scripted", "live"],
+        default="off",
+        help=(
+            "Run the model-replan round-trip (deny -> different tool -> allow) "
+            "once per LLM framework. 'scripted' is deterministic/CI-safe; "
+            "'live' drives the local LLM to pick the replacement tool "
+            "(default: off)"
+        ),
+    )
     parser.set_defaults(func=_field_test)
 
 
@@ -79,6 +90,48 @@ def _field_test(args: argparse.Namespace) -> int:
     Returns:
         Exit code 0 if all cases pass, 1 otherwise.
     """
+    replan_results: list[Any] = []
+    if args.replan != "off":
+        from agent_tooltrust.field.replan import run_replan_sweep
+
+        sweep = run_replan_sweep(live=(args.replan == "live"))
+        replan_results = sweep.to_report()
+        _DEFAULT_REPLAN_OUT = Path("tests/field/results/replan")
+        _DEFAULT_REPLAN_OUT.mkdir(parents=True, exist_ok=True)
+        (_DEFAULT_REPLAN_OUT / f"{args.replan}.json").write_text(
+            json.dumps(
+                {"total": sweep.total, "passed": sweep.passed, "results": replan_results},
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        if args.json:
+            print(
+                json.dumps(
+                    {
+                        "replan": {
+                            "total": sweep.total,
+                            "passed": sweep.passed,
+                            "results": replan_results,
+                        }
+                    },
+                    indent=2,
+                )
+            )
+        else:
+            print("  Model replan sweep:")
+            for result in sweep.results:
+                status = "PASS" if result.passed else "FAIL"
+                print(
+                    f"    [{status}] {result.agent_id:8} deny={result.denied:8} "
+                    f"({result.denial_reason}) -> replan={result.replacement:6} "
+                    f"{('· ' + result.notes) if result.notes else ''}"
+                )
+            print(f"    replan total: {sweep.passed}/{sweep.total}")
+        replan_failed = sweep.passed != sweep.total
+    else:
+        replan_failed = False
+
     try:
         runner = FieldTestRunner.from_files(args.scenarios, args.roster)
     except Exception as exc:
@@ -138,4 +191,4 @@ def _field_test(args: argparse.Namespace) -> int:
         if not args.json:
             print(f"\n  Report written to {report_path}")
 
-    return 0 if report.failed == 0 else 1
+    return 0 if (report.failed == 0 and not replan_failed) else 1

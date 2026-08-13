@@ -36,7 +36,7 @@
 | 3 | **Decision matrix (primary):** 20 scenarios across 4 decision types. Full cross product (83×30) replaced by coverage plans | F-75 | Plan A: 62/62 decision assertions pass | ✅ done (Plan A) |
 | 4 | **Adversarial sub-matrix (CUJ 11 P0):** 10 scenarios — prompt injection, Unicode obfuscation, case variants, whitespace, unknown tool, malformed input/env, grant bypass | F-89(P0), F-75 | Plan A: 21/21 adversarial assertions pass | ✅ done (Plan A) |
 | 5 | **Agent integration test per platform:** each framework runs a real agent: build → prompt → guard intercepts → verify Decision | — | 10/10 frameworks record decisions | ✅ done |
-| 6 | **Model replan test:** deny a call → agent replans to a different tool → allowed. | — | Covered by coverage sweep + deterministic replan module (`src/agent_tooltrust/field/replan.py`) | ⏳ partial (module exists; live round-trip via plans) |
+| 6 | **Model replan test:** deny a call → agent replans to a different tool → allowed. | — | **8/8 live round-trips pass** (`tooltrust field-test --replan live`); scripted CI-safe path validated | ✅ done |
 | 7 | **`tooltrust field-test` CLI** + **`run_field_agents.py --plan A\|B\|full [--agents] [--list]`**: exits 0 all-pass, non-zero on failure; results to `tests/field/results/<fw>/<id>.json` | F-75 | CLI runs; per-agent JSON written; exit code reflects pass | ✅ done |
 | 8 | **Field test report:** `docs/field-test/FIELD_TEST_REPORT.md` (consolidated A+B + learnings + appendices). Regenerated per release | F-75 | Report present, valid, committed | ✅ done |
 | 9 | **CI integration:** `tooltrust field-test` runs in GitHub Actions on every PR; failure blocks merge | F-75 | CI job on field test failure | ⏳ pending |
@@ -51,7 +51,7 @@
 | Adversarial matrix | all adversarial assertions pass | Plan A 21/21; Plan B 30/30 (executed) | ✅ |
 | Plan A sweep | green (one scenario per agent) | **83/83 (100%)** | ✅ |
 | Plan B sweep | green (per-framework decision-type proof) | **116/123 (94%)**; 7 `not-available` = LLM no-call (guard never fired), not policy failures; retry path documented | ⚠️ 7 no-call rows to close |
-| Model replan | replan round-trips succeed | replan module ships; live round-trip via plans | ⏳ |
+| Model replan | replan round-trips succeed | **8/8 live** (deny→replan→allow, audit 2 entries) across langgraph, pydanticai, crewai, openai-agents, autogen, smolagents, llamaindex, adk | ✅ |
 | CI gate | Field test blocks PR merge on any failure | CI wiring pending | ⏳ |
 | Report generation | Auto-generated markdown report | `FIELD_TEST_REPORT.md` committed | ✅ |
 
@@ -67,6 +67,7 @@
 - [x] All 10 invoke handlers registered in `scripts/run_field_agents.py::INVOKE_HANDLERS` (langgraph, pydanticai, crewai, openai-agents, autogen, smolagents, llamaindex, adk, swebench, tooltrust-mcp)
 - [x] **Plan A sweep GREEN — 83/83 (100%)** across all 10 frameworks; results committed under `tests/field/results/`
 - [x] **Plan B sweep — 116/123 (94%)**; 7 `not-available` are LLM no-calls (guard never fired) — retry/close + CI remainder open
+- [x] **Model replan — 8/8 live round-trips pass** (`--replan live`), scripted CI-safe path green
 - [ ] CI integration (M7 task 9)
 
 **HOW TO EXECUTE** — use the **coverage plan** (`run_field_agents.py --plan A|B`), not a per-agent full matrix:
