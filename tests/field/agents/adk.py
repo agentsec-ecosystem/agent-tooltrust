@@ -38,7 +38,7 @@ def build_agent(agent_id: str = "adk-01", payload: dict[str, Any] | None = None)
         for name in _agent_tools(agent_id)
     ]
 
-    agent = Agent(name=agent_id, model=MODEL, tools=tools)
+    agent = Agent(name=agent_id.replace("-", "_"), model=MODEL, tools=tools)
     agent._tool_names = _agent_tools(agent_id)  # type: ignore[attr-defined]
     return agent
 

@@ -79,7 +79,7 @@ class TestServerIntegration:
         sid = str(uuid.uuid4())
         result: dict[str, Any] = {}
 
-        for _ in range(5):
+        for _ in range(6):
             result = core.evaluate(
                 "query_logs", "read", "staging", "internal", "bot1",
                 session_id=sid, call_budget=5,

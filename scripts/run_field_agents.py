@@ -44,7 +44,8 @@ from typing import TYPE_CHECKING, Any
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import yaml
-from tests.field.agents import MODEL, build as registry
+from tests.field.agents import MODEL
+from tests.field.agents import build as registry
 
 from agent_tooltrust.engine.engine import Engine
 from agent_tooltrust.field.models import CELL_FIELDS, FieldAgent, FieldScenario
@@ -409,7 +410,7 @@ def _run_one(
     try:
         run = handler(obj, _prompt_for(scenario))
         error = ""
-    except Exception as exc:  # noqa: BLE001 — record any runtime error
+    except Exception as exc:
         run = {"llm_responded": False, "response": ""}
         error = f"{type(exc).__name__}: {exc}"
     row = {

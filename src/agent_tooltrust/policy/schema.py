@@ -141,7 +141,8 @@ class PolicyDocument(BaseModel):
     environments: dict[str, EnvironmentSpec] = Field(default_factory=dict)
     data_classes: dict[str, DataClassSpec] = Field(default_factory=dict)
     risk_weights: dict[str, float] = Field(
-        default_factory=lambda: {dim: 1.0 for dim in sorted(KNOWN_DIMENSIONS)}
+        default_factory=dict,
+        description="Per-dimension risk weights. Empty means inherit all from the posture preset.",
     )
     rules: list[RuleSpec] = Field(default_factory=list)
     escalation: EscalationConfig = Field(default_factory=EscalationConfig)

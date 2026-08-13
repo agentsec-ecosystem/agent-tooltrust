@@ -114,6 +114,11 @@ class TestSessionStore:
         store.update("sess_1", risk_increment=0.1, call_id="c2")
         store.update("sess_1", risk_increment=0.1, call_id="c3")
 
+        # Budget of 3 authorizes exactly 3 calls; the 4th exceeds it.
+        exceeded, reason = store.exceeds_budget("sess_1")
+        assert not exceeded
+
+        store.update("sess_1", risk_increment=0.1, call_id="c4")
         exceeded, reason = store.exceeds_budget("sess_1")
         assert exceeded
         assert reason is not None

@@ -69,7 +69,7 @@ class TestServerCore:
         sid = str(uuid.uuid4())
         result: dict[str, Any] = {}
 
-        for _ in range(3):
+        for _ in range(4):
             result = core.evaluate(
                 "query_logs", "read", "staging", "internal", "debug-bot",
                 session_id=sid, call_budget=3,

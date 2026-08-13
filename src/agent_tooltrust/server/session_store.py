@@ -153,7 +153,7 @@ class SessionStore:
             state = self._sessions.get(session_id)
             if state is None:
                 return False, None
-            if state.call_budget is not None and state.tool_call_count >= state.call_budget:
+            if state.call_budget is not None and state.tool_call_count > state.call_budget:
                 return True, f"call budget exceeded ({state.tool_call_count}/{state.call_budget})"
             return False, None
 

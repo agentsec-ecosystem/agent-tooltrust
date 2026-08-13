@@ -36,7 +36,7 @@ def _register_tool(agent: Any, fn: Any, name: str = "") -> None:
     """Register a guarded callable as an agent tool, capturing fn by value."""
 
     @agent.tool_plain(name=name or None)
-    def _tool(**kwargs: Any) -> Any:  # noqa: ANN401
+    def _tool(**kwargs: Any) -> Any:
         return fn(**kwargs)
 
 

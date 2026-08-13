@@ -6,7 +6,13 @@ from typing import Any
 
 from agent_tooltrust.engine.engine import Engine
 from agent_tooltrust.policy.models import default_policy
-from tests.field.agents import MODEL, MissingFrameworkError, _tool_arg
+from tests.field.agents import (
+    API_KEY,
+    ENDPOINT,
+    MODEL,
+    MissingFrameworkError,
+    _tool_arg,
+)
 
 
 def build_agent(agent_id: str = "li-01", payload: dict[str, Any] | None = None) -> Any:
@@ -24,12 +30,11 @@ def build_agent(agent_id: str = "li-01", payload: dict[str, Any] | None = None) 
     """
     try:
         from llama_index.core.agent import ReActAgent
-        from llama_index.core.llms import LLM
         from llama_index.core.tools import FunctionTool
+        from llama_index.llms.openai import OpenAI
     except ImportError as exc:
         raise MissingFrameworkError(
-            "llamaindex shim requires llama-index-core; "
-            "install with `pip install llama-index-core`"
+            "llamaindex shim requires llama-index-core + llama-index-llms-openai"
         ) from exc
 
     from agent_tooltrust.adapters.llamaindex import LlamaIndexAdapter
@@ -45,10 +50,9 @@ def build_agent(agent_id: str = "li-01", payload: dict[str, Any] | None = None) 
         for name in _agent_tools(agent_id)
     ]
 
-    llm = LLM()
-    llm.model_name = MODEL  # type: ignore[attr-defined]
+    llm = OpenAI(model=MODEL, api_key=API_KEY, api_base=ENDPOINT)
 
-    agent = ReActAgent.from_tools(tools=tools, llm=llm, verbose=False)
+    agent = ReActAgent(tools=tools, llm=llm, verbose=False)
     agent._tool_names = _agent_tools(agent_id)  # type: ignore[attr-defined]
     return agent
 

@@ -60,8 +60,16 @@ class ToolTrustToolNode(BaseAdapter):
                 "install with `pip install agent-tooltrust[langgraph]`"
             ) from err
 
-        class _GuardedToolNode(ToolNode):  # type: ignore[misc]
-            def _run_one(self_guard: Any, tool_call_request: Any, config: Any = None) -> Any:
+        class _GuardedToolNode(ToolNode):
+            def _run_one(  # type: ignore[override]
+                self_guard: Any,
+                call: Any,
+                input_type: Any = None,
+                *,
+                tool_runtime: Any = None,
+                **kwargs: Any,
+            ) -> Any:
+                tool_call_request = call if hasattr(call, "get") else {}
                 tool_name = tool_call_request.get("name", "")
                 args = tool_call_request.get("args", {}) or {}
 
@@ -83,7 +91,9 @@ class ToolTrustToolNode(BaseAdapter):
                         tool_call_id=tool_call_request.get("id", ""),
                     )
 
-                return super(ToolNode, self_guard)._run_one(tool_call_request, config)
+                return super()._run_one(
+                    cast(Any, call), input_type, tool_runtime=tool_runtime, **kwargs
+                )
 
         node = _GuardedToolNode(self._tools)
-        return cast(dict[str, Any], node(state))
+        return cast(dict[str, Any], node.invoke(state))

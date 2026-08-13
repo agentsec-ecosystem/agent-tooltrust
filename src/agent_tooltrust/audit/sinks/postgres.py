@@ -29,6 +29,7 @@ _DDL = (
     "CREATE TABLE IF NOT EXISTS audit_entries ("
     "id BIGSERIAL PRIMARY KEY, "
     "session_id TEXT NOT NULL, "
+    "call_id TEXT, "
     "timestamp TIMESTAMPTZ NOT NULL, "
     "tool TEXT NOT NULL, "
     "tool_category TEXT, "
@@ -51,22 +52,22 @@ _DDL = (
 )
 
 _INSERT = (
-    "INSERT INTO audit_entries (session_id, timestamp, tool, tool_category, "
+    "INSERT INTO audit_entries (session_id, call_id, timestamp, tool, tool_category, "
     "action, action_class, environment, data_class, agent_id, agent_class, "
     "decision, criticality, reason_code, explanation, factors, policy_version, "
     "dry_run, escalation_id, approver) "
-    "VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)"
+    "VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)"
 )
 
 _SELECT = (
-    "SELECT session_id, timestamp, tool, tool_category, action, action_class, "
+    "SELECT session_id, call_id, timestamp, tool, tool_category, action, action_class, "
     "environment, data_class, agent_id, agent_class, decision, criticality, "
     "reason_code, explanation, factors, policy_version, dry_run, escalation_id, "
     "approver FROM audit_entries"
 )
 
 _SELECT_SESSION = (
-    "SELECT session_id, timestamp, tool, tool_category, action, action_class, "
+    "SELECT session_id, call_id, timestamp, tool, tool_category, action, action_class, "
     "environment, data_class, agent_id, agent_class, decision, criticality, "
     "reason_code, explanation, factors, policy_version, dry_run, escalation_id, "
     "approver FROM audit_entries WHERE session_id = $1"
@@ -147,6 +148,7 @@ class PostgresSink(AuditSink):
             await conn.execute(
                 _INSERT,
                 entry.session_id,
+                entry.call_id,
                 entry.timestamp,
                 entry.tool,
                 entry.tool_category,

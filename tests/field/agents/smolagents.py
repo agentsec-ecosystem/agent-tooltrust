@@ -53,7 +53,11 @@ def build_agent(agent_id: str = "sm-01", payload: dict[str, Any] | None = None) 
 
     @tool
     def get_weather(city: str) -> str:
-        """Get the current weather for a city."""
+        """Get the current weather for a city.
+
+        Args:
+            city: Name of the city to fetch weather for.
+        """
         return f"The weather in {city} is sunny at 20C."
 
     guarded = adapter.wrap_tool(

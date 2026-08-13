@@ -62,7 +62,7 @@ def build_agent(agent_id: str = "ag-01", payload: dict[str, Any] | None = None) 
     ]
 
     agent = AssistantAgent(
-        name=agent_id,
+        name=agent_id.replace("-", "_"),
         model_client=model_client,
         system_message="You are a helpful assistant with a few tools.",
         tools=tools,

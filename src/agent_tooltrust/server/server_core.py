@@ -6,6 +6,7 @@ the /audit HTTP endpoint share the same instances.
 
 from __future__ import annotations
 
+import sys
 from datetime import UTC, datetime
 from typing import Any
 
@@ -146,8 +147,14 @@ class ServerCore:
             reason_code=decision_dict["reason_code"],
             explanation=decision_dict["explanation"],
             factors=list(decision.factors),
+            policy_version=decision_dict.get("policy_version", "0.0.0"),
+            dry_run=decision_dict.get("dry_run", False),
+            escalation_id=decision_dict.get("escalation_id"),
         )
-        self._audit_logger.sink.write(entry)
+        try:
+            self._audit_logger.sink.write(entry)
+        except Exception as exc:
+            print(f"tooltrust audit: log failed: {exc}", file=sys.stderr)
 
         if session_id is not None and decision_dict["decision"] not in ("deny",):
             self._session_store.patch_last_call_id(session_id, entry.call_id)

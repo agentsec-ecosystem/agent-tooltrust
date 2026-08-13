@@ -11,7 +11,7 @@ import pytest
 
 class TestDockerSmoke:
     IMAGE = "tooltrust:latest"
-    HEALTH_URL = "http://localhost:8000/audit/health"
+    HEALTH_URL = "http://localhost:9000/audit/health"
 
     @pytest.fixture(scope="class")
     def _docker_setup(self) -> None:

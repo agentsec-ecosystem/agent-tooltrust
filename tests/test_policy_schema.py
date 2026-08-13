@@ -80,7 +80,9 @@ class TestParsesValid:
         assert doc.rules == []
         assert doc.escalation == EscalationConfig()
         assert doc.audit == AuditConfig()
-        assert doc.risk_weights != {}
+        # risk_weights default empty so the loader inherits the posture preset
+        # instead of clobbering every dimension with 1.0.
+        assert doc.risk_weights == {}
 
     def test_rules_use_default_constraints(self):
         doc = parse_tooltrust_yaml('version: "0.1.0"\nrules:\n  - decision: allow\n')

@@ -41,12 +41,16 @@ class OpenAIAdapter(BaseAdapter):
         environment: str = "production",
         data_class: str = "internal",
         agent_id: str = "",
-    ) -> Callable[[CallContext, Any], Any]:
+    ) -> Callable[..., Any]:
         """Return a ``@tool_input_guardrail`` compatible function.
 
+        The OpenAI Agents SDK calls the guardrail with a single
+        ``ToolInputGuardrailData`` argument. Tool identity and context come
+        from the decorator parameters, not the SDK context object.
+
         Args:
-            tool_name: Tool identity (defaults to ``ctx.tool_name``).
-            action: Action (defaults to ``ctx.action``).
+            tool_name: Tool identity for the engine.
+            action: Action being performed.
             environment: Deployment environment.
             data_class: Data sensitivity label.
             agent_id: Agent identity.
@@ -55,30 +59,28 @@ class OpenAIAdapter(BaseAdapter):
             A callable suitable for ``@tool_input_guardrail``.
         """
 
-        def guardrail_fn(ctx_guard: CallContext, agent: Any) -> Any:
-            resolved_tool = tool_name or ctx_guard.tool_name
-            resolved_action = action or ctx_guard.action
+        def guardrail_fn(data: Any, /) -> Any:
+            try:
+                from agents import ToolGuardrailFunctionOutput
+            except ImportError:
+                raise ImportError(
+                    "openai-agents required; install `agent-tooltrust[openai-agents]`"
+                ) from None
 
             ctx = CallContext(
-                tool_name=resolved_tool,
-                action=resolved_action or "call",
-                environment=environment or ctx_guard.environment,
-                data_class=data_class or ctx_guard.data_class,
-                agent_id=agent_id or ctx_guard.agent_id,
-                arguments=ctx_guard.arguments,
+                tool_name=tool_name or getattr(data.context, "tool_name", ""),
+                action=action or "call",
+                environment=environment,
+                data_class=data_class,
+                agent_id=agent_id,
+                arguments=None,
             )
             decision = self.intercept(ctx)
 
             if decision.decision in ("deny", "escalate"):
-                try:
-                    from agents import ToolGuardrailFunctionOutput
-                except ImportError:
-                    raise ImportError(
-                        "openai-agents required; install `agent-tooltrust[openai-agents]`"
-                    ) from None
-                return ToolGuardrailFunctionOutput.deny(
-                    reason=f"[ToolTrust] {decision.decision}: {decision.explanation}"
+                return ToolGuardrailFunctionOutput.reject_content(
+                    message=f"[ToolTrust] {decision.decision}: {decision.explanation}"
                 )
-            return None
+            return ToolGuardrailFunctionOutput.allow()
 
         return guardrail_fn

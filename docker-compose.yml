@@ -2,7 +2,7 @@ services:
   tooltrust:
     build: .
     ports:
-      - "8000:8000"
+      - "9000:8000"
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/audit/health')"]
       interval: 5s

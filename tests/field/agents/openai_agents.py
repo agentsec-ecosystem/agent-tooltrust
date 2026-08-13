@@ -53,11 +53,8 @@ def build_agent(agent_id: str = "oa-01", payload: dict[str, Any] | None = None) 
 def _make_tool(name: str):
     from agents import function_tool
 
-    @function_tool
-    def _tool(**kwargs: Any) -> Any:
-        return _tool_arg(name, name)(**kwargs)
-
-    return _tool
+    fn = _tool_arg(name, name)
+    return function_tool(name_override=name, strict_mode=False)(fn)
 
 
 def _agent_tools(agent_id: str) -> list[str]:

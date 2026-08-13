@@ -110,6 +110,8 @@ def _parse_opa_output(raw: str, call: NormalizedCall) -> Decision:
         raise OpaUnavailableError(f"unparseable OPA output: {exc}") from exc
 
     try:
+        if not isinstance(value, dict):
+            raise ValueError(f"OPA result must be an object, got {type(value).__name__}")
         decision_str = value.get("decision", "deny")
         return Decision(
             decision=decision_str,
@@ -117,5 +119,5 @@ def _parse_opa_output(raw: str, call: NormalizedCall) -> Decision:
             explanation=value.get("explanation", "OPA decision (no explanation provided)"),
             criticality=value.get("criticality", "low"),
         )
-    except (ValueError, TypeError) as exc:
+    except (ValueError, TypeError, AttributeError) as exc:
         raise OpaUnavailableError(f"invalid OPA result fields: {exc}") from exc

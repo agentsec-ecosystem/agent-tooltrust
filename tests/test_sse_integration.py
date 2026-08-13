@@ -14,14 +14,14 @@ from agent_tooltrust.policy.models import default_policy
 
 
 class TestSSEIntegration:
-    SSE_URL = "http://localhost:8000/sse"
+    SSE_URL = "http://localhost:9000/sse"
     TIMEOUT = 30
 
     @pytest.fixture(scope="class")
     def engine(self) -> Engine:
         return Engine(default_policy("balanced"))
 
-    @pytest.fixture(scope="class")
+    @pytest.fixture(scope="class", autouse=True)
     def _server(self) -> Any:
         subprocess.run(
             ["docker", "compose", "up", "--detach", "--wait"],
@@ -96,7 +96,7 @@ class TestSSEIntegration:
         import json
         import urllib.request
 
-        resp = urllib.request.urlopen("http://localhost:8000/audit")
+        resp = urllib.request.urlopen("http://localhost:9000/audit")
         assert resp.status == 200
         data = json.loads(resp.read())
         assert isinstance(data, list)
@@ -105,7 +105,7 @@ class TestSSEIntegration:
         import json
         import urllib.request
 
-        resp = urllib.request.urlopen("http://localhost:8000/audit/health")
+        resp = urllib.request.urlopen("http://localhost:9000/audit/health")
         assert resp.status == 200
         data = json.loads(resp.read())
         assert data["status"] == "ok"
@@ -128,7 +128,7 @@ async def _call_sse(tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]
     from fastmcp.client import Client
     from fastmcp.client.transports import SSETransport
 
-    transport = SSETransport("http://localhost:8000/sse")
+    transport = SSETransport("http://localhost:9000/sse")
     async with Client(transport) as client:
         result = await client.call_tool(tool_name, arguments)
         content = result.content
