@@ -145,6 +145,7 @@ class AgentProfile:
     agent_class: str
     risk: float
     environments: tuple[str, ...] = ()
+    parent: str | None = None
 
     def __post_init__(self) -> None:
         for env in self.environments:

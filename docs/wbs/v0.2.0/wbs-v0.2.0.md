@@ -68,7 +68,7 @@ Every milestone — before it is declared complete — must pass ALL of the foll
 | # | Task | Feature ID | Issue | Verification |
 |---|------|------------|-------|--------------|
 | 1 | **Resource/environment scoping:** resource-scoped identities + env tags; session scoped to an environment; default-deny on out-of-scope resolution | dev.to (Tae Kim) | #145 | ✅ Prod entity rejected from a staging-scoped session; cross-env attempt blocked and audited (`tests/test_scoping.py`, `SessionScope`, `DENY_OUT_OF_SCOPE`) |
-| 2 | **Child-agent delegation:** `engine.delegate(child_id, parent, scope_subset)`; child scope ⊆ parent scope allowed, exceeding denied | F-88 | #108 | Subset allowed; superset denied; audit log shows delegation chain |
+| 2 | **Child-agent delegation:** `engine.delegate(child_id, parent, scope_subset)`; child scope ⊆ parent scope allowed, exceeding denied | F-88 | #108 | ✅ Subset allowed; superset denied; audit log shows delegation chain (`tests/test_delegation.py`, `DelegationManager`) |
 | 3 | **Dispatcher parser:** parse `bash`/`aws`/`http` args to canonical `(tool, action, args)`; evaluate against same policy; unparseable → deny | F-87 | #106 | `git push --force` denied when `git.push` denied; unparseable input denied |
 
 ### M2 Exit Gate

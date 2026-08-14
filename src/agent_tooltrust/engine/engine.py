@@ -11,6 +11,7 @@ from typing import Any
 from agent_tooltrust.audit.logger import AuditLogger
 from agent_tooltrust.engine.argument_policy import check_arguments
 from agent_tooltrust.engine.decide import decide
+from agent_tooltrust.engine.delegation import DelegationManager, DelegationResult
 from agent_tooltrust.engine.explain import explain
 from agent_tooltrust.engine.fail_closed import deny, fail_closed
 from agent_tooltrust.engine.llm_explain import Explainer, template_explainer
@@ -63,11 +64,49 @@ class Engine:
         #: Obligation state (sign-off cache, event journal). One store may be
         #: shared across engine instances to keep sign-offs durable per fleet.
         self._obligation_store = obligation_store or ObligationStore()
+        #: Child-agent delegation registry (M2 #108, F-88). Enforces the
+        #: child-scope-⊆-parent-scope invariant and keeps the parent→child
+        #: chain for the audit trail.
+        self._delegations = DelegationManager()
 
     @property
     def obligation_store(self) -> ObligationStore:
         """The obligation store backing this engine's permit-with-obligation."""
         return self._obligation_store
+
+    @property
+    def delegation_manager(self) -> DelegationManager:
+        """The delegation registry enforcing the child-scope subset invariant."""
+        return self._delegations
+
+    def delegate(
+        self,
+        child_id: str,
+        parent_id: str,
+        environments: tuple[str, ...] = (),
+    ) -> DelegationResult:
+        """Delegate a child agent under a parent, enforcing scope-subset.
+
+        The child's requested ``environments`` must be a subset of the
+        parent's own allowed environments (confused-deputy protection, F-88).
+        A successful delegation registers the child in the registry so the
+        parent→child lineage is visible in the audit trail; a delegation that
+        would exceed the parent's scope is denied.
+
+        Args:
+            child_id: The identity being created by this delegation.
+            parent_id: The existing identity authorizing the delegation.
+            environments: The child's requested allowed environments.
+
+        Returns:
+            The :class:`DelegationResult` describing allow or deny.
+        """
+        return self._delegations.delegate(
+            child_id=child_id,
+            parent_id=parent_id,
+            policy=self._policy,
+            environments=environments,
+        )
 
     @property
     def policy(self) -> Policy:

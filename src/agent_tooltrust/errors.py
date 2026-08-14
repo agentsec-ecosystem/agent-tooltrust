@@ -37,6 +37,12 @@ ALLOW_WITH_OBLIGATION = "allow_with_obligation"
 DENY_OBLIGATION_FAILED = "deny_obligation_failed"
 #: Decision: deny. Call resolved outside the session/identity scope (default-deny).
 DENY_OUT_OF_SCOPE = "deny_out_of_scope"
+#: Decision: allow. Child-agent delegation registered (scope subset of parent).
+ALLOW_DELEGATION = "allow_delegation"
+#: Decision: deny. Child-agent delegation references an unknown parent identity.
+DENY_DELEGATION_UNKNOWN_PARENT = "deny_delegation_unknown_parent"
+#: Decision: deny. Child scope would exceed the parent's scope (confused-deputy).
+DENY_DELEGATION_EXCEEDS_SCOPE = "deny_delegation_exceeds_scope"
 
 
 class ToolTrustError(Exception):
