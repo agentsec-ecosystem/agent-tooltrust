@@ -45,6 +45,20 @@ DENY_DELEGATION_UNKNOWN_PARENT = "deny_delegation_unknown_parent"
 DENY_DELEGATION_EXCEEDS_SCOPE = "deny_delegation_exceeds_scope"
 #: Decision: deny. Dispatcher could not parse the raw command into a canonical call.
 DENY_UNPARSEABLE_INPUT = "deny_unparseable_input"
+#: Decision: escalate. Approval requested; bound to an action_identity + TTL.
+ESCALATE_APPROVAL = "escalate_approval"
+#: Decision: allow. Escalation was approved and is within its action identity + TTL.
+ALLOW_ESCALATION_APPROVED = "allow_escalation_approved"
+#: Decision: deny. Escalation was denied by a human.
+DENY_ESCALATION_DENIED = "deny_escalation_denied"
+#: Decision: deny. Escalation approval expired (TTL elapsed).
+DENY_ESCALATION_EXPIRED = "deny_escalation_expired"
+#: Decision: deny. Escalation id is unknown / already resolved.
+DENY_ESCALATION_UNKNOWN = "deny_escalation_unknown"
+#: Decision: deny. Approval reused for a call with a different action identity.
+DENY_ACTION_IDENTITY_MISMATCH = "deny_action_identity_mismatch"
+#: Decision: deny. Same escalation id reused for a different call (replay).
+DENY_ESCALATION_REPLAY = "deny_escalation_replay"
 
 
 class ToolTrustError(Exception):

@@ -96,19 +96,19 @@ Every milestone — before it is declared complete — must pass ALL of the foll
 
 | # | Task | Feature ID | Issue | Verification |
 |---|------|------------|-------|--------------|
-| 1 | **EscalationManager:** create escalation, track status, bind to action_identity, enforce TTL; approve → execute, deny → agent gets deny | F-09, F-90 | #84 | Approve executes; deny blocks; expired TTL denies |
+| 1 | **EscalationManager:** create escalation, track status, bind to action_identity, enforce TTL; approve → execute, deny → agent gets deny | F-09, F-90 | #84 | ✅ Approve executes; deny blocks; expired TTL denies; engine registers escalations on `escalate` (`tests/test_escalation.py`, `engine/escalation.py`) |
 | 2 | **CLI approve/deny:** `tooltrust approve <id>` / `tooltrust deny <id> [--reason]`; records approver + timestamp + reason | F-90 | #85 | CLI round-trip works; audit records approver, time, reason |
-| 3 | **Action-identity binding:** escalate bound to `hash(tool, action, args)`; different args → `deny('action_identity_mismatch')` | F-09 | #86 | Replay with different args denied; approval TTL enforced |
-| 4 | **Replay-attempt detection:** same `escalation_id` reused with a different call → deny | F-89(P1) | #95 | Reuse denied; fresh id proceeds |
+| 3 | **Action-identity binding:** escalate bound to `hash(tool, action, args)`; different args → `deny('action_identity_mismatch')` | F-09 | #86 | ✅ `action_identity(tool, action, args)` hash; `resolve()` denies `deny_action_identity_mismatch` on different args; approval TTL enforced |
+| 4 | **Replay-attempt detection:** same `escalation_id` reused with a different call → deny | F-89(P1) | #95 | ✅ Already-resolved id → `deny_escalation_replay`/unknown; one attest per call (`EscalationManager.resolve|attest`) |
 
 ### M3 Exit Gate
 
-- [ ] Code review passed on all M3 code
-- [ ] Test coverage > 90%
-- [ ] Ruff strict clean
-- [ ] Mypy strict clean
-- [ ] Code comments / docstrings added on all new `.py` files
-- [ ] CI green
+- [ ] Code review passed on all M3 code — *EscalationManager done; pending full-milestone review*
+- [ ] Test coverage > 90% — *escalation module 99%; repo-wide 87.2% (post-M3) — needs lift before M3 close*
+- [x] Ruff strict clean (`ruff check src/ tests/` → 0 errors)
+- [x] Mypy strict clean (`mypy --strict` → 0 errors, 80 files)
+- [x] Code comments / docstrings added on all new `.py` files
+- [ ] CI green — *pending workflow run on commit*
 
 **Dependency:** M1 (policy model)
 **Produces:** complete escalation round-trip with anti-replay guarantees

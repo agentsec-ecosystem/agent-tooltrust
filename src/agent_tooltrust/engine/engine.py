@@ -12,6 +12,7 @@ from agent_tooltrust.audit.logger import AuditLogger
 from agent_tooltrust.engine.argument_policy import check_arguments
 from agent_tooltrust.engine.decide import decide
 from agent_tooltrust.engine.delegation import DelegationManager, DelegationResult
+from agent_tooltrust.engine.escalation import EscalationManager
 from agent_tooltrust.engine.explain import explain
 from agent_tooltrust.engine.fail_closed import deny, fail_closed
 from agent_tooltrust.engine.llm_explain import Explainer, template_explainer
@@ -47,6 +48,7 @@ class Engine:
         dry_run: bool = False,
         audit_logger: AuditLogger | None = None,
         obligation_store: ObligationStore | None = None,
+        escalation_manager: EscalationManager | None = None,
     ):
         #: The declarative policy in force for every evaluation. Immutable for
         #: the Engine's lifetime; swap engines to change policy.
@@ -68,6 +70,10 @@ class Engine:
         #: child-scope-⊆-parent-scope invariant and keeps the parent→child
         #: chain for the audit trail.
         self._delegations = DelegationManager()
+        #: Escalation approval registry (M3 #84, F-09). Tracks pending
+        #: escalations and their approvals/denials, bound to the action
+        #: identity, so a human approval can be enforced by the engine.
+        self._escalation_manager = escalation_manager or EscalationManager()
 
     @property
     def obligation_store(self) -> ObligationStore:
@@ -78,6 +84,11 @@ class Engine:
     def delegation_manager(self) -> DelegationManager:
         """The delegation registry enforcing the child-scope subset invariant."""
         return self._delegations
+
+    @property
+    def escalation_manager(self) -> EscalationManager:
+        """The escalation registry tracking approvals bound to action identity."""
+        return self._escalation_manager
 
     def delegate(
         self,
@@ -211,6 +222,13 @@ class Engine:
         risk_score = score(call, self._policy)
         verdict = decide(call, self._policy)
         decision = explain(verdict, risk_score, call, self._policy)
+        # 3b. Escalation registry (M3 #84, F-09). When the verdict escalates,
+        #     create a pending approval record bound to the call's action
+        #     identity, and pin the decision's escalation_id to the registered
+        #     record so the approval workflow keys on a known, tracked id.
+        if decision.decision == "escalate" or verdict.decision == "escalate":
+            escalation = self._escalation_manager.create(call, reason=decision.explanation)
+            decision = replace(decision, escalation_id=escalation.escalation_id)
         # 4b. Permit-with-obligation (M1 #147, DD-20). When the verdict carries
         #     obligations, the gatekeeper executes them — not the agent — and
         #     a runner failure is fail-closed (deny, never allow-without-
