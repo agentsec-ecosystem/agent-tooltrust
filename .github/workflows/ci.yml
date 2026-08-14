@@ -40,10 +40,10 @@ jobs:
       - run: uv sync --group dev
 
       - name: Build Docker image
-        run: docker build -t tooltrust:latest .
+        run: docker compose build
 
       - name: Start container
-        run: docker compose up --detach --wait
+        run: docker compose up --detach --force-recreate --wait
 
       - name: Smoke test — health endpoint
         run: |
@@ -55,6 +55,37 @@ jobs:
 
       - name: SSE integration tests
         run: uv run pytest tests/test_sse_integration.py -v --tb=short
+
+      - name: Console API + dashboard tests (M7.5 #157)
+        run: uv run pytest tests/test_docker_console.py -v --tb=short
+
+      - name: Stop container
+        if: always()
+        run: docker compose down
+
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: astral-sh/setup-uv@v2
+
+      - run: uv sync --group dev --group ui
+
+      - run: uv run playwright install chromium --with-deps
+
+      - name: Build Docker image
+        run: docker compose build
+
+      - name: Start container
+        run: docker compose up --detach --force-recreate --wait
+
+      - name: Playwright E2E + screenshot capture (M7.5 #154)
+        run: uv run pytest tests/ui -v --tb=short
 
       - name: Stop container
         if: always()

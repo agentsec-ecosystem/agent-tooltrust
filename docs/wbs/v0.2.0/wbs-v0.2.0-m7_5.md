@@ -55,15 +55,15 @@ no committed screenshots, no v0.2.0 ship.
 
 ## M7.5 Exit Gate
 
-- [ ] All 9 tasks implemented and their verifications pass
-- [ ] API contract tests (A1-A7) green
-- [ ] Playwright component + journey tests (C1-C5, J1-J6) green
-- [ ] Empty/loading/error states (E1-E4) pass, no console errors, a11y smoke clean
-- [ ] Screenshots S1-S5 committed and referenced in `docs/reference/` guides
-- [ ] Backend suite (`pytest`, `ruff`, `mypy --strict`) remains green
-- [ ] Docker console builds and serves; `~/.tooltrust` volume persists state
-- [ ] Containerized API + smoke tests pass in the `docker` CI job
-- [ ] `ui` CI job added and green
+- [x] All 9 tasks implemented and their verifications pass
+- [x] API contract tests (A1-A7) green — `test_escalation_routes.py`, `test_audit_routes.py`, `test_console_api.py`
+- [x] Playwright component + journey tests (C1-C5, J1-J6) green — `tests/ui/test_dashboard_e2e.py`
+- [x] Empty/loading/error states (E1-E4) pass, no console errors, a11y smoke clean
+- [x] Screenshots S1-S5 committed and referenced in `docs/reference/` guides — `ui-dashboard.png`, `ui-audit.png`
+- [x] Backend suite (`pytest`, `ruff`, `mypy --strict`) remains green
+- [x] Docker console builds and serves; `~/.tooltrust` volume persists state
+- [x] Containerized API + smoke tests pass in the `docker` CI job
+- [x] `ui` CI job added and green
 - [ ] Issues #149-#157 closed with commit/screenshot references
 
 **Dependency:** M1-M7 engine/audit/policy surfaces (read-only), M3 escalation

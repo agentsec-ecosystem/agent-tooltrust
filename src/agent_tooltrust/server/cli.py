@@ -63,12 +63,17 @@ def _serve(args: argparse.Namespace) -> int:
 
     from agent_tooltrust.audit.logger import AuditLogger
     from agent_tooltrust.engine.engine import Engine
+    from agent_tooltrust.engine.escalation import EscalationManager
     from agent_tooltrust.policy.models import default_policy
+    from agent_tooltrust.server.analytics_routes import register_analytics_routes
     from agent_tooltrust.server.audit_routes import register_audit_routes
+    from agent_tooltrust.server.baselines_routes import register_baselines_routes
+    from agent_tooltrust.server.dashboard import register_dashboard_route
     from agent_tooltrust.server.escalation_routes import register_escalation_routes
     from agent_tooltrust.server.mcp_tools import register_tools
     from agent_tooltrust.server.server_core import ServerCore
     from agent_tooltrust.server.session_store import SessionStore
+    from agent_tooltrust.server.sessions_routes import register_sessions_routes
 
     policy_path = args.policy_path or os.environ.get("TOOLTRUST_POLICY_PATH")
 
@@ -80,7 +85,12 @@ def _serve(args: argparse.Namespace) -> int:
     else:
         policy = default_policy(args.posture)
 
-    engine = Engine(policy)
+    # Load a persisted escalation store when configured (Docker volume keeps
+    # approvals/denials across container restarts).
+    esc_file = os.environ.get("TOOLTRUST_ESCALATIONS_FILE")
+    escalation_manager = EscalationManager.load(esc_file) if esc_file else EscalationManager()
+
+    engine = Engine(policy, escalation_manager=escalation_manager)
     session_store = SessionStore()
     audit_logger = AuditLogger()
     core = ServerCore(engine=engine, session_store=session_store, audit_logger=audit_logger)
@@ -91,12 +101,20 @@ def _serve(args: argparse.Namespace) -> int:
     register_tools(mcp, core)
     register_audit_routes(mcp, core)
     register_escalation_routes(mcp, core)
+    register_sessions_routes(mcp, core)
+    register_analytics_routes(mcp, core)
+    register_baselines_routes(mcp, core)
+    register_dashboard_route(mcp, core)
 
     print(f"ToolTrust MCP server starting on http://{args.host}:{args.port}")
     print(f"  Policy: {policy_path or f'preset ({args.posture})'}")
     print(f"  MCP endpoint: SSE at http://{args.host}:{args.port}/sse")
     print(f"  Audit endpoint: http://{args.host}:{args.port}/audit")
     print(f"  Escalations endpoint: http://{args.host}:{args.port}/api/escalations")
+    print(f"  Sessions endpoint: http://{args.host}:{args.port}/api/sessions/<id>")
+    print(f"  Analytics endpoint: http://{args.host}:{args.port}/api/analytics")
+    print(f"  Baselines endpoint: http://{args.host}:{args.port}/api/baselines")
+    print(f"  Dashboard: http://{args.host}:{args.port}/dashboard")
     print(f"  Health check: http://{args.host}:{args.port}/audit/health")
 
     try:

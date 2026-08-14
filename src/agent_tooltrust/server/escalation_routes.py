@@ -59,6 +59,7 @@ def _register_approve(mcp: Any, core: Any) -> None:
             record = manager.approve(esc_id, approver=approver)
         except ValueError as exc:
             return JSONResponse({"error": str(exc), "escalation_id": esc_id}, status_code=409)
+        _persist(manager)
         return JSONResponse(record.to_dict())
 
 
@@ -77,6 +78,7 @@ def _register_deny(mcp: Any, core: Any) -> None:
             record = manager.deny(esc_id, approver=approver, reason=reason)
         except ValueError as exc:
             return JSONResponse({"error": str(exc), "escalation_id": esc_id}, status_code=409)
+        _persist(manager)
         return JSONResponse(record.to_dict())
 
 
@@ -85,6 +87,23 @@ def _default_user() -> str:
     import getpass
 
     return getpass.getuser() or "unknown"
+
+
+def _persist(manager: Any) -> None:
+    """Persist the escalation store to its configured file (Docker volume).
+
+    Non-fatal: when ``TOOLTRUST_ESCALATIONS_FILE`` is not set, approvals live
+    only in memory (same as the in-process engine). When set, the decision
+    survives container restarts via the mounted volume.
+    """
+    import os
+
+    path = os.environ.get("TOOLTRUST_ESCALATIONS_FILE")
+    if path:
+        try:
+            manager.save(path)
+        except OSError:
+            pass
 
 
 async def _json_body(request: Request) -> dict[str, Any] | None:

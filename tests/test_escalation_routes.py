@@ -120,6 +120,26 @@ class TestEscalationRoutes:
         assert response.json()["approver"] == "cli-user"
 
 
+class TestDashboardRoute:
+    def test_dashboard_serves_html(self) -> None:
+        from fastmcp import FastMCP
+
+        from agent_tooltrust.server.dashboard import register_dashboard_route
+
+        core = ServerCore(
+            engine=Engine(default_policy("balanced")),
+            session_store=SessionStore(),
+            audit_logger=AuditLogger(),
+        )
+        mcp = FastMCP("test")
+        register_dashboard_route(mcp, core)
+        client = TestClient(mcp.http_app())
+        response = client.get("/dashboard")
+        assert response.status_code == 200
+        assert "ToolTrust Operator Console" in response.text
+        assert "/api/escalations" in response.text
+
+
 def test_core_exposes_escalation_manager() -> None:
     core = ServerCore(
         engine=Engine(default_policy("balanced")),

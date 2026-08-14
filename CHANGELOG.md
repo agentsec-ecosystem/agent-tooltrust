@@ -120,6 +120,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **OPAL distributed policy sync** — <5s propagation, 3-instance fleet,
   rollback (#119)
 - **Fleet deployment guide** (#120)
+- **Playwright UI E2E** — dashboard smoke + screenshot capture for user guides (#154)
 
 ### Security
 - OWASP Agentic Top 10 10/10 mapping (from 5/10) (#114)

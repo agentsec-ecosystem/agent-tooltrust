@@ -139,9 +139,12 @@ dev = [
     "autogen-ext[openai]>=0.7.5",
     "smolagents>=1.26.0",
     "llama-index-core>=0.14.23",
-    "llama-index-llms-openai>=0.7.10",
-    "google-adk>=1.10.0",
+"llama-index-llms-openai>=0.7.10",
+    "google.adk>=1.10.0",
     "litellm>=1.96.2",
+]
+ui = [
+    "playwright>=1.40",
 ]
 
 [build-system]
@@ -180,6 +183,7 @@ ignore = []
 "tests/test_validators_dims.py" = ["S108"]
 "tests/test_docker_smoke.py" = ["S603", "S607", "S108", "S310"]
 "tests/test_sse_integration.py" = ["S603", "S607"]
+"tests/ui/**" = ["S603", "S607"]
 # RUF001/RUF003: the whole point of F-89 is tables/tests full of
 # deliberately ambiguous Unicode characters (Cyrillic/Greek lookalikes).
 "src/agent_tooltrust/engine/normalize.py" = ["RUF001", "RUF003"]
