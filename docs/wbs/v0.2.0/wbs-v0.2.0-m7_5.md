@@ -3,6 +3,7 @@
 > **Milestones covered:** M7.5 — a parallel milestone (GH #13) that surfaces the
 > operator console web UI across v0.2.0. It is *not* a phase of M1-M8; it runs
 > alongside them, mounting pages that read the features M1-M7 already produce.
+> **Status: Complete ✅** (all 9 issues #149-#157 closed; suites + UI E2E + docker green)
 > **Issue tracking:** `#149`-`#157` in GitHub Milestone
 > [M7.5 — Operator Console & Web Dashboard](../../../issues?q=is%3Aissue+milestone%3A%22M7.5+%E2%80%94+Operator+Console+%26+Web+Dashboard%22).
 > **UI test plan:** [docs/test/web-ui-test-plan.md](../../../docs/test/web-ui-test-plan.md)
@@ -64,7 +65,7 @@ no committed screenshots, no v0.2.0 ship.
 - [x] Docker console builds and serves; `~/.tooltrust` volume persists state
 - [x] Containerized API + smoke tests pass in the `docker` CI job
 - [x] `ui` CI job added and green
-- [ ] Issues #149-#157 closed with commit/screenshot references
+- [x] Issues #149-#157 closed with commit/screenshot references — **all 9 closed ✅**
 
 **Dependency:** M1-M7 engine/audit/policy surfaces (read-only), M3 escalation
 (#84-#86, #95)
