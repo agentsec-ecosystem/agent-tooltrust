@@ -13,6 +13,7 @@ DecisionValue = Literal["allow", "audit", "escalate", "deny", "allow_with_obliga
 Criticality = Literal["none", "low", "medium", "high", "critical"]
 ActionClass = Literal["read", "write", "delete", "grant"]
 RiskBand = Literal["low", "medium", "high", "critical"]
+Environment = Literal["development", "staging", "pre_prod", "production"]
 
 _VALID_DECISIONS = frozenset(
     {"allow", "audit", "escalate", "deny", "allow_with_obligation"}
@@ -67,6 +68,7 @@ class NormalizedCall:
     agent_id: str
     agent_class: str
     session_id: str | None = None
+    resource_tag: str | None = None
     arguments: dict[str, Any] | None = None
     context: dict[str, Any] | None = None
 
@@ -81,6 +83,9 @@ class NormalizedCall:
             "agent_class",
         ):
             _require_nonblank(getattr(self, field_name), field_name)
+        if self.resource_tag is not None:
+            tag = " ".join(self.resource_tag.split())
+            object.__setattr__(self, "resource_tag", tag or None)
         if self.action_class not in _VALID_ACTION_CLASSES:
             raise ValueError(
                 f"action_class must be one of {sorted(_VALID_ACTION_CLASSES)}, "

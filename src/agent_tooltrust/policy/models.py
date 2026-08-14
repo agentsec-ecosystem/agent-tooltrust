@@ -133,10 +133,23 @@ def condition_from_dict(data: dict[str, Any]) -> Condition:
 
 @dataclass(frozen=True)
 class AgentProfile:
-    """Risk profile for one agent identity."""
+    """Risk profile for one agent identity.
+
+    ``environments`` is the identity's allowed environment scope (M2 #145,
+    resource-scoped identity). An empty tuple means unrestricted — the
+    identity may operate in any declared environment. A non-empty tuple is
+    an allowlist: a call resolving to an environment outside it is denied by
+    the engine's scope gate (default-deny), even before rule evaluation.
+    """
 
     agent_class: str
     risk: float
+    environments: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        for env in self.environments:
+            if not env.strip():
+                raise ValueError("profile environments must be non-blank strings")
 
 
 @dataclass(frozen=True)

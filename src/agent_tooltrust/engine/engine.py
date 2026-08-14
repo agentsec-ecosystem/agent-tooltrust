@@ -16,8 +16,13 @@ from agent_tooltrust.engine.fail_closed import deny, fail_closed
 from agent_tooltrust.engine.llm_explain import Explainer, template_explainer
 from agent_tooltrust.engine.normalize import normalize
 from agent_tooltrust.engine.obligations import ObligationError, ObligationStore, run_obligations
+from agent_tooltrust.engine.scoping import SessionScope, scoping_violation
 from agent_tooltrust.engine.score import score
-from agent_tooltrust.errors import DENY_ARGUMENT_POLICY, DENY_OBLIGATION_FAILED
+from agent_tooltrust.errors import (
+    DENY_ARGUMENT_POLICY,
+    DENY_OBLIGATION_FAILED,
+    DENY_OUT_OF_SCOPE,
+)
 from agent_tooltrust.policy.models import Policy
 from agent_tooltrust.taxonomy import KNOWN_TOOLS
 from agent_tooltrust.types import Decision, NormalizedCall
@@ -106,6 +111,8 @@ class Engine:
         agent_id: str,
         arguments: dict[str, Any] | None = None,
         context: dict[str, Any] | None = None,
+        session_scope: SessionScope | None = None,
+        resource_tag: str | None = None,
     ) -> Decision:
         """Evaluate a tool call and return a complete, always-safe Decision.
 
@@ -128,7 +135,27 @@ class Engine:
             agent_class=profile.agent_class,
             arguments=arguments,
             context=context,
+            resource_tag=resource_tag,
         )
+        # 1a. Resource/environment scoping (M2 #145, DD-18). Default-deny: an
+        #     identity or session scope restricts which environments/resources
+        #     a call may touch. Identity scope comes from the policy profile;
+        #     the session scope is supplied by the caller. A violation is an
+        #     immediate, audited deny before scoring.
+        scope_violation = scoping_violation(call, session_scope)
+        if scope_violation is None and profile.environments:
+            if call.environment not in profile.environments:
+                scope_violation = (
+                    f"identity {agent_id!r} is not scoped to environment "
+                    f"{call.environment!r} (allowed: {profile.environments!r})"
+                )
+        if scope_violation is not None:
+            decision = deny(
+                DENY_OUT_OF_SCOPE,
+                scope_violation,
+                policy_version=self._policy.version,
+            )
+            return self._finalize(decision, call)
         # 1b. Argument-level policy (M1 #142, DD-15). Pure, deterministic check
         #     of the call's arguments against the tool's args_policy. A
         #     violation is an immediate, audited deny before any scoring.

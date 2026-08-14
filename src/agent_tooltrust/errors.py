@@ -35,6 +35,8 @@ DENY_ARGUMENT_POLICY = "deny_argument_policy"
 ALLOW_WITH_OBLIGATION = "allow_with_obligation"
 #: Decision: deny. An obligation runner failed; fail-closed.
 DENY_OBLIGATION_FAILED = "deny_obligation_failed"
+#: Decision: deny. Call resolved outside the session/identity scope (default-deny).
+DENY_OUT_OF_SCOPE = "deny_out_of_scope"
 
 
 class ToolTrustError(Exception):
