@@ -176,6 +176,77 @@ class EscalationManager:
         """Return unresolved (pending) escalations in creation order."""
         return [r for r in self._records.values() if r.status == EscalationStatus.PENDING]
 
+    def save(self, path: str) -> None:
+        """Persist all records to *path* as JSON.
+
+        Records survive CLI invocations so a human can review and approve an
+        escalation that was created by an earlier process.
+
+        Args:
+            path: Filesystem path to write (``~/.tooltrust/escations.json``).
+        """
+        import json
+        import os
+        from pathlib import Path
+
+        target = Path(path).expanduser()
+        target.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "version": 1,
+            "ttl_seconds": int(self.ttl.total_seconds()),
+            "records": [r.to_dict() for r in self._records.values()],
+        }
+        tmp = target.with_suffix(".tmp")
+        tmp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        os.replace(tmp, target)
+
+    @classmethod
+    def load(cls, path: str) -> EscalationManager:
+        """Load a manager previously written by :meth:`save`.
+
+        A missing or unreadable file yields an empty manager (safe: no
+        approvals are assumed on a fresh or unavailable store).
+
+        Args:
+            path: Filesystem path previously written by :meth:`save`.
+
+        Returns:
+            A manager populated with the recorded escalations.
+        """
+        import json
+        from pathlib import Path
+
+        file = Path(path).expanduser()
+        if not file.exists():
+            return cls()
+        data = json.loads(file.read_text(encoding="utf-8"))
+        manager = cls(ttl_seconds=data.get("ttl_seconds", 300))
+        for item in data.get("records", []):
+            try:
+                status = EscalationStatus(item["status"])
+            except (KeyError, ValueError):
+                continue
+            record = Escalation(
+                escalation_id=item["escalation_id"],
+                status=status,
+                tool=item["tool"],
+                action=item["action"],
+                agent_id=item["agent_id"],
+                environment=item["environment"],
+                data_class=item["data_class"],
+                action_identity=item["action_identity"],
+                reason=item.get("reason", ""),
+                arguments=item.get("arguments", {}),
+                created_at=item["created_at"],
+                expires_at=item["expires_at"],
+                approver=item.get("approver"),
+                denied_reason=item.get("denied_reason"),
+            )
+            manager._records[record.escalation_id] = record
+            if record.status == EscalationStatus.APPROVED:
+                manager._identity_index[record.action_identity] = record.escalation_id
+        return manager
+
     def create(self, call: NormalizedCall, *, reason: str = "",
                now: datetime | None = None) -> Escalation:
         """Create a new pending escalation for a call that resolved to escalate.
