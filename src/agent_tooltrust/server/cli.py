@@ -71,6 +71,7 @@ def _serve(args: argparse.Namespace) -> int:
     from agent_tooltrust.server.dashboard import register_dashboard_route
     from agent_tooltrust.server.escalation_routes import register_escalation_routes
     from agent_tooltrust.server.mcp_tools import register_tools
+    from agent_tooltrust.server.seed import register_seed_route
     from agent_tooltrust.server.server_core import ServerCore
     from agent_tooltrust.server.session_store import SessionStore
     from agent_tooltrust.server.sessions_routes import register_sessions_routes
@@ -105,6 +106,7 @@ def _serve(args: argparse.Namespace) -> int:
     register_analytics_routes(mcp, core)
     register_baselines_routes(mcp, core)
     register_dashboard_route(mcp, core)
+    register_seed_route(mcp, core)
 
     print(f"ToolTrust MCP server starting on http://{args.host}:{args.port}")
     print(f"  Policy: {policy_path or f'preset ({args.posture})'}")

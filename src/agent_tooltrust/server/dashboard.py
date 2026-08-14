@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 from starlette.requests import Request
-from starlette.responses import HTMLResponse
+from starlette.responses import HTMLResponse, RedirectResponse
 
 DASHBOARD_HTML = """\
 <!DOCTYPE html>
@@ -77,7 +77,7 @@ DASHBOARD_HTML = """\
     <a href="#" data-tab="sessions">Sessions</a>
     <a href="#" data-tab="analytics">Analytics</a>
     <a href="#" data-tab="baselines">Baselines</a>
-    <a href="/audit/health" target="_blank">Health</a>
+    <a href="#" data-tab="health">Health</a>
   </nav>
 </header>
 <div id="escalations" class="section">
@@ -125,6 +125,13 @@ DASHBOARD_HTML = """\
   </div>
   <div id="baseline-body"></div>
 </div>
+<div id="health" class="section" style="display:none">
+  <div class="refresh-bar">
+    <h2>Server Health</h2>
+    <button onclick="loadHealth()">Refresh</button>
+  </div>
+  <div id="health-body"></div>
+</div>
 </div>
 <div id="toast"></div>
 <script>
@@ -132,9 +139,9 @@ let showAll=false,tab='escalations';
 document.querySelectorAll('[data-tab]').forEach(a=>{a.onclick=e=>{e.preventDefault();
   tab=e.target.dataset.tab;document.querySelectorAll('[data-tab]').forEach(l=>l.classList.remove('active'));
   e.target.classList.add('active');
-  ['escalations','audit','sessions','analytics','baselines'].forEach(t=>{
+  ['escalations','audit','sessions','analytics','baselines','health'].forEach(t=>{
     document.getElementById(t).style.display=t===tab?'':'none';});
-  if(tab==='audit')loadAudit();else if(tab==='sessions')loadSession();else if(tab==='analytics')loadAnalytics();else if(tab==='baselines')loadBaselines();else loadEscalations();}});
+  if(tab==='audit')loadAudit();else if(tab==='sessions')loadSession();else if(tab==='analytics')loadAnalytics();else if(tab==='baselines')loadBaselines();else if(tab==='health')loadHealth();else loadEscalations();}});
 
 function toggleView(){showAll=!showAll;document.getElementById('view-toggle').textContent=showAll?'Pending Only':'Show All';loadEscalations();}
 
@@ -260,6 +267,16 @@ async function loadBaselines(){
       </div>`;
   }catch(err){document.getElementById('baseline-body').innerHTML='<div class="empty">Error: '+err.message+'</div>';}}
 
+async function loadHealth(){
+  try{
+    const r=await fetch('/audit/health');if(!r.ok)throw new Error(r.status+' '+r.statusText);
+    const d=await r.json();
+    const rows=[['Status',d.status||'unknown'],['Policy version',d.policy_version||'unknown'],['Uptime (s)',(d.uptime||0).toFixed(0)],['Active sessions',d.sessions_active||0]];
+    document.getElementById('health-body').innerHTML=
+      '<div class="card card-row"><span class="badge badge-'+(d.status==='ok'?'pass':'fail')+'">'+d.status+'</span></div>'+
+      kvTable(['Metric','Value'],rows.map(r=>'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>').join(''));
+  }catch(err){document.getElementById('health-body').innerHTML='<div class="empty">Error: '+err.message+'</div>';}}
+
 async function approve(id){
   try{
     const r=await fetch('/api/escalations/'+id+'/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:'{"approver":"operator"}'});
@@ -291,6 +308,10 @@ def register_dashboard_route(mcp: Any, core: Any) -> None:
         mcp: A FastMCP server instance.
         core: A :class:`ServerCore` instance.
     """
+
+    @mcp.custom_route("/", methods=["GET"])  # type: ignore[untyped-decorator]
+    async def root(request: Request) -> RedirectResponse:
+        return RedirectResponse(url="/dashboard", status_code=302)
 
     @mcp.custom_route("/dashboard", methods=["GET"])  # type: ignore[untyped-decorator]
     async def dashboard(request: Request) -> HTMLResponse:
