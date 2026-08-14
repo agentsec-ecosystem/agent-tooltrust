@@ -12,6 +12,7 @@
 | [fixtures/](fixtures/) | Test fixtures and seed data |
 | [real-agent-integration/](real-agent-integration/) | Plans and reports for real agent integration testing |
 | [examples.md](examples.md) | Usage examples |
+| [../packs](https://github.com/deghosal-2026/agent-tooltrust/tree/rel-0.2.0/packs) | Shareable policy packs + contribution guide (M1) |
 
 ## Key Documents
 

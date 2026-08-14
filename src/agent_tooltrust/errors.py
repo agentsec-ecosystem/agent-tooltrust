@@ -29,6 +29,12 @@ DENY_OPA_BACKEND_DOWN = "deny_opa_backend_down"
 DENY_POLICY_PARSE_ERROR = "deny_policy_parse_error"
 #: Decision: deny. Evaluation exceeded the time budget.
 DENY_EVALUATION_TIMEOUT = "deny_evaluation_timeout"
+#: Decision: deny. A permitted tool was called with unsafe arguments.
+DENY_ARGUMENT_POLICY = "deny_argument_policy"
+#: Decision: allow with obligation. Call allowed but obligations fire.
+ALLOW_WITH_OBLIGATION = "allow_with_obligation"
+#: Decision: deny. An obligation runner failed; fail-closed.
+DENY_OBLIGATION_FAILED = "deny_obligation_failed"
 
 
 class ToolTrustError(Exception):

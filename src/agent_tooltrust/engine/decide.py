@@ -46,6 +46,7 @@ class Verdict:
     decision: DecisionValue
     source: str
     reason: str = ""
+    obligations: tuple[str, ...] = ()
 
 
 def decide_from_score(risk_score: RiskScore, call: NormalizedCall, policy: Policy) -> Verdict:
@@ -62,6 +63,14 @@ def decide_from_score(risk_score: RiskScore, call: NormalizedCall, policy: Polic
     for wanted in ("deny", "allow", "escalate"):
         for rule in policy.rules:
             if rule.decision == wanted and rule.matches(call):
+                obligations = rule.obligations
+                if wanted == "allow" and obligations:
+                    return Verdict(
+                        "allow_with_obligation",
+                        "rule",
+                        rule.reason,
+                        obligations,
+                    )
                 return Verdict(cast(DecisionValue, rule.decision), "rule", rule.reason)
 
     # Band mapping covers every valid band; the ``"deny"`` default here is a

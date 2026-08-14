@@ -21,6 +21,7 @@ CRITICALITY_BY_DECISION = {
     "escalate": "high",
     "audit": "medium",
     "allow": "low",
+    "allow_with_obligation": "low",
 }
 
 #: Human-readable explanation templates, keyed by reason_code. The exact
@@ -49,6 +50,10 @@ TEMPLATES = {
         "effects. Use a read-only alternative or move to a lower-risk "
         "environment."
     ),
+    "allow_with_obligation": (
+        "{tool} ({action}) in {environment} on {data_class} data is allowed, "
+        "with mandatory obligations enforced by the gatekeeper."
+    ),
 }
 
 
@@ -68,6 +73,8 @@ def _reason_code_for(verdict: Verdict, call: NormalizedCall) -> str:
         if call.environment == "production":
             return "escalate_prod_write"
         return "escalate_high_risk"
+    if verdict.decision == "allow_with_obligation":
+        return "allow_with_obligation"
     return "allow_low_risk"
 
 
@@ -146,4 +153,5 @@ def explain(
         escalation_id=escalation_id,
         dry_run=False,
         policy_version=policy.version,
+        obligations=verdict.obligations,
     )

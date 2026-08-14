@@ -12,6 +12,7 @@ from agent_tooltrust.policy.schema import (
     AuditConfig,
     EscalationConfig,
     RuleSpec,
+    ToolSpec,
     parse_tooltrust_yaml,
 )
 
@@ -92,6 +93,33 @@ class TestParsesValid:
         assert rule.environment == "*"
         assert rule.data_class == "*"
         assert rule.reason == ""
+        assert rule.conditions == []
+
+
+class TestConditionsSchema:
+    """M1 #93 — boolean condition tree in policy rules (schema form)."""
+
+    CONDITIONS_YAML = """\
+version: "2.0.0"
+rules:
+  - decision: deny
+    conditions:
+      - {field: environment, op: eq, value: production}
+      - {op: not, condition: {field: data_class, value: public}}
+"""
+
+    def test_conditions_parses(self):
+        doc = parse_tooltrust_yaml(self.CONDITIONS_YAML)
+        assert len(doc.rules) == 1
+        assert len(doc.rules[0].conditions) == 2
+
+    def test_unknown_condition_key_rejected(self):
+        with pytest.raises(ValidationError):
+            parse_tooltrust_yaml(
+                'version: "2.0.0"\nrules:\n'
+                "  - decision: deny\n    conditions:\n"
+                "      - {field: environment, op: eq, value: prod, bogus: 1}\n"
+            )
 
 
 class TestRejectsMalformed:
@@ -163,3 +191,54 @@ class TestRuleSpec:
         for decision in ("allow", "audit", "escalate", "deny"):
             rule = RuleSpec(decision=decision)
             assert rule.decision == decision
+
+
+class TestToolSpec:
+    def test_hidden_for_round_trips(self):
+        tool = ToolSpec(name="delete_instance", hidden_for=["readonly"])
+        assert tool.name == "delete_instance"
+        assert tool.hidden_for == ["readonly"]
+
+    def test_empty_hidden_for_defaults(self):
+        assert ToolSpec(name="delete_instance").hidden_for == []
+
+    def test_unknown_keys_rejected(self):
+        with pytest.raises(ValidationError):
+            parse_tooltrust_yaml(
+                'version: "1.0.0"\ntools:\n  - name: delete_instance\n    bogus: 1\n'
+            )
+
+    def test_args_policy_parses(self):
+        doc = parse_tooltrust_yaml(
+            'version: "1.0.0"\ntools:\n'
+            "  - name: db.delete\n    args_policy:\n"
+            "      filter: {required: true, forbid: [\"*\", \"1=1\"]}\n"
+            "      row_limit: {max: 1000}\n"
+        )
+        spec = doc.tools[0].args_policy
+        assert spec["filter"].required is True
+        assert spec["filter"].forbid == ["*", "1=1"]
+        assert spec["row_limit"].max == 1000
+
+    def test_args_policy_unknown_key_rejected(self):
+        with pytest.raises(ValidationError):
+            parse_tooltrust_yaml(
+                'version: "1.0.0"\ntools:\n'
+                "  - name: db.delete\n    args_policy:\n"
+                "      filter: {bogus: 1}\n"
+            )
+
+    def test_rule_obligations_parse(self):
+        doc = parse_tooltrust_yaml(
+            'version: "1.0.0"\nrules:\n'
+            "  - decision: allow\n    action: delete\n"
+            "    obligations: [first_use_signoff, auto_notify]\n"
+        )
+        assert doc.rules[0].obligations == ["first_use_signoff", "auto_notify"]
+
+    def test_rule_unknown_obligation_key_rejected(self):
+        with pytest.raises(ValidationError):
+            parse_tooltrust_yaml(
+                'version: "1.0.0"\nrules:\n'
+                "  - decision: allow\n    obligaton: [first_use_signoff]\n"
+            )

@@ -84,6 +84,8 @@ def _print_table(decision: Any) -> None:
     print(f"  Reason code   {decision.reason_code}")
     print(f"  Explanation   {decision.explanation}")
     print(f"  Policy        v{decision.policy_version}")
+    if getattr(decision, "obligations", ()):
+        print(f"  Obligations   {', '.join(decision.obligations)}")
     if decision.factors:
         print("  Factors")
         for f in decision.factors:
@@ -105,5 +107,6 @@ def _decision_indicator(decision: str) -> str:
         "audit": "⚑",
         "escalate": "⤴",
         "deny": "✗",
+        "allow_with_obligation": "⚙",
     }
     return indicators.get(decision, "?")

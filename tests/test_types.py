@@ -193,6 +193,7 @@ class TestDecision:
             "escalation_id",
             "policy_version",
             "dry_run",
+            "obligations",
         }
 
     def test_decision_to_dict_matches_asdict(self):

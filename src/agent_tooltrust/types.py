@@ -9,12 +9,14 @@ and can never flow into the scorer.
 from dataclasses import asdict, dataclass, field
 from typing import Any, Literal
 
-DecisionValue = Literal["allow", "audit", "escalate", "deny"]
+DecisionValue = Literal["allow", "audit", "escalate", "deny", "allow_with_obligation"]
 Criticality = Literal["none", "low", "medium", "high", "critical"]
 ActionClass = Literal["read", "write", "delete", "grant"]
 RiskBand = Literal["low", "medium", "high", "critical"]
 
-_VALID_DECISIONS = frozenset({"allow", "audit", "escalate", "deny"})
+_VALID_DECISIONS = frozenset(
+    {"allow", "audit", "escalate", "deny", "allow_with_obligation"}
+)
 _VALID_CRITICALITIES = frozenset({"none", "low", "medium", "high", "critical"})
 _VALID_ACTION_CLASSES = frozenset({"read", "write", "delete", "grant"})
 _VALID_BANDS = frozenset({"low", "medium", "high", "critical"})
@@ -125,6 +127,7 @@ class Decision:
     escalation_id: str | None = None
     policy_version: str = "0.0.0"
     dry_run: bool = False
+    obligations: tuple[str, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
         if self.decision not in _VALID_DECISIONS:

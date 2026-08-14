@@ -23,6 +23,7 @@ from agent_tooltrust.cli import (
     explain,
     field_test,
     init,
+    pack,
     report,
     scan,
     swebench,
@@ -56,6 +57,7 @@ def _build_parser() -> argparse.ArgumentParser:
     test.add_parser(subparsers)
     report.add_parser(subparsers)
     swebench.add_parser(subparsers)
+    pack.add_parser(subparsers)
     serve_cli.add_parser(subparsers)
     return parser
 

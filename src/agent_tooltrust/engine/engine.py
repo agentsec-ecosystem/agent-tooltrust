@@ -9,14 +9,18 @@ from dataclasses import replace
 from typing import Any
 
 from agent_tooltrust.audit.logger import AuditLogger
+from agent_tooltrust.engine.argument_policy import check_arguments
 from agent_tooltrust.engine.decide import decide
 from agent_tooltrust.engine.explain import explain
-from agent_tooltrust.engine.fail_closed import fail_closed
+from agent_tooltrust.engine.fail_closed import deny, fail_closed
 from agent_tooltrust.engine.llm_explain import Explainer, template_explainer
 from agent_tooltrust.engine.normalize import normalize
+from agent_tooltrust.engine.obligations import ObligationError, ObligationStore, run_obligations
 from agent_tooltrust.engine.score import score
+from agent_tooltrust.errors import DENY_ARGUMENT_POLICY, DENY_OBLIGATION_FAILED
 from agent_tooltrust.policy.models import Policy
-from agent_tooltrust.types import Decision
+from agent_tooltrust.taxonomy import KNOWN_TOOLS
+from agent_tooltrust.types import Decision, NormalizedCall
 
 
 class Engine:
@@ -36,6 +40,7 @@ class Engine:
         explainer: Explainer = template_explainer,
         dry_run: bool = False,
         audit_logger: AuditLogger | None = None,
+        obligation_store: ObligationStore | None = None,
     ):
         #: The declarative policy in force for every evaluation. Immutable for
         #: the Engine's lifetime; swap engines to change policy.
@@ -50,6 +55,46 @@ class Engine:
         #: deny alike) is recorded after stage 5. A sink failure is reported to
         #: stderr by the logger and never changes or blocks the decision.
         self._audit_logger = audit_logger
+        #: Obligation state (sign-off cache, event journal). One store may be
+        #: shared across engine instances to keep sign-offs durable per fleet.
+        self._obligation_store = obligation_store or ObligationStore()
+
+    @property
+    def obligation_store(self) -> ObligationStore:
+        """The obligation store backing this engine's permit-with-obligation."""
+        return self._obligation_store
+
+    @property
+    def policy(self) -> Policy:
+        """The policy in force for this engine."""
+        return self._policy
+
+    def capabilities(self, agent_id: str) -> tuple[str, ...]:
+        """Return the discovery-time capability list for an agent class.
+
+        Implements discovery-time tool hiding (M1 #88, F-83). A tool marked
+        ``hidden_for`` a class is omitted from the list that class sees, so a
+        read-only agent is never even told about tools it cannot use. Hiding
+        is *discovery-time only*: calling a hidden tool still goes through
+        :meth:`evaluate` and is denied by policy if not permitted — hiding
+        never weakens enforcement.
+
+        The returned order is deterministic (sorted) so the capability surface
+        is stable across calls.
+
+        Args:
+            agent_id: The agent identity; its class resolves visibility.
+
+        Returns:
+            The tool names visible to the agent's class, sorted.
+        """
+        agent_class = self._policy.agent_profile(agent_id).agent_class
+        hidden: set[str] = {
+            tool
+            for tool, rules in self._policy.tool_visibility.items()
+            if agent_class in rules.get("hidden_for", ())
+        }
+        return tuple(sorted(tool for tool in KNOWN_TOOLS if tool not in hidden))
 
     @fail_closed
     def evaluate(
@@ -84,14 +129,68 @@ class Engine:
             arguments=arguments,
             context=context,
         )
+        # 1b. Argument-level policy (M1 #142, DD-15). Pure, deterministic check
+        #     of the call's arguments against the tool's args_policy. A
+        #     violation is an immediate, audited deny before any scoring.
+        violating = check_arguments(call.tool, call.arguments, self._policy.args_policy)
+        if violating is not None:
+            decision = deny(
+                DENY_ARGUMENT_POLICY,
+                f"argument {violating!r} violates policy for tool {call.tool!r}",
+                policy_version=self._policy.version,
+            )
+            return self._finalize(decision, call)
         # 2-4. Score → decide → explain. Order is fixed: the verdict needs the
         #      score's band, and the Decision needs both.
         risk_score = score(call, self._policy)
         verdict = decide(call, self._policy)
         decision = explain(verdict, risk_score, call, self._policy)
+        # 4b. Permit-with-obligation (M1 #147, DD-20). When the verdict carries
+        #     obligations, the gatekeeper executes them — not the agent — and
+        #     a runner failure is fail-closed (deny, never allow-without-
+        #     obligation). The summary is folded into the explanation so the
+        #     audit trail records the obligations and their completion.
+        if verdict.obligations:
+            try:
+                summary = run_obligations(
+                    verdict.obligations,
+                    store=self._obligation_store,
+                    agent_id=call.agent_id,
+                    tool=call.tool,
+                )
+            except ObligationError as exc:
+                decision = deny(
+                    DENY_OBLIGATION_FAILED,
+                    f"obligation failed: {exc}",
+                    policy_version=self._policy.version,
+                )
+                return self._finalize(decision, call)
+            decision = replace(
+                decision,
+                obligations=verdict.obligations,
+                explanation=f"OBLIGATIONS [{summary}]: {decision.explanation}",
+            )
         # 5. Enrich explanation (optional plugin). Always re-set the text so
         #    the explainer's output is what callers and the audit trail see.
         decision = replace(decision, explanation=self._explainer(decision, call))
+        return self._finalize(decision, call)
+
+    def _finalize(self, decision: Decision, call: NormalizedCall) -> Decision:
+        """Apply the audit log and shadow-mode override to a finished Decision.
+
+        Every decision — allow, deny, and the early-return denies from
+        argument-policy (1b) and obligation-failure (4b) paths — flows through
+        here so the audit trail records a *real*, un-overridden decision and
+        dry-run mode always returns an ``allow`` without blocking anything.
+
+        Args:
+            decision: The finished decision (pre audit/dry-run).
+            call: The normalized call, for the audit record.
+
+        Returns:
+            The audited decision, with the dry-run override applied when
+            shadow mode is active.
+        """
         # 5b. Audit. Record the *real* (pre-dry-run) decision so the audit
         #     trail shows what would have been enforced in shadow mode. The
         #     logger swallows its own failures, so this never raises.
