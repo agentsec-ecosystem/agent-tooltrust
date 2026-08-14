@@ -65,6 +65,7 @@ def _serve(args: argparse.Namespace) -> int:
     from agent_tooltrust.engine.engine import Engine
     from agent_tooltrust.policy.models import default_policy
     from agent_tooltrust.server.audit_routes import register_audit_routes
+    from agent_tooltrust.server.escalation_routes import register_escalation_routes
     from agent_tooltrust.server.mcp_tools import register_tools
     from agent_tooltrust.server.server_core import ServerCore
     from agent_tooltrust.server.session_store import SessionStore
@@ -89,11 +90,13 @@ def _serve(args: argparse.Namespace) -> int:
     mcp = FastMCP("ToolTrust MCP Server")
     register_tools(mcp, core)
     register_audit_routes(mcp, core)
+    register_escalation_routes(mcp, core)
 
     print(f"ToolTrust MCP server starting on http://{args.host}:{args.port}")
     print(f"  Policy: {policy_path or f'preset ({args.posture})'}")
     print(f"  MCP endpoint: SSE at http://{args.host}:{args.port}/sse")
     print(f"  Audit endpoint: http://{args.host}:{args.port}/audit")
+    print(f"  Escalations endpoint: http://{args.host}:{args.port}/api/escalations")
     print(f"  Health check: http://{args.host}:{args.port}/audit/health")
 
     try:

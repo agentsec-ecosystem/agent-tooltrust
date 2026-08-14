@@ -3,7 +3,7 @@
 > **Milestones covered:** M7.5 — a parallel milestone (GH #13) that surfaces the
 > operator console web UI across v0.2.0. It is *not* a phase of M1-M8; it runs
 > alongside them, mounting pages that read the features M1-M7 already produce.
-> **Issue tracking:** `#149`-`#155` in GitHub Milestone
+> **Issue tracking:** `#149`-`#157` in GitHub Milestone
 > [M7.5 — Operator Console & Web Dashboard](../../../issues?q=is%3Aissue+milestone%3A%22M7.5+%E2%80%94+Operator+Console+%26+Web+Dashboard%22).
 > **UI test plan:** [docs/test/web-ui-test-plan.md](../../../docs/test/web-ui-test-plan.md)
 
@@ -48,19 +48,23 @@ no committed screenshots, no v0.2.0 ship.
 | 5 | **Policy analytics page** — M5 session analytics (#148) + M4 deny-storm/probe alerts (#143) | #153 | `GET /api/analytics` | analytics tiles | Deny patterns, deny→allow transitions, dead/over-hit rules, alerts surfaced |
 | 6 | **Compliance & baseline page** — ToolTrust tiers, OWASP 10/10 map, OpenSSF status | #155 | `GET /api/baselines` | C5, A6 | Tier/status reflect `tooltrust baseline check` |
 | 7 | **Playwright E2E + screenshots** — suite over `docs/test/web-ui-test-plan.md`; capture `docs/reference/ui-*.png` into guides; `ui` CI job | #154 | — | full plan | Release gate: green sweep + committed screenshots for v0.2.0 |
+| 8 | **Docker hosting for the operator console** — one image serving server + `/audit` + `/api/escalations` + dashboard; persisted `~/.tooltrust` volume; healthcheck covers `/audit/health` + `/api/escalations`; documented `docker compose` | #156 | mounts escalation + audit + dashboard | A1-A7 | `docker compose up --wait` serves console; state survives restart; healthcheck green |
+| 9 | **Containerized test execution** — build the image, start it, run the API contract + smoke suite against the live container (`test_escalation_routes.py`, `test_audit_routes.py`); `docker` CI job | #157 | — | A1-A7 | `/api/escalations` + `/audit` return correct JSON through the network; approve/deny round-trip works in-container; CI docker job green |
 
 ---
 
 ## M7.5 Exit Gate
 
-- [ ] All 7 tasks implemented and their verifications pass
+- [ ] All 9 tasks implemented and their verifications pass
 - [ ] API contract tests (A1-A7) green
 - [ ] Playwright component + journey tests (C1-C5, J1-J6) green
 - [ ] Empty/loading/error states (E1-E4) pass, no console errors, a11y smoke clean
 - [ ] Screenshots S1-S5 committed and referenced in `docs/reference/` guides
 - [ ] Backend suite (`pytest`, `ruff`, `mypy --strict`) remains green
+- [ ] Docker console builds and serves; `~/.tooltrust` volume persists state
+- [ ] Containerized API + smoke tests pass in the `docker` CI job
 - [ ] `ui` CI job added and green
-- [ ] Issues #149-#155 closed with commit/screenshot references
+- [ ] Issues #149-#157 closed with commit/screenshot references
 
 **Dependency:** M1-M7 engine/audit/policy surfaces (read-only), M3 escalation
 (#84-#86, #95)
