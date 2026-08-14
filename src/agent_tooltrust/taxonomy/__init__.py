@@ -168,10 +168,15 @@ KNOWN_TOOLS: dict[str, str] = {
     "push_changes": "git",
     "force_push": "git",
     "clone_repo": "git",
+    "git_push": "git",
+    "git_pull": "git",
+    "git_status": "git",
     # http
     "http_get": "http",
     "http_post": "http",
     "http_patch": "http",
+    "http_put": "http",
+    "http_delete": "http",
     # iam
     "create_api_key": "iam",
     "assign_role": "iam",

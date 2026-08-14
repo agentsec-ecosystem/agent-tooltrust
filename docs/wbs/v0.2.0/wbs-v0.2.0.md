@@ -69,14 +69,14 @@ Every milestone — before it is declared complete — must pass ALL of the foll
 |---|------|------------|-------|--------------|
 | 1 | **Resource/environment scoping:** resource-scoped identities + env tags; session scoped to an environment; default-deny on out-of-scope resolution | dev.to (Tae Kim) | #145 | ✅ Prod entity rejected from a staging-scoped session; cross-env attempt blocked and audited (`tests/test_scoping.py`, `SessionScope`, `DENY_OUT_OF_SCOPE`) |
 | 2 | **Child-agent delegation:** `engine.delegate(child_id, parent, scope_subset)`; child scope ⊆ parent scope allowed, exceeding denied | F-88 | #108 | ✅ Subset allowed; superset denied; audit log shows delegation chain (`tests/test_delegation.py`, `DelegationManager`) |
-| 3 | **Dispatcher parser:** parse `bash`/`aws`/`http` args to canonical `(tool, action, args)`; evaluate against same policy; unparseable → deny | F-87 | #106 | `git push --force` denied when `git.push` denied; unparseable input denied |
+| 3 | **Dispatcher parser:** parse `bash`/`aws`/`http` args to canonical `(tool, action, args)`; evaluate against same policy; unparseable → deny | F-87 | #106 | ✅ `git push --force` denied when `git.push` denied; unparseable input denied (`tests/test_dispatcher.py`, `DispatcherError`, `DENY_UNPARSEABLE_INPUT`) |
 
 ### M2 Exit Gate
 
 - [x] Code review passed on all M2 code (reviewed with author in session 2026-08-13)
-- [ ] Test coverage > 90% — *scoping module 100%; repo-wide 86% — needs lift before M2 close*
+- [ ] Test coverage > 90% — *M2 modules 100% (scoping) / 100% (delegation) / 96% (dispatcher); repo-wide 86% — needs lift before M2 close*
 - [x] Ruff strict clean (`ruff check src/ tests/` → 0 errors)
-- [x] Mypy strict clean (`mypy --strict` → 0 errors, 77 files)
+- [x] Mypy strict clean (`mypy --strict` → 0 errors, 79 files)
 - [x] Code comments / docstrings added on all new `.py` files
 - [ ] CI green — *pending workflow run on commit*
 

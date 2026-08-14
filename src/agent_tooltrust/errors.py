@@ -43,6 +43,8 @@ ALLOW_DELEGATION = "allow_delegation"
 DENY_DELEGATION_UNKNOWN_PARENT = "deny_delegation_unknown_parent"
 #: Decision: deny. Child scope would exceed the parent's scope (confused-deputy).
 DENY_DELEGATION_EXCEEDS_SCOPE = "deny_delegation_exceeds_scope"
+#: Decision: deny. Dispatcher could not parse the raw command into a canonical call.
+DENY_UNPARSEABLE_INPUT = "deny_unparseable_input"
 
 
 class ToolTrustError(Exception):
