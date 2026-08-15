@@ -4,7 +4,7 @@
 > **PRD:** [PRD.md](../design/PRD.md) | **Architecture:** [architecture-v0.1.0.md](../architecture/architecture-v0.1.0.md) (v0.2 architecture to follow)
 > **Issue tracking:** All 52 v0.2.0 issues live in GitHub Milestones [M1-M8](../../../issues?q=is%3Aissue+milestone%3A%22M1+%E2%80%94+Policy+Model+%26+Rule+Engine%22) and [M7.5 — Operator Console & Web Dashboard](../../../issues?q=is%3Aissue+milestone%3A%22M7.5+%E2%80%94+Operator+Console+%26+Web+Dashboard%22) and the [v0.2.0 release milestone](../../../issues?q=is%3Aissue+milestone%3A%22v0.2.0%22).
 > **Source of features:** v0.1.0 pull-forward backlog + 7 dev.to community feedback features (#142-#148) + operator console web UI (M7.5, #149-#157) + 7 dev.to follow-up feedback issues (#158-#164).
-> **Status:** M1-M3 tasks complete ✅ · **M4 complete ✅** (deny-storm #143, fetch guard #146, verification sink #144 — all closed, 100% module coverage, repo-wide 91.08%) · M5 in progress (Tasks 1-2 ✅ — #81 session replay, #112 AgentControlPlane+MCP-Data; Task 3 in progress — session analytics #148) · M7.5 complete ✅
+> **Status:** M1-M3 tasks complete ✅ · **M4 complete ✅** (deny-storm #143, fetch guard #146, verification sink #144 — all closed, 100% module coverage, repo-wide 91.08%) · M5 in progress (Tasks 1-3 ✅ — #81 session replay, #112 AgentControlPlane+MCP-Data, #148 session analytics; Task 4 in progress — audit redaction #158) · M7.5 complete ✅
 
 ---
 
