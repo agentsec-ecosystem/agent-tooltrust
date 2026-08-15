@@ -196,6 +196,9 @@ See [SECURITY.md](SECURITY.md) for the full OWASP mapping and [SECURITY_BASELINE
 | [Session Analytics Design](docs/design/session-analytics-design.md) | Cross-session deny→allow transition detection |
 | [Audit Redaction Design](docs/design/audit-redaction-design.md) | PII/secret redaction in audit log |
 | [Score Calibration Design](docs/design/score-calibration-design.md) | Counterfactual thresholds, false rates, shadow mode |
+| [Stale-Credential Design](docs/design/stale-credential-design.md) | Distinct audit tag for credential-rejected calls |
+| [Field Test Report v0.2.0](docs/field-test/FIELD_TEST_REPORT-v0.2.0.md) | Plan A 83/83 (100%), Plan B 116/123 (94%), replan 8/8, 4-model comparison, observations + lessons |
+| [Release Checklist](docs/wbs/v0.2.0/release-checklist.md) | 17-step release checklist for v0.2.0 |
 
 ---
 
