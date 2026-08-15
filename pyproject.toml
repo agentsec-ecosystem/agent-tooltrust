@@ -214,7 +214,7 @@ ignore_missing_imports = true
 
 [tool.coverage.report]
 # Baseline accepted for v0.1.0 ship gate (WBS M8.8). Nudged upward in v0.2.
-fail_under = 85
+fail_under = 90
 exclude_also = [
     "if TYPE_CHECKING:",
 ]
