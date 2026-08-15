@@ -1,0 +1,13 @@
+fixtures:
+  - tool: query_database
+    action: query
+    environment: staging
+    data_class: internal
+    agent_id: analyst
+    expected: allow
+  - tool: drop_database
+    action: drop
+    environment: production
+    data_class: customer_pii
+    agent_id: admin
+    expected: deny

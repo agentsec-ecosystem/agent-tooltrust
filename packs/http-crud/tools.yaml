@@ -1,0 +1,17 @@
+version: "1.0"
+posture: permissive
+environments:
+  development: 0.0
+  production: 0.5
+data_classes:
+  public: 0.0
+  internal: 0.2
+rules:
+  - decision: deny
+    action: delete
+    environment: production
+    reason: "HTTP DELETE is blocked in production."
+  - decision: escalate
+    action: write
+    environment: production
+    reason: "Write operations in production require approval."

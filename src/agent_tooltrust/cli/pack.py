@@ -18,6 +18,26 @@ from typing import Any
 from agent_tooltrust.cli.errors import CliError
 from agent_tooltrust.policy.pack import PackError, run_pack_tests, validate_pack
 
+_PACKS_DIR = Path(__file__).resolve().parents[3] / "packs"
+
+
+def list_packs() -> list[dict[str, Any]]:
+    """Return metadata for every pack in the packs/ directory."""
+    import yaml
+
+    if not _PACKS_DIR.is_dir():
+        return []
+    packs: list[dict[str, Any]] = []
+    for child in sorted(_PACKS_DIR.iterdir()):
+        if child.is_dir():
+            meta_path = child / "metadata.yaml"
+            if meta_path.exists():
+                with open(meta_path) as f:
+                    meta = yaml.safe_load(f)
+                if meta is not None:
+                    packs.append(meta)
+    return packs
+
 
 def add_parser(subparsers: Any) -> None:
     """Register the ``tooltrust pack`` subcommand parser.
@@ -57,6 +77,19 @@ def add_parser(subparsers: Any) -> None:
         help="pack directory or path to its tools.yaml (default: .)",
     )
     test_parser.set_defaults(pack_func=_run_test)
+
+    list_parser = sub.add_parser(
+        "list",
+        help="list available policy packs in the catalog",
+    )
+    list_parser.set_defaults(pack_func=_run_list)
+
+    info_parser = sub.add_parser(
+        "info",
+        help="show metadata for a single pack",
+    )
+    info_parser.add_argument("name", help="pack name (directory under packs/)")
+    info_parser.set_defaults(pack_func=_run_info)
 
     parser.set_defaults(func=_run)
 
@@ -99,3 +132,33 @@ def _run_test(args: argparse.Namespace) -> int:
         )
     print(f"{len(results) - failed}/{len(results)} passed")
     return 0 if failed == 0 else 1
+
+
+def _run_list(args: argparse.Namespace) -> int:
+    packs = list_packs()
+    if not packs:
+        print("No packs found in the catalog.")
+        return 0
+    print(f"{'Name':<20} {'Domains':<30} {'Tools':<8} {'Tests':<8} {'Updated':<14} {'Maintainer'}")
+    print("-" * 90)
+    for p in packs:
+        domains = ", ".join(p.get("domains", []))
+        print(
+            f"{p['name']:<20} {domains:<30} "
+            f"{p.get('tool_count', '?'):<8} {p.get('tests_passing', '?'):<8} "
+            f"{p.get('last_updated', 'unknown'):<14} {p.get('maintainer', 'unknown')}"
+        )
+    return 0
+
+
+def _run_info(args: argparse.Namespace) -> int:
+    import yaml
+
+    path = _PACKS_DIR / args.name / "metadata.yaml"
+    if not path.exists():
+        raise CliError(f"Pack '{args.name}' not found in catalog.")
+    with open(path) as f:
+        meta = yaml.safe_load(f)
+    for k, v in meta.items():
+        print(f"{k}: {v}")
+    return 0

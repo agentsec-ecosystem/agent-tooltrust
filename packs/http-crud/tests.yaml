@@ -1,0 +1,13 @@
+fixtures:
+  - tool: http_get
+    action: get
+    environment: production
+    data_class: public
+    agent_id: scraper
+    expected: allow
+  - tool: http_delete
+    action: delete
+    environment: production
+    data_class: public
+    agent_id: scraper
+    expected: deny

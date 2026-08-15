@@ -1,0 +1,13 @@
+fixtures:
+  - tool: execute_shell
+    action: exec
+    environment: development
+    data_class: internal
+    agent_id: dev
+    expected: allow
+  - tool: execute_shell
+    action: exec
+    environment: production
+    data_class: internal
+    agent_id: dev
+    expected: deny
