@@ -2,7 +2,7 @@
   "agent_id": "lg-05",
   "framework": "langgraph",
   "agent_class": "sensitive",
-  "model": "Qwen3.5-4B-4bit",
+  "model": "openai/gpt-oss-20b",
   "tools": [
     "get_current_time",
     "query_logs"
@@ -23,7 +23,7 @@
       "llm_responded": true,
       "response": null,
       "error": null,
-      "elapsed_s": 5.63,
+      "elapsed_s": 2.02,
       "decision": "deny",
       "reason_code": "deny_malformed_input",
       "expected": "deny",

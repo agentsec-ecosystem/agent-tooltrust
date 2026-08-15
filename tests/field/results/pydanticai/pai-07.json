@@ -2,7 +2,7 @@
   "agent_id": "pai-07",
   "framework": "pydanticai",
   "agent_class": "general",
-  "model": "Qwen3.5-4B-4bit",
+  "model": "openai/gpt-oss-20b",
   "tools": [
     "http_get",
     "http_post"
@@ -23,7 +23,7 @@
       "llm_responded": true,
       "response": null,
       "error": null,
-      "elapsed_s": 5.03,
+      "elapsed_s": 1.97,
       "decision": "deny",
       "reason_code": "deny_critical_op",
       "expected": "deny",

@@ -2,7 +2,7 @@
   "agent_id": "mcp-04",
   "framework": "tooltrust-mcp",
   "agent_class": "analyst",
-  "model": "Qwen3.5-4B-4bit",
+  "model": "openai/gpt-oss-20b",
   "tools": [
     "add",
     "get_current_time",

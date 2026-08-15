@@ -2,7 +2,7 @@
   "agent_id": "ag-02",
   "framework": "autogen",
   "agent_class": "engineer",
-  "model": "Qwen3.5-4B-4bit",
+  "model": "openai/gpt-oss-20b",
   "tools": [
     "add"
   ],
@@ -20,9 +20,9 @@
       "called": true,
       "llm_called": true,
       "llm_responded": true,
-      "response": "The tool `scn_decision-audit-05` has been successfully called in the 'production' environment with data_class 'internal' as required. The tool execution completed without errors.",
+      "response": "Audit completed successfully.",
       "error": null,
-      "elapsed_s": 9.99,
+      "elapsed_s": 4.02,
       "decision": "audit",
       "reason_code": "audit_sensitive_data",
       "expected": "audit",

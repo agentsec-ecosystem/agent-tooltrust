@@ -2,7 +2,7 @@
   "agent_id": "mcp-05",
   "framework": "tooltrust-mcp",
   "agent_class": "sensitive",
-  "model": "Qwen3.5-4B-4bit",
+  "model": "openai/gpt-oss-20b",
   "tools": [
     "query_logs"
   ],

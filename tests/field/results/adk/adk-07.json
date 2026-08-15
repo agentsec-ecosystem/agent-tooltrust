@@ -2,7 +2,7 @@
   "agent_id": "adk-07",
   "framework": "adk",
   "agent_class": "general",
-  "model": "Qwen3.5-4B-4bit",
+  "model": "openai/gpt-oss-20b",
   "tools": [
     "deploy_service",
     "query_logs"
@@ -21,9 +21,9 @@
       "called": true,
       "llm_called": true,
       "llm_responded": true,
-      "response": "parts=[Part(\n  text='The tool `scn_decision-audit-03` has been called successfully with the arguments \"staging environment with data_class internal\". The tool returned the same text as the result.'\n)] role='model'",
+      "response": "parts=[Part(\n  text=\"\"\"**Audit Initiated**\n\nThe audit request for the **staging** environment with data class **internal** has been submitted.  \nYou\u2019ll receive detailed logs and findings shortly. If you need to review the audit logs now, let me know and I can query the latest ent",
       "error": null,
-      "elapsed_s": 8.59,
+      "elapsed_s": 3.27,
       "decision": "audit",
       "reason_code": "audit_sensitive_data",
       "expected": "audit",

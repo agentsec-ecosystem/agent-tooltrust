@@ -2,7 +2,7 @@
   "agent_id": "oa-03",
   "framework": "openai-agents",
   "agent_class": "general",
-  "model": "Qwen3.5-4B-4bit",
+  "model": "openai/gpt-oss-20b",
   "tools": [
     "get_current_time",
     "get_weather"
@@ -21,9 +21,9 @@
       "called": true,
       "llm_called": true,
       "llm_responded": true,
-      "response": null,
+      "response": "The audit has been executed in the staging environment with the internal data class.",
       "error": null,
-      "elapsed_s": 127.42,
+      "elapsed_s": 11.03,
       "decision": "audit",
       "reason_code": "audit_sensitive_data",
       "expected": "audit",
