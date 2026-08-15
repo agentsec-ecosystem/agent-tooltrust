@@ -46,3 +46,26 @@ Agent ToolTrust is a policy engine that gates tool invocations. Key security pro
 ## CI Security Scanning
 
 [trufflehog](https://github.com/trufflesecurity/trufflehog) runs on every push to detect secrets accidentally committed to the repository.
+
+## OpenSSF Scorecard
+
+ToolTrust targets [OpenSSF Scorecard Gold](https://securityscorecards.dev/) level:
+
+| Criteria | Status | Notes |
+|----------|--------|-------|
+| Binary-Artifacts | ✅ | No checked-in binaries |
+| CI-Tests | ✅ | CI runs on every push |
+| Code-Review | ✅ | All changes reviewed |
+| Dangerous-Workflow | ✅ | No `pull_request_target` with write token |
+| Dependency-Update-Tool | ✅ | `uv lock` + Dependabot configured |
+| Fuzzing | ⚠️ | Manual fuzzing; automated CI integration planned |
+| License | ✅ | MIT licensed |
+| Maintained | ✅ | Active development |
+| Pinned-Dependencies | ✅ | Hashing pinned in CI |
+| SAST | ✅ | Ruff + mypy strict + trufflehog |
+| Security-Policy | ✅ | SECURITY.md published |
+| Signed-Releases | ⚠️ | Signing pipeline in progress |
+| Token-Permissions | ✅ | Least-privilege tokens |
+| Vulnerabilities | ✅ | No open CVEs |
+
+**Path to Gold:** Fuzzing CI integration and release signing are the remaining gaps. See `docs/design/openssf-gold-path.md` for the full roadmap.
