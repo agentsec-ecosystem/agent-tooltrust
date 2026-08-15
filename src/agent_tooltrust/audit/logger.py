@@ -53,38 +53,42 @@ class AuditLogger:
         return self._sink
 
     def log(
-        self,
-        decision: Decision,
-        call: NormalizedCall,
-        *,
-        session_id: str | None = None,
-        approver: str | None = None,
-        dry_run: bool | None = None,
-    ) -> AuditEntry:
-        """Build and persist the audit entry for one decision.
+            self,
+            decision: Decision,
+            call: NormalizedCall,
+            *,
+            session_id: str | None = None,
+            approver: str | None = None,
+            dry_run: bool | None = None,
+            credential_status: str | None = None,
+        ) -> AuditEntry:
+            """Build and persist the audit entry for one decision.
 
-        Never raises. A failing sink is reported to stderr and the entry is
-        dropped (the decision itself is already complete and safe to return).
+            Never raises. A failing sink is reported to stderr and the entry is
+            dropped (the decision itself is already complete and safe to return).
 
-        Args:
-            decision: The decision to record.
-            call: The normalized call that produced it.
-            session_id: Session id (defaults to the call's).
-            approver: Human approver for escalation entries.
-            dry_run: Shadow-mode marker. Defaults to the decision's flag; the
-                engine passes ``True`` for a shadowed run to record that the
-                real decision was not enforced.
-        """
-        entry = AuditEntry.from_decision(
-            decision, call, session_id=session_id, approver=approver, dry_run=dry_run,
-        )
-        redacted_args, was_redacted = redact_arguments(call.arguments, self._redact_keys)
-        entry = replace(entry, arguments=redacted_args, redacted=was_redacted)
-        try:
-            self._sink.write(entry)
-        except Exception as exc:
-            print(f"tooltrust audit: log failed: {exc}", file=sys.stderr)
-        return entry
+            Args:
+                decision: The decision to record.
+                call: The normalized call that produced it.
+                session_id: Session id (defaults to the call's).
+                approver: Human approver for escalation entries.
+                dry_run: Shadow-mode marker. Defaults to the decision's; the
+                    engine passes ``True`` for a shadowed run to record that the
+                    real decision was not enforced.
+                credential_status: Post-decision credential status (e.g. ``"stale"``)
+                    when the engine allowed the call but the underlying API rejected it.
+            """
+            entry = AuditEntry.from_decision(
+                decision, call, session_id=session_id, approver=approver, dry_run=dry_run,
+                credential_status=credential_status,
+            )
+            redacted_args, was_redacted = redact_arguments(call.arguments, self._redact_keys)
+            entry = replace(entry, arguments=redacted_args, redacted=was_redacted)
+            try:
+                self._sink.write(entry)
+            except Exception as exc:
+                print(f"tooltrust audit: log failed: {exc}", file=sys.stderr)
+            return entry
 
     def query(self, session_id: str | None = None) -> list[AuditEntry]:
         """Return recorded entries for a session (or all when ``None``)."""

@@ -55,6 +55,7 @@ class AuditEntry:
     prev_hash: str | None = None
     arguments: dict[str, Any] | None = None
     redacted: bool = False
+    credential_status: str | None = None
 
     @classmethod
     def from_decision(
@@ -68,6 +69,7 @@ class AuditEntry:
         dry_run: bool | None = None,
         arguments: dict[str, Any] | None = None,
         redacted: bool = False,
+        credential_status: str | None = None,
     ) -> AuditEntry:
         """Build an audit entry from a finished decision and its call.
 
@@ -83,6 +85,8 @@ class AuditEntry:
             arguments: The tool-call arguments (pre-redaction). Defaults to
                 ``call.arguments``.
             redacted: Whether arguments were redacted.
+            credential_status: Post-decision credential status (e.g. ``"stale"``)
+                when the engine allowed the call but the underlying API rejected it.
         """
         return cls(
             session_id=session_id if session_id is not None else call.session_id,
@@ -106,6 +110,7 @@ class AuditEntry:
             approver=approver,
             arguments=arguments if arguments is not None else call.arguments,
             redacted=redacted,
+            credential_status=credential_status,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -142,6 +147,7 @@ class AuditEntry:
             prev_hash=data.get("prev_hash"),
             arguments=data.get("arguments"),
             redacted=bool(data.get("redacted", False)),
+            credential_status=data.get("credential_status"),
         )
         if "call_id" in data:
             kwargs["call_id"] = data["call_id"]
