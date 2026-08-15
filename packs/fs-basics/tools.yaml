@@ -1,0 +1,18 @@
+version: "1.0"
+posture: balanced
+environments:
+  development: 0.0
+  staging: 0.1
+  production: 0.7
+data_classes:
+  public: 0.0
+  internal: 0.2
+  restricted: 0.5
+rules:
+  - decision: deny
+    action: delete
+    tool: read_file
+    reason: "File deletion is not covered by this pack."
+  - decision: deny
+    tool: delete_file
+    reason: "Delete operations are blocked."

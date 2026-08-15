@@ -1,0 +1,151 @@
+"""Analytics HTTP endpoint for the ToolTrust MCP server (M7.5).
+
+Aggregates the whole audit log into a compact compliance snapshot: total
+decisions, decision and tool breakdowns, deny rate, and the most-denied
+tools. Deterministic — keys and iteration order are sorted so the payload is
+stable across calls.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+
+
+def register_analytics_routes(mcp: Any, core: Any) -> None:
+    """Register the /api/analytics aggregation endpoint.
+
+    Args:
+        mcp: A FastMCP server instance.
+        core: A :class:`ServerCore` instance.
+    """
+    _register_analytics(mcp, core)
+
+
+def _register_analytics(mcp: Any, core: Any) -> None:
+    @mcp.custom_route("/api/analytics", methods=["GET"])  # type: ignore[untyped-decorator]
+    async def analytics(request: Request) -> JSONResponse:
+        entries = core.audit_logger.query(None)
+        return JSONResponse(_aggregate(entries))
+
+    @mcp.custom_route("/api/analytics/sessions", methods=["GET"])  # type: ignore[untyped-decorator]
+    async def analytics_sessions(request: Request) -> JSONResponse:
+        from agent_tooltrust.analytics.session_analyzer import analyze
+
+        entries = core.audit_logger.query(None)
+        raw_min = request.query_params.get("min_denials")
+        min_denials = int(raw_min) if raw_min and raw_min.isdigit() else 3
+        findings = analyze(entries, min_denials=min_denials)
+        return JSONResponse({
+            "recurring_denials": [
+                {
+                    "context": list(r.context),
+                    "deny_count": r.deny_count,
+                    "sample_reason": r.sample_reason,
+                }
+                for r in findings.recurring_denials
+            ],
+            "deny_to_allow_transitions": [
+                {
+                    "context": list(t.context),
+                    "first_deny_at": t.first_deny_at,
+                    "first_allow_at": t.first_allow_at,
+                }
+                for t in findings.deny_to_allow_transitions
+            ],
+            "dead_rules": [
+                {
+                    "rule_index": r.rule_index,
+                    "decision": r.decision,
+                    "tool": r.tool,
+                    "action": r.action,
+                    "environment": r.environment,
+                    "data_class": r.data_class,
+                    "reason": r.reason,
+                }
+                for r in findings.dead_rules
+            ],
+            "over_hit_rules": [
+                {
+                    "reason_code": r.reason_code,
+                    "match_count": r.match_count,
+                    "percentile": r.percentile,
+                }
+                for r in findings.over_hit_rules
+            ],
+        })
+
+    @mcp.custom_route("/api/analytics/calibration", methods=["GET"])  # type: ignore[untyped-decorator]
+    async def analytics_calibration(request: Request) -> JSONResponse:
+        from collections import defaultdict
+
+        entries = core.audit_logger.query(None)
+        by_tool: defaultdict[str, list[str]] = defaultdict(list)
+        by_env: defaultdict[str, list[str]] = defaultdict(list)
+        by_data: defaultdict[str, list[str]] = defaultdict(list)
+
+        for entry in entries:
+            by_tool[entry.tool].append(entry.decision)
+            by_env[entry.environment].append(entry.decision)
+            by_data[entry.data_class].append(entry.decision)
+
+        def _bucket(data: dict[str, list[str]]) -> list[dict[str, object]]:
+            return [
+                {
+                    "key": k,
+                    "total": len(v),
+                    "allow_audit": sum(1 for d in v if d in ("allow", "audit")),
+                    "escalate": sum(1 for d in v if d == "escalate"),
+                    "deny": sum(1 for d in v if d == "deny"),
+                }
+                for k, v in sorted(data.items())
+            ]
+
+        return JSONResponse({
+            "by_tool": _bucket(by_tool),
+            "by_environment": _bucket(by_env),
+            "by_data_class": _bucket(by_data),
+        })
+
+
+def _aggregate(entries: list[Any]) -> dict[str, Any]:
+    """Compute the analytics payload from a list of audit entries.
+
+    Args:
+        entries: Audit entries; ``AuditEntry``-like objects exposing
+            ``decision``, ``tool``, and ``session_id``.
+
+    Returns:
+        A deterministic analytics dict sized to the recorded decisions.
+    """
+    total = len(entries)
+    deny_count = 0
+    by_decision: dict[str, int] = {}
+    by_tool: dict[str, int] = {}
+    deny_by_tool: dict[str, int] = {}
+    sessions: dict[str, int] = {}
+
+    for entry in entries:
+        by_decision[entry.decision] = by_decision.get(entry.decision, 0) + 1
+        by_tool[entry.tool] = by_tool.get(entry.tool, 0) + 1
+        if entry.decision == "deny":
+            deny_count += 1
+            deny_by_tool[entry.tool] = deny_by_tool.get(entry.tool, 0) + 1
+        if entry.session_id is not None:
+            sessions[entry.session_id] = sessions.get(entry.session_id, 0) + 1
+
+    deny_rate = deny_count / total if total else 0.0
+    top_denied_tools = sorted(
+        deny_by_tool.items(), key=lambda item: (-item[1], item[0])
+    )[:5]
+
+    return {
+        "total_decisions": total,
+        "by_decision": dict(sorted(by_decision.items())),
+        "by_tool": dict(sorted(by_tool.items())),
+        "deny_rate": deny_rate,
+        "top_denied_tools": [tool for tool, _ in top_denied_tools],
+        "sessions": dict(sorted(sessions.items())),
+    }

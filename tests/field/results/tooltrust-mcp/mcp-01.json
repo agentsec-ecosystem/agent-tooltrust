@@ -2,7 +2,7 @@
   "agent_id": "mcp-01",
   "framework": "tooltrust-mcp",
   "agent_class": "ci-bot",
-  "model": "Qwen3.5-4B-4bit",
+  "model": "openai/gpt-oss-20b",
   "tools": [
     "get_weather",
     "query_logs"

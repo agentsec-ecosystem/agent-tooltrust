@@ -15,11 +15,17 @@ from __future__ import annotations
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 Posture = Literal["strict", "balanced", "permissive"]
 RuleDecision = Literal["allow", "audit", "escalate", "deny"]
 AuditSink = Literal["jsonl", "sqlite", "postgres"]
+
+#: Fields a leaf condition may constrain. Mirrors the flat ``Rule`` fields plus
+#: the taxonomy-resolved ``tool_category`` and the action verb ``action``.
+_CONDITION_FIELDS = frozenset(
+    {"tool", "tool_category", "action", "environment", "data_class", "agent_class"}
+)
 
 #: The five scored dimensions. risk_weights keys are restricted to these so a
 #: typo like ``tool_categry`` is caught at load time instead of silently
@@ -73,6 +79,39 @@ class DataClassSpec(BaseModel):
         return _in_unit(v, "sensitivity")
 
 
+class ConditionSpec(BaseModel):
+    """One node of a rule's boolean condition tree (M1 #93).
+
+    Mirrors :class:`~agent_tooltrust.policy.models.Condition`. A leaf carries
+    ``field`` / ``op`` (``eq``/``neq``) / ``value``; an ``and``/``or`` group
+    carries ``conditions``; a ``not`` carries a single ``condition``. Unknown
+    keys are rejected so a typo like ``valu`` is caught at load time. ``op``
+    is restricted to the known operators, so ``op: xor`` is a schema error
+    with a line:column, not a crash during model construction.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    op: Literal["eq", "neq", "and", "or", "not"] = "eq"
+    field: str = ""
+    value: str = "*"
+    conditions: list[ConditionSpec] = Field(default_factory=list)
+    condition: ConditionSpec | None = None
+
+    @model_validator(mode="after")
+    def _check_shape(self) -> ConditionSpec:
+        if self.op in ("and", "or") and not self.conditions:
+            raise ValueError(f"a {self.op!r} group requires at least one child condition")
+        if self.op == "not" and self.condition is None:
+            raise ValueError("a 'not' condition requires a single `condition`")
+        if self.op in ("eq", "neq") and self.field not in _CONDITION_FIELDS:
+            raise ValueError(
+                f"condition field must be one of {sorted(_CONDITION_FIELDS)}, "
+                f"got {self.field!r}"
+            )
+        return self
+
+
 class RuleSpec(BaseModel):
     """One declarative rule. ``"*"`` means "match anything".
 
@@ -81,6 +120,9 @@ class RuleSpec(BaseModel):
     only *enforces* deny > allow > escalate rules and produces ``audit`` from
     the risk band, but org files may still carry an ``audit`` rule for
     documentation/forward-compat.
+
+    ``conditions`` (M1 #93) is an optional boolean condition tree ANDed with
+    the flat constraints. It accepts a list of :class:`ConditionSpec` clauses.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -91,6 +133,30 @@ class RuleSpec(BaseModel):
     environment: str = "*"
     data_class: str = "*"
     reason: str = ""
+    conditions: list[ConditionSpec] = Field(default_factory=list)
+    obligations: list[str] = Field(
+        default_factory=list,
+        description="Mandatory gatekeeper-enforced side-effects (M1 #147)",
+    )
+
+    @field_validator("obligations")
+    @classmethod
+    def _check_obligations(cls, v: list[str]) -> list[str]:
+        from agent_tooltrust.engine.obligations import OBLIGATION_NAMES
+
+        unknown = sorted(set(v) - set(OBLIGATION_NAMES))
+        if unknown:
+            raise ValueError(f"unknown obligation(s): {', '.join(unknown)}")
+        return v
+
+    @model_validator(mode="after")
+    def _check_obligations_on_allow_only(self) -> RuleSpec:
+        if self.obligations and self.decision != "allow":
+            raise ValueError(
+                f"obligations are only enforced on 'allow' rules, "
+                f"got decision {self.decision!r}"
+            )
+        return self
 
 
 class EscalationConfig(BaseModel):
@@ -126,6 +192,46 @@ class AuditConfig(BaseModel):
     postgres_url: str | None = None
 
 
+class ArgumentSpecSchema(BaseModel):
+    """One argument's constraints in a tool's ``args_policy`` (M1 #142).
+
+    Mirrors :class:`agent_tooltrust.engine.argument_policy.ArgumentSpec`:
+    ``required``, ``forbid`` substrings, inclusive ``min``/``max`` bounds, and
+    an ``allowed`` value allowlist. Any combination may be set; an empty spec
+    constrains nothing. ``min``/``max`` are validated as numbers so a
+    nonnumeric bound is rejected at load time.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    required: bool = False
+    forbid: list[str] = Field(default_factory=list)
+    min: float | None = None
+    max: float | None = None
+    allowed: list[str] = Field(default_factory=list)
+
+
+class ToolSpec(BaseModel):
+    """One tool definition in the policy document (M1 #88, F-83).
+
+    ``hidden_for`` marks the tool hidden (not exposed at discovery time) for
+    the listed agent classes. Hiding is discovery-time only — enforcement is
+    unchanged. Unknown keys are rejected.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, description="Tool name (matches taxonomy)")
+    hidden_for: list[str] = Field(
+        default_factory=list,
+        description="Agent classes that must not see this tool",
+    )
+    args_policy: dict[str, ArgumentSpecSchema] = Field(
+        default_factory=dict,
+        description="Per-argument constraints for this tool (M1 #142)",
+    )
+
+
 class PolicyDocument(BaseModel):
     """A validated tooltrust.yaml file.
 
@@ -145,6 +251,10 @@ class PolicyDocument(BaseModel):
         description="Per-dimension risk weights. Empty means inherit all from the posture preset.",
     )
     rules: list[RuleSpec] = Field(default_factory=list)
+    tools: list[ToolSpec] = Field(
+        default_factory=list,
+        description="Per-tool definitions: hiding + argument policy",
+    )
     escalation: EscalationConfig = Field(default_factory=EscalationConfig)
     audit: AuditConfig = Field(default_factory=AuditConfig)
 

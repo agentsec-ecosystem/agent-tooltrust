@@ -51,6 +51,12 @@ class AuditEntry:
     dry_run: bool = False
     escalation_id: str | None = None
     approver: str | None = None
+    chain_hash: str | None = None
+    prev_hash: str | None = None
+    arguments: dict[str, Any] | None = None
+    redacted: bool = False
+    credential_status: str | None = None
+    counterfactual: float | None = None
 
     @classmethod
     def from_decision(
@@ -62,6 +68,9 @@ class AuditEntry:
         timestamp: str | None = None,
         approver: str | None = None,
         dry_run: bool | None = None,
+        arguments: dict[str, Any] | None = None,
+        redacted: bool = False,
+        credential_status: str | None = None,
     ) -> AuditEntry:
         """Build an audit entry from a finished decision and its call.
 
@@ -74,6 +83,11 @@ class AuditEntry:
             dry_run: Recorded dry_run flag. Defaults to the decision's; pass
                 explicitly so the engine can mark shadowed decisions that were
                 logged before the allowance was applied.
+            arguments: The tool-call arguments (pre-redaction). Defaults to
+                ``call.arguments``.
+            redacted: Whether arguments were redacted.
+            credential_status: Post-decision credential status (e.g. ``"stale"``)
+                when the engine allowed the call but the underlying API rejected it.
         """
         return cls(
             session_id=session_id if session_id is not None else call.session_id,
@@ -95,6 +109,10 @@ class AuditEntry:
             dry_run=decision.dry_run if dry_run is None else dry_run,
             escalation_id=decision.escalation_id,
             approver=approver,
+            arguments=arguments if arguments is not None else call.arguments,
+            redacted=redacted,
+            credential_status=credential_status,
+            counterfactual=decision.counterfactual,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -127,6 +145,12 @@ class AuditEntry:
             dry_run=bool(data.get("dry_run", False)),
             escalation_id=data.get("escalation_id"),
             approver=data.get("approver"),
+            chain_hash=data.get("chain_hash"),
+            prev_hash=data.get("prev_hash"),
+            arguments=data.get("arguments"),
+            redacted=bool(data.get("redacted", False)),
+            credential_status=data.get("credential_status"),
+            counterfactual=data.get("counterfactual"),
         )
         if "call_id" in data:
             kwargs["call_id"] = data["call_id"]

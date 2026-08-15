@@ -675,16 +675,16 @@ def _prompt_for(scenario: FieldScenario) -> str:
     """Build an imperative prompt that forces the scenario tool call."""
     scn_name = f"scn_{scenario.id}"
     extra = (
-        "(the tool name may contain intentional whitespace or unicode — call "
-        "it exactly by name)"
+        "The tool name may contain intentional whitespace or unicode — call "
+        "it exactly by name."
         if scenario.type == "adversarial"
         else ""
     )
     return (
         f"In environment '{scenario.environment}' with data_class "
-        f"'{scenario.data_class}', you must call the tool exactly named "
-        f"`{scn_name}` with valid arguments, then answer. Do not skip the tool "
-        f"call. {extra}"
+        f"'{scenario.data_class}', call ONLY the tool `{scn_name}` with valid "
+        f"arguments, then answer. Do not call any other tool. Do not skip. "
+        f"{extra}"
     ).strip()
 
 

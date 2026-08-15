@@ -92,6 +92,7 @@ def normalize(
     agent_id: str,
     agent_class: str = "general",
     session_id: str | None = None,
+    resource_tag: str | None = None,
     arguments: dict[str, Any] | None = None,
     context: dict[str, Any] | None = None,
 ) -> NormalizedCall:
@@ -132,6 +133,7 @@ def normalize(
         agent_id=_fold_whitespace(agent_id).strip(),
         agent_class=_fold_whitespace(agent_class).strip() or "general",
         session_id=session_id,
+        resource_tag=resource_tag,
         arguments=arguments,
         context=context,
     )

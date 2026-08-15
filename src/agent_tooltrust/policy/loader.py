@@ -19,10 +19,12 @@ in architecture §3.1.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import yaml
 from pydantic import ValidationError
 
+from agent_tooltrust.engine.argument_policy import ArgumentSpec
 from agent_tooltrust.errors import PolicyParseError
 from agent_tooltrust.policy.models import Policy, Rule, default_policy
 from agent_tooltrust.policy.schema import PolicyDocument, parse_tooltrust_yaml
@@ -76,6 +78,30 @@ def _schema_error_message(error: ValidationError, text: str) -> str:
     return f"line {line}, column {column}: invalid {where}: {first['msg']}"
 
 
+def _condition_dicts(conds: list[Any]) -> list[dict[str, Any]]:
+    """Convert validated :class:`ConditionSpec` objects to plain dicts.
+
+    The in-memory :class:`~agent_tooltrust.policy.models.Condition` is built
+    from dicts (``condition_from_dict``); this helper rehydrates the pydantic
+    specs into that shape so the model stays the single evaluation home.
+
+    Args:
+        conds: The validated condition specs from a policy rule.
+
+    Returns:
+        Plain-dict condition clauses for ``condition_from_dict``.
+    """
+    out: list[dict[str, Any]] = []
+    for spec in conds:
+        if spec.op in ("and", "or"):
+            out.append({"op": spec.op, "conditions": _condition_dicts(spec.conditions)})
+        elif spec.op == "not" and spec.condition is not None:
+            out.append({"op": "not", "condition": _condition_dicts([spec.condition])[0]})
+        else:
+            out.append({"op": spec.op, "field": spec.field, "value": spec.value})
+    return out
+
+
 def _build_policy(doc: PolicyDocument) -> Policy:
     """Merge a validated :class:`PolicyDocument` onto the posture default.
 
@@ -107,12 +133,30 @@ def _build_policy(doc: PolicyDocument) -> Policy:
                 environment=rule.environment,
                 data_class=rule.data_class,
                 reason=rule.reason,
+                conditions=tuple(_condition_dicts(rule.conditions)),
+                obligations=tuple(rule.obligations),
             )
             for rule in doc.rules
         )
         if doc.rules
         else base.rules
     )
+    tool_visibility: dict[str, dict[str, tuple[str, ...]]] = {}
+    args_policy: dict[str, dict[str, ArgumentSpec]] = {}
+    for spec in doc.tools:
+        if spec.hidden_for:
+            tool_visibility[spec.name] = {"hidden_for": tuple(spec.hidden_for)}
+        if spec.args_policy:
+            args_policy[spec.name] = {
+                name: ArgumentSpec(
+                    required=arg.required,
+                    forbid=tuple(arg.forbid),
+                    min=arg.min,
+                    max=arg.max,
+                    allowed=tuple(arg.allowed),
+                )
+                for name, arg in spec.args_policy.items()
+            }
     return Policy(
         version=doc.version,
         posture=doc.posture,
@@ -122,6 +166,8 @@ def _build_policy(doc: PolicyDocument) -> Policy:
         rules=rules,
         agents=base.agents,
         default_agent=base.default_agent,
+        tool_visibility=tool_visibility,
+        args_policy=args_policy,
     )
 
 
@@ -152,7 +198,14 @@ def load_policy_text(text: str) -> Policy:
         raise PolicyParseError(_schema_error_message(exc, text)) from exc
     except ValueError as exc:
         raise PolicyParseError(str(exc)) from exc
-    return _build_policy(doc)
+    try:
+        return _build_policy(doc)
+    except (ValueError, ValidationError) as exc:
+        # Model construction (e.g. a malformed ``conditions`` tree: unknown op,
+        # a ``not`` without a child, an unknown condition field) raises after
+        # the pydantic schema pass. Convert to the same fail-closed
+        # PolicyParseError contract so every load failure is a clean error.
+        raise PolicyParseError(str(exc)) from exc
 
 
 def load_policy(path: str | Path) -> Policy:

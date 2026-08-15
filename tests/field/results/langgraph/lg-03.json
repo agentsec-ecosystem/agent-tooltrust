@@ -2,7 +2,7 @@
   "agent_id": "lg-03",
   "framework": "langgraph",
   "agent_class": "general",
-  "model": "Qwen3.5-4B-4bit",
+  "model": "openai/gpt-oss-20b",
   "tools": [
     "get_weather",
     "search_docs"
@@ -23,7 +23,7 @@
       "llm_responded": true,
       "response": null,
       "error": null,
-      "elapsed_s": 5.46,
+      "elapsed_s": 3.66,
       "decision": "deny",
       "reason_code": "deny_critical_op",
       "expected": "deny",

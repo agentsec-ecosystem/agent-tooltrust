@@ -24,6 +24,7 @@ from typing import Any
 from agent_tooltrust.audit.models import AuditEntry
 from agent_tooltrust.audit.sink import AuditSink
 from agent_tooltrust.audit.sinks.jsonl import JsonlSink
+from agent_tooltrust.audit.tamper_proof import chain_entry
 
 _DDL = (
     "CREATE TABLE IF NOT EXISTS audit_entries ("
@@ -47,7 +48,9 @@ _DDL = (
     "policy_version TEXT NOT NULL, "
     "dry_run BOOLEAN NOT NULL DEFAULT FALSE, "
     "escalation_id TEXT, "
-    "approver TEXT"
+    "approver TEXT, "
+    "chain_hash TEXT, "
+    "prev_hash TEXT"
     ")"
 )
 
@@ -55,23 +58,25 @@ _INSERT = (
     "INSERT INTO audit_entries (session_id, call_id, timestamp, tool, tool_category, "
     "action, action_class, environment, data_class, agent_id, agent_class, "
     "decision, criticality, reason_code, explanation, factors, policy_version, "
-    "dry_run, escalation_id, approver) "
-    "VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)"
+    "dry_run, escalation_id, approver, chain_hash, prev_hash) "
+    "VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)"
 )
 
 _SELECT = (
     "SELECT session_id, call_id, timestamp, tool, tool_category, action, action_class, "
     "environment, data_class, agent_id, agent_class, decision, criticality, "
     "reason_code, explanation, factors, policy_version, dry_run, escalation_id, "
-    "approver FROM audit_entries"
+    "approver, chain_hash, prev_hash FROM audit_entries"
 )
 
 _SELECT_SESSION = (
     "SELECT session_id, call_id, timestamp, tool, tool_category, action, action_class, "
     "environment, data_class, agent_id, agent_class, decision, criticality, "
     "reason_code, explanation, factors, policy_version, dry_run, escalation_id, "
-    "approver FROM audit_entries WHERE session_id = $1"
+    "approver, chain_hash, prev_hash FROM audit_entries WHERE session_id = $1"
 )
+
+_SELECT_CHAIN = "SELECT chain_hash FROM audit_entries ORDER BY id DESC LIMIT 1"
 
 
 def _require_asyncpg() -> None:
@@ -145,29 +150,45 @@ class PostgresSink(AuditSink):
             return
         async with self._pool.acquire() as conn:
             await conn.execute(_DDL)
+            await self._migrate(conn)
+            prev_row = await conn.fetchrow(_SELECT_CHAIN)
+            prev_hash = prev_row[0] if prev_row else None
+            chained = chain_entry(entry, prev_hash)
             await conn.execute(
                 _INSERT,
-                entry.session_id,
-                entry.call_id,
-                entry.timestamp,
-                entry.tool,
-                entry.tool_category,
-                entry.action,
-                entry.action_class,
-                entry.environment,
-                entry.data_class,
-                entry.agent_id,
-                entry.agent_class,
-                entry.decision,
-                entry.criticality,
-                entry.reason_code,
-                entry.explanation,
-                json.dumps([f.to_dict() for f in entry.factors]),
-                entry.policy_version,
-                entry.dry_run,
-                entry.escalation_id,
-                entry.approver,
+                chained.session_id,
+                chained.call_id,
+                chained.timestamp,
+                chained.tool,
+                chained.tool_category,
+                chained.action,
+                chained.action_class,
+                chained.environment,
+                chained.data_class,
+                chained.agent_id,
+                chained.agent_class,
+                chained.decision,
+                chained.criticality,
+                chained.reason_code,
+                chained.explanation,
+                json.dumps([f.to_dict() for f in chained.factors]),
+                chained.policy_version,
+                chained.dry_run,
+                chained.escalation_id,
+                chained.approver,
+                chained.chain_hash,
+                chained.prev_hash,
             )
+
+    async def _migrate(self, conn: Any) -> None:
+        """Add the tamper-chain columns to tables created before v0.2."""
+        record = await conn.fetchrow("SELECT * FROM audit_entries LIMIT 0")
+        existing = {k for k in record.keys()}
+        for column in ("chain_hash", "prev_hash"):
+            if column not in existing:
+                await conn.execute(
+                    f"ALTER TABLE audit_entries ADD COLUMN IF NOT EXISTS {column} TEXT"
+                )
 
     def query(self, session_id: str | None = None) -> list[AuditEntry]:
         _require_asyncpg()

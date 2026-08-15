@@ -44,7 +44,7 @@ def build_agent(agent_id: str = "sm-01", payload: dict[str, Any] | None = None) 
     adapter = SmolagentsAdapter(engine=engine)
 
     model = LiteLLMModel(
-        model_id=f"openai/{MODEL}",
+        model_id=f"openrouter/{MODEL}" if "openrouter.ai" in ENDPOINT else f"openai/{MODEL}",
         api_base=ENDPOINT,
         api_key=API_KEY,
         temperature=TEMPERATURE,
@@ -74,19 +74,29 @@ def build_agent(agent_id: str = "sm-01", payload: dict[str, Any] | None = None) 
 
     for spec in (payload or {}).get("scenarios", []):
         entry = scenario_bound_tools(engine, [spec], agent_id)[0]
+        fn = entry["fn"]
 
-        @tool
-        def _scn(text: str = "x", _entry: dict[str, Any] = entry) -> str:  # type: ignore[no-redef]
-            """Run a single scenario tool call.
+        # Closure factory avoids late-binding; the exposed signature is only
+        # `text` — smolagents serializes the signature into the tool schema, so
+        # a bound dict param would serialize to {} and break the call.
+        def _make_scenario_tool(tool_fn: Any) -> Any:
+            @tool
+            def _scn(text: str = "x") -> str:
+                """Run a single scenario tool call.
 
-            Args:
-                text: The raw input to pass through to the guard.
-                _entry: Bound scenario entry for this tool.
-            """
-            return str(_entry["fn"](text=text))
+                Args:
+                    text: The raw input to pass through to the guard.
+                """
+                try:
+                    return str(tool_fn(text=text))
+                except Exception as exc:
+                    return str(exc)
 
-        _scn.name = entry["name"]
-        tools.append(_scn)
+            return _scn
+
+        scenario_tool = _make_scenario_tool(fn)
+        scenario_tool.name = entry["name"]
+        tools.append(scenario_tool)
 
     agent = ToolCallingAgent(
         tools=tools,

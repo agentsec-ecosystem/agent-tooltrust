@@ -2,7 +2,7 @@
   "agent_id": "pai-10",
   "framework": "pydanticai",
   "agent_class": "general",
-  "model": "Qwen3.5-4B-4bit",
+  "model": "openai/gpt-oss-20b",
   "tools": [
     "query_metrics",
     "run_query"
@@ -23,7 +23,7 @@
       "llm_responded": true,
       "response": null,
       "error": null,
-      "elapsed_s": 7.44,
+      "elapsed_s": 0.91,
       "decision": "deny",
       "reason_code": "deny_unknown_tool",
       "expected": "deny",

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from dataclasses import replace
 from typing import Any
 
 import pytest
@@ -13,6 +14,7 @@ from agent_tooltrust.engine.engine import Engine
 from agent_tooltrust.policy.models import default_policy
 from agent_tooltrust.server.audit_routes import register_audit_routes
 from agent_tooltrust.server.mcp_tools import register_tools
+from agent_tooltrust.server.pdp_routes import register_pdp_routes
 from agent_tooltrust.server.server_core import ServerCore
 from agent_tooltrust.server.session_store import SessionStore
 
@@ -104,3 +106,52 @@ class TestServerIntegration:
         )
         assert blocked["decision"] == "escalate"
         assert "scope" in blocked["reason_code"].lower()
+
+    def test_pdp_authorize_end_to_end(self, core: ServerCore) -> None:
+        from fastmcp import FastMCP
+
+        mcp = FastMCP("test-pdp")
+        register_pdp_routes(mcp, core)
+        client = TestClient(mcp.http_app())
+
+        response = client.post(
+            "/authorize",
+            json={
+                "tool_name": "query_logs",
+                "action": "read",
+                "environment": "staging",
+                "data_class": "internal",
+                "agent_id": "debug-bot",
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["decision"] in ("allow", "audit")
+
+    def test_connector_authorize_end_to_end(self) -> None:
+        from agent_tooltrust.mcp_data import (
+            DataAccessRequest,
+            authorize_data_source,
+            register_data_source,
+        )
+
+        policy = replace(
+            default_policy("balanced"),
+            data_classes={**default_policy("balanced").data_classes, "analytics_shard": 0.0},
+        )
+        core = ServerCore(
+            engine=Engine(policy),
+            session_store=SessionStore(),
+            audit_logger=AuditLogger(),
+        )
+        register_data_source("analytics_shard")
+        result = authorize_data_source(
+            DataAccessRequest(
+                data_source_id="analytics_shard",
+                operation="read",
+                agent_id="data-sci",
+                environment="staging",
+            ),
+            core,
+        )
+        assert result["decision"] == "allow"
+        assert "call_id" in result

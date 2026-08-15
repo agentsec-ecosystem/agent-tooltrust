@@ -15,14 +15,19 @@ from typing import NoReturn
 
 from agent_tooltrust import __version__
 from agent_tooltrust.cli import (
+    analytics,
     audit,
     baseline,
+    calibrate,
     check,
     diff,
+    escalation,
     evaluate,
     explain,
     field_test,
     init,
+    pack,
+    policy,
     report,
     scan,
     swebench,
@@ -45,6 +50,8 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
     init.add_parser(subparsers)
+    analytics.add_parser(subparsers)
+    calibrate.add_parser(subparsers)
     check.add_parser(subparsers)
     baseline.add_parser(subparsers)
     diff.add_parser(subparsers)
@@ -56,7 +63,10 @@ def _build_parser() -> argparse.ArgumentParser:
     test.add_parser(subparsers)
     report.add_parser(subparsers)
     swebench.add_parser(subparsers)
+    pack.add_parser(subparsers)
+    policy.add_parser(subparsers)
     serve_cli.add_parser(subparsers)
+    escalation.add_parser(subparsers)
     return parser
 
 

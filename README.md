@@ -8,7 +8,7 @@
 [![PyPI](https://img.shields.io/pypi/v/agent-tooltrust)](https://pypi.org/project/agent-tooltrust/)
 [![Ruff](https://img.shields.io/badge/code%20style-ruff-000000)](https://github.com/astral-sh/ruff)
 [![Type checked](https://img.shields.io/badge/mypy-strict-blue)](https://github.com/python/mypy)
-[![Coverage](https://img.shields.io/badge/coverage-85%25-yellowgreen)](https://github.com/deghosal-2026/agent-tooltrust/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-91%25-brightgreen)](https://github.com/deghosal-2026/agent-tooltrust/actions/workflows/ci.yml)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![OpenSSF Best Practices](https://img.shields.io/badge/OpenSSF-Silver-informational)](https://www.bestpractices.dev)
 
@@ -17,8 +17,8 @@
 </div>
 
 > [!NOTE]
-> **Status:** v0.1.1 shipped and published to [PyPI](https://pypi.org/project/agent-tooltrust/) · `pip install agent-tooltrust`
-> **Repo:** Private → public at v0.1.0 ship.
+> **Status:** v0.2.0 shipped and published to [PyPI](https://pypi.org/project/agent-tooltrust/) · `pip install agent-tooltrust`
+> **License:** MIT
 
 ---
 
@@ -91,12 +91,15 @@ tooltrust init --posture permissive # Local dev, sandboxes
 |------|-----|----------|
 | **Python library** | `pip install agent-tooltrust`; `engine.evaluate(...)` in-process | Zero infra, 15-line integration |
 | **MCP client wrapper** | Proxies `tools/call` through the engine | Agents using MCP tool servers |
-| **MCP server** | ToolTrust exposes `evaluate` + `explain` as MCP tools | Any MCP agent queries authorization |
+| **MCP server** | ToolTrust exposes `evaluate` + `explain` + `authorize_data_source` as MCP tools | Any MCP agent queries authorization |
+| **HTTP PDP** | `POST /authorize` returns Decision JSON — language-agnostic | Non-Python fleets, gateways |
+| **CLI** | `tooltrust evaluate`, `audit`, `analytics sessions`, `calibrate report`, `baseline check`, `pack list` | Shell, CI gates |
+| **OPAL sync** | Distributed policy propagation to all PDP nodes | Multi-instance fleets |
 | **Framework adapters** | Decorators/guards for LangGraph, PydanticAI, OpenAI Agents SDK, CrewAI | Framework-native integration |
 
 ---
 
-## Quickstart (v0.1.0 preview)
+## Quickstart
 
 ```bash
 pip install agent-tooltrust
@@ -162,9 +165,9 @@ ToolTrust targets three concrete, audit-level security baselines:
 
 | Baseline | v0.1 | v0.2 | v0.3 |
 |----------|------|------|------|
-| **OWASP Agentic AI Top 10** | 5/10 covered | 9/10 covered | 10/10 full |
-| **OpenSSF Best Practices** | Silver | Silver+ | Gold aspirational |
-| **ToolTrust Security Baseline** | Essential | Hardened | Certified |
+| **OWASP Agentic AI Top 10** | 5/10 covered | **10/10 covered** | 10/10 full |
+| **OpenSSF Best Practices** | Silver | **Silver+** | Gold aspirational |
+| **ToolTrust Security Baseline** | Essential | **Hardened** (15/15 checks) | Certified |
 
 See [SECURITY.md](SECURITY.md) for the full OWASP mapping and [SECURITY_BASELINE.md](docs/SECURITY_BASELINE.md) for the tier-by-tier checklist. Verify your posture locally with `tooltrust baseline check essential`.
 
@@ -178,16 +181,25 @@ See [SECURITY.md](SECURITY.md) for the full OWASP mapping and [SECURITY_BASELINE
 | [Architecture](docs/architecture/architecture-v0.1.0.md) | System design, 5-stage pipeline, components, data model |
 | [Design Decisions](docs/design/design-decisions.md) | 14 recorded design decisions with rationale |
 | [API Reference](docs/reference/api.md) | Engine API, CLI, MCP tools, framework adapters, SWE-bench integration, error codes |
-| [Release Notes v0.1.0](docs/reference/release-notes-v0.1.0.md) | What shipped in v0.1.0, quality gates, known limitations, roadmap |
+| [Release Notes v0.2.0](docs/reference/release-notes-v0.2.0.md) | What shipped in v0.2.0, quality gates, known limitations, roadmap |
+| [Migration Guide v0.1→v0.2](docs/design/migration-guide-v0.2.0.md) | Upgrading from 0.1.x: no breaking changes, what's new, redaction notes |
 | [CHANGELOG](CHANGELOG.md) | Keep a Changelog–formatted history of all releases |
 | [Demo Scenario](docs/design/demo-scenario.md) | 5-call narrative: allow→audit→escalate→deny→replan |
 | [Demo Agent Example](examples/demo-agent/README.md) | Runnable demo agent + adversarial variant, with captured output |
 | [DB Schema](docs/architecture/db-schema-sketch.md) | Postgres + SQLite audit tables, JSONL format |
 | [WBS](docs/wbs/README.md) | 6 files, 18 milestones across v0.1-v0.4 |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup and guidelines |
-| [SECURITY.md](SECURITY.md) | Vulnerability reporting and security design |
-| [Security Baseline](docs/SECURITY_BASELINE.md) | Essential tier checklist + `tooltrust baseline check` |
+| [SECURITY.md](SECURITY.md) | Vulnerability reporting, OWASP 10/10 coverage, OpenSSF status |
+| [Security Baseline](docs/SECURITY_BASELINE.md) | Essential + Hardened tier checklist + `tooltrust baseline check` |
 | [GOVERNANCE.md](GOVERNANCE.md) | Project decision-making and releases |
+| [Fleet Deployment Guide](docs/design/fleet-deployment-guide.md) | Multi-node PDP, OPAL sync, nginx LB, rollback |
+| [PDP + MCP-Data Design](docs/design/agentcontrolplane-mcp-data-design.md) | /authorize endpoint and MCP-Data connector architecture |
+| [Session Analytics Design](docs/design/session-analytics-design.md) | Cross-session deny→allow transition detection |
+| [Audit Redaction Design](docs/design/audit-redaction-design.md) | PII/secret redaction in audit log |
+| [Score Calibration Design](docs/design/score-calibration-design.md) | Counterfactual thresholds, false rates, shadow mode |
+| [Stale-Credential Design](docs/design/stale-credential-design.md) | Distinct audit tag for credential-rejected calls |
+| [Field Test Report v0.2.0](docs/field-test/FIELD_TEST_REPORT-v0.2.0.md) | Plan A 83/83 (100%), Plan B 116/123 (94%), replan 8/8, 4-model comparison, observations + lessons |
+| [Release Checklist](docs/wbs/v0.2.0/release-checklist.md) | 17-step release checklist for v0.2.0 |
 
 ---
 
@@ -195,8 +207,8 @@ See [SECURITY.md](SECURITY.md) for the full OWASP mapping and [SECURITY_BASELINE
 
 | Version | Scope | Ship target |
 |---------|-------|-------------|
-| **v0.1.0** | Core engine, 6 adapters, MCP server, 3 posture presets, YAML+OPA/Rego dual backend, audit (JSONL/SQLite/Postgres), CLI, field tests (10 agents, 300 assertions), demo agent, OpenSSF Silver, OWASP 5/10, SWE-bench wrapper | ~Week 5-6 |
-| **v0.2.0** | Session/context state, argument validation, escalation round-trip, tool scanning, tool hiding, CI policy suite, rate limits, OWASP 9/10, ToolTrust Hardened | TBD |
+| **v0.1.0** | Core engine, 6 adapters, MCP server, 3 posture presets, YAML+OPA/Rego dual backend, audit (JSONL/SQLite/Postgres), CLI, field tests (10 agents, 300 assertions), demo agent, OpenSSF Silver, OWASP 5/10, SWE-bench wrapper | ✅ Shipped |
+| **v0.2.0** | Session replay + audit replay, PDP /authorize service, MCP-Data connector, session analytics, audit redaction, stale-credential tagging, score calibration, OPAL sync, policy packs catalog, fleet deployment guide, hardened security baseline (15/15), OWASP 10/10, 91% coverage | ✅ Shipped |
 | **v0.3.0** | Output inspection, dispatcher safety, child delegation, tamper-evident audit, policy packs catalog, OWASP 10/10, Certified baseline | TBD |
 | **v0.4.0** | Governance reports, distributed policy sync, OpenSSF Gold aspirational | TBD |
 

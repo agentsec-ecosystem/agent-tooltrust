@@ -1,0 +1,13 @@
+fixtures:
+  - tool: describe_instances
+    action: describe
+    environment: production
+    data_class: internal
+    agent_id: monitor
+    expected: allow
+  - tool: create_ec2
+    action: create
+    environment: production
+    data_class: internal
+    agent_id: engineer
+    expected: escalate

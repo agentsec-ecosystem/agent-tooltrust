@@ -130,3 +130,93 @@ class TestCLIIntegration:
         result = _run("evaluate")
         assert result.returncode != 0
         assert "required" in result.stderr.lower() or "error" in result.stderr.lower()
+
+    def test_pack_validate_ok(self) -> None:
+        import shutil
+        import tempfile as _temp
+
+        d = Path(_temp.mkdtemp())
+        (d / "tools.yaml").write_text('version: "1.0.0"\nposture: balanced\n')
+        try:
+            result = _run("pack", "validate", str(d))
+            assert result.returncode == 0
+            assert "ok" in result.stdout
+        finally:
+            shutil.rmtree(d)
+
+    def test_pack_validate_rejects_malformed(self) -> None:
+        import shutil
+        import tempfile as _temp
+
+        d = Path(_temp.mkdtemp())
+        (d / "tools.yaml").write_text('version: "1.0.0"\nbogus: 1\n')
+        try:
+            result = _run("pack", "validate", str(d))
+            assert result.returncode != 0
+        finally:
+            shutil.rmtree(d)
+
+    def test_pack_test_passes(self) -> None:
+        import shutil
+        import tempfile as _temp
+
+        d = Path(_temp.mkdtemp())
+        (d / "tools.yaml").write_text('version: "1.0.0"\nposture: balanced\n')
+        (d / "tests.yaml").write_text(
+            'version: "1.0.0"\nfixtures:\n'
+            "  - name: denied\n    tool: assign_role\n    action: grant\n"
+            "    environment: production\n    data_class: restricted\n"
+            "    agent_id: release-bot\n    expect: deny\n"
+        )
+        try:
+            result = _run("pack", "test", str(d))
+            assert result.returncode == 0
+            assert "1/1 passed" in result.stdout
+        finally:
+            shutil.rmtree(d)
+
+    def test_pack_test_reports_failure(self) -> None:
+        import shutil
+        import tempfile as _temp
+
+        d = Path(_temp.mkdtemp())
+        (d / "tools.yaml").write_text('version: "1.0.0"\nposture: balanced\n')
+        (d / "tests.yaml").write_text(
+            'version: "1.0.0"\nfixtures:\n'
+            "  - name: wrongly-denied\n    tool: query_logs\n    action: read\n"
+            "    environment: development\n    data_class: public\n"
+            "    agent_id: release-bot\n    expect: deny\n"
+        )
+        try:
+            result = _run("pack", "test", str(d))
+            assert result.returncode == 1
+            assert "FAIL" in result.stdout
+        finally:
+            shutil.rmtree(d)
+
+    def test_evaluate_allow_with_obligation(self) -> None:
+        import shutil
+        import tempfile as _temp
+
+        d = Path(_temp.mkdtemp())
+        policy = d / "policy.yaml"
+        policy.write_text(
+            'version: "1.0.0"\nrules:\n'
+            "  - decision: allow\n    action: delete\n"
+            "    environment: production\n    obligations: [first_use_signoff]\n"
+        )
+        try:
+            result = _run(
+                "evaluate",
+                "--tool", "drop_database",
+                "--action", "delete",
+                "--env", "production",
+                "--data", "restricted",
+                "--agent", "release-bot",
+                "--policy", str(policy),
+            )
+            assert result.returncode == 0
+            assert "ALLOW_WITH_OBLIGATION" in result.stdout
+            assert "Obligations" in result.stdout
+        finally:
+            shutil.rmtree(d)

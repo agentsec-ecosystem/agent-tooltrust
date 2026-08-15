@@ -118,3 +118,131 @@ class TestEngineAudit:
         entries = sink.query()
         assert len(entries) == 1
         assert entries[0].tool == "deploy_service"
+
+
+def _policy_with_args_policy(args_policy):
+    from agent_tooltrust.policy.models import Policy
+
+    base = default_policy("balanced")
+    return Policy(
+        version=base.version,
+        posture=base.posture,
+        environments=base.environments,
+        data_classes=base.data_classes,
+        risk_weights=base.risk_weights,
+        rules=base.rules,
+        agents=base.agents,
+        args_policy=args_policy,
+    )
+
+
+def _policy_with_obligation(obligations):
+    from agent_tooltrust.policy.models import Policy, Rule
+
+    base = default_policy("balanced")
+    return Policy(
+        version=base.version,
+        posture=base.posture,
+        environments=base.environments,
+        data_classes=base.data_classes,
+        risk_weights=base.risk_weights,
+        rules=(
+            Rule(
+                decision="allow",
+                action="delete",
+                environment="production",
+                obligations=obligations,
+            ),
+        ),
+        agents=base.agents,
+    )
+
+
+class TestEarlyReturnDeniesAreAudited:
+    """Argument-policy (1b) and obligation-failure (4b) denies must be
+    recorded in the audit trail and must still honor dry-run semantics."""
+
+    def test_argument_policy_deny_is_audited(self, tmp_path):
+        from agent_tooltrust.engine.argument_policy import ArgumentSpec
+
+        sink = JsonlSink(str(tmp_path / "audit.jsonl"))
+        policy = _policy_with_args_policy(
+            {"drop_database": {"filter": ArgumentSpec(forbid=("",))}}
+        )
+        engine = Engine(policy, audit_logger=AuditLogger(sink))
+        decision = engine.evaluate(
+            tool_name="drop_database",
+            action="delete",
+            environment="production",
+            data_class="restricted",
+            agent_id="release-bot",
+            arguments={"filter": ""},
+        )
+        assert decision.decision == "deny"
+        assert decision.reason_code == "deny_argument_policy"
+        entries = sink.query()
+        assert len(entries) == 1
+        assert entries[0].decision == "deny"
+        assert entries[0].reason_code == "deny_argument_policy"
+
+    def test_argument_policy_deny_respects_dry_run(self, tmp_path):
+        from agent_tooltrust.engine.argument_policy import ArgumentSpec
+
+        sink = JsonlSink(str(tmp_path / "audit.jsonl"))
+        policy = _policy_with_args_policy(
+            {"drop_database": {"filter": ArgumentSpec(forbid=("",))}}
+        )
+        engine = Engine(policy, dry_run=True, audit_logger=AuditLogger(sink))
+        decision = engine.evaluate(
+            tool_name="drop_database",
+            action="delete",
+            environment="production",
+            data_class="restricted",
+            agent_id="release-bot",
+            arguments={"filter": ""},
+        )
+        assert decision.decision == "allow"
+        assert decision.dry_run is True
+        entries = sink.query()
+        assert len(entries) == 1
+        assert entries[0].decision == "deny"
+        assert entries[0].reason_code == "deny_argument_policy"
+
+    def test_obligation_failure_deny_is_audited(self, tmp_path):
+        sink = JsonlSink(str(tmp_path / "audit.jsonl"))
+        engine = Engine(
+            _policy_with_obligation(("no_such_obligation",)),
+            audit_logger=AuditLogger(sink),
+        )
+        decision = engine.evaluate(
+            tool_name="drop_database",
+            action="delete",
+            environment="production",
+            data_class="restricted",
+            agent_id="release-bot",
+        )
+        assert decision.decision == "deny"
+        assert decision.reason_code == "deny_obligation_failed"
+        entries = sink.query()
+        assert len(entries) == 1
+        assert entries[0].decision == "deny"
+
+    def test_obligation_failure_deny_respects_dry_run(self, tmp_path):
+        sink = JsonlSink(str(tmp_path / "audit.jsonl"))
+        engine = Engine(
+            _policy_with_obligation(("no_such_obligation",)),
+            dry_run=True,
+            audit_logger=AuditLogger(sink),
+        )
+        decision = engine.evaluate(
+            tool_name="drop_database",
+            action="delete",
+            environment="production",
+            data_class="restricted",
+            agent_id="release-bot",
+        )
+        assert decision.decision == "allow"
+        assert decision.dry_run is True
+        entries = sink.query()
+        assert len(entries) == 1
+        assert entries[0].decision == "deny"

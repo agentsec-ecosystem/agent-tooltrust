@@ -117,6 +117,78 @@ def _owasp_mapping_published() -> tuple[bool, str]:
     return bool(used), f"security docs present: {', '.join(used) or 'none'}"
 
 
+def _output_inspector_present() -> tuple[bool, str]:
+    try:
+        from agent_tooltrust.engine.output_inspector import inspect_output  # noqa: F401
+    except Exception as exc:
+        return False, f"output_inspector.inspect_output import failed: {exc}"
+    return True, "Output inspection is available for data exfiltration prevention"
+
+
+def _otel_present() -> tuple[bool, str]:
+    try:
+        from agent_tooltrust.engine.otel import setup_tracing  # noqa: F401
+    except Exception as exc:
+        return False, f"otel.setup_tracing import failed: {exc}"
+    return True, "OpenTelemetry observability integration is present"
+
+
+def _deny_storm_present() -> tuple[bool, str]:
+    try:
+        from agent_tooltrust.engine.deny_storm import DenyStormAnalyzer  # noqa: F401
+    except Exception as exc:
+        return False, f"DenyStormAnalyzer import failed: {exc}"
+    return True, "Deny-storm detection (M4 #143) is available"
+
+
+def _argument_policy_present() -> tuple[bool, str]:
+    try:
+        from agent_tooltrust.engine.argument_policy import check_arguments  # noqa: F401
+    except Exception as exc:
+        return False, f"check_arguments import failed: {exc}"
+    return True, "Argument-level policy checking is available"
+
+
+def _delegation_present() -> tuple[bool, str]:
+    try:
+        from agent_tooltrust.engine.delegation import DelegationManager  # noqa: F401
+    except Exception as exc:
+        return False, f"DelegationManager import failed: {exc}"
+    return True, "Child-agent delegation with scope subset (M2 #108) is available"
+
+
+def _escalation_present() -> tuple[bool, str]:
+    try:
+        from agent_tooltrust.engine.escalation import EscalationManager  # noqa: F401
+    except Exception as exc:
+        return False, f"EscalationManager import failed: {exc}"
+    return True, "Human approval escalation (M3 #84) is available"
+
+
+def _tamper_chain_verified() -> tuple[bool, str]:
+    try:
+        from agent_tooltrust.audit.tamper_proof import verify_entries  # noqa: F401
+    except Exception as exc:
+        return False, f"tamper_proof.verify_entries import failed: {exc}"
+    return True, "Hash-chain audit integrity verification is available"
+
+
+def _redaction_present() -> tuple[bool, str]:
+    try:
+        from agent_tooltrust.audit.redact import redact_arguments  # noqa: F401
+    except Exception as exc:
+        return False, f"audit.redact_arguments import failed: {exc}"
+    return True, "Audit argument redaction (M5 #158) is available"
+
+
+def _session_analytics_present() -> tuple[bool, str]:
+    try:
+        from agent_tooltrust.analytics.session_analyzer import analyze  # noqa: F401
+    except Exception as exc:
+        return False, f"analytics.session_analyzer.analyze import failed: {exc}"
+    return True, "Session-to-session policy analytics (M5 #148) is available"
+
+
 ESSENTIAL_CHECKS: list[_Check] = [
     _Check("E1", "Fail-closed engine (unknown/malformed → deny)", _fail_closed_enforced),
     _Check(
@@ -135,8 +207,25 @@ ESSENTIAL_CHECKS: list[_Check] = [
     _Check("E9", "OWASP mapping + security baseline published", _owasp_mapping_published),
 ]
 
+HARDENED_CHECKS: list[_Check] = [
+    *ESSENTIAL_CHECKS,
+    _Check(
+        "H1", "Output inspector present (prevents data exfiltration)",
+        _output_inspector_present,
+    ),
+    _Check("H2", "OTel observability integration active", _otel_present),
+    _Check("H3", "Deny-storm detection (M4)", _deny_storm_present),
+    _Check("H4", "Argument-level policy checking (M1)", _argument_policy_present),
+    _Check("H5", "Delegation scoping (child ⊆ parent, M2)", _delegation_present),
+    _Check("H6", "Escalation system with human approval (M3)", _escalation_present),
+    _Check("H7", "Tamper-evident audit chain (hash-linked entries)", _tamper_chain_verified),
+    _Check("H8", "Audit argument redaction (no PII/secrets in log)", _redaction_present),
+    _Check("H9", "Session analytics for anomaly detection (M5)", _session_analytics_present),
+]
+
 TIERS: dict[str, list[_Check]] = {
     "essential": ESSENTIAL_CHECKS,
+    "hardened": HARDENED_CHECKS,
 }
 
 

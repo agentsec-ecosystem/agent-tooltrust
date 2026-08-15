@@ -168,10 +168,15 @@ KNOWN_TOOLS: dict[str, str] = {
     "push_changes": "git",
     "force_push": "git",
     "clone_repo": "git",
+    "git_push": "git",
+    "git_pull": "git",
+    "git_status": "git",
     # http
     "http_get": "http",
     "http_post": "http",
     "http_patch": "http",
+    "http_put": "http",
+    "http_delete": "http",
     # iam
     "create_api_key": "iam",
     "assign_role": "iam",
@@ -231,3 +236,19 @@ def taxonomy_summary() -> str:
     for domain in DOMAINS:
         lines.append(f"  {domain}: {len(DOMAIN_VERBS[domain])} verbs")
     return "\n".join(lines) + "\n"
+
+
+def register_tool(tool: str, domain: str) -> None:
+    """Register a runtime tool→domain mapping (used by connectors).
+
+    Dynamic tool names such as ``mcp_data.<source_id>`` are resolved by the
+    normalize stage through the same ``KNOWN_TOOLS`` map as built-in tools.
+    Registering an unknown tool keeps the fail-closed guarantee intact: a tool
+    that is *not* registered still evaluates to ``deny``.
+    """
+    name = tool.strip()
+    if not name:
+        raise ValueError("tool must be a non-blank name")
+    if domain not in DOMAINS:
+        raise ValueError(f"unknown domain {domain!r}; known: {sorted(DOMAINS)}")
+    KNOWN_TOOLS[name] = domain

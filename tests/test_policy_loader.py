@@ -67,6 +67,32 @@ class TestLoadsAndMerges:
         policy = load_policy_text('version: "2.0.0"')
         assert policy.rules == default_policy("balanced").rules
 
+    def test_conditions_survive_load(self):
+        policy = load_policy_text(
+            'version: "2.0.0"\nrules:\n'
+            "  - decision: deny\n    conditions:\n"
+            "      - {field: environment, op: eq, value: production}\n"
+            "      - {op: not, condition: {field: data_class, value: public}}\n"
+        )
+        rule = policy.rules[0]
+        assert rule.decision == "deny"
+        assert len(rule.conditions) == 2
+
+        from agent_tooltrust.types import NormalizedCall
+
+        call = NormalizedCall(
+            tool="deploy_service", tool_category="cloud", action="write",
+            action_class="write", environment="production", data_class="internal",
+            agent_id="release-bot", agent_class="ci-bot",
+        )
+        assert rule.matches(call)
+        not_public = NormalizedCall(
+            tool="deploy_service", tool_category="cloud", action="write",
+            action_class="write", environment="production", data_class="public",
+            agent_id="release-bot", agent_class="ci-bot",
+        )
+        assert not rule.matches(not_public)
+
     def test_reason_defaults_to_empty(self):
         policy = load_policy_text('version: "2.0.0"\nrules:\n  - decision: deny\n')
         assert policy.rules[0].reason == ""
@@ -184,3 +210,119 @@ def test_loads_from_real_file(tmp_path):
     assert policy.version == "3.1.4"
     assert policy.environments == default.environments
     assert policy.rules == default.rules
+
+
+class TestHidingTools:
+    """M1 #88: ``tools`` section with ``hidden_for`` round-trips to
+    ``Policy.tool_visibility`` and drives discovery-time capabilities."""
+
+    TEXT = """\
+version: "2.0.0"
+tools:
+  - name: delete_instance
+    hidden_for: [readonly]
+  - name: read_secrets
+    hidden_for: [readonly]
+  - name: create_api_key
+    hidden_for: [engineer, readonly]
+"""
+
+    def test_tools_section_round_trips(self):
+        policy = load_policy_text(self.TEXT)
+        assert policy.tool_visibility["delete_instance"]["hidden_for"] == ("readonly",)
+        assert policy.tool_visibility["create_api_key"]["hidden_for"] == (
+            "engineer",
+            "readonly",
+        )
+
+    def test_empty_tools_defaults_to_no_hiding(self):
+        assert load_policy_text('version: "2.0.0"').tool_visibility == {}
+
+    def test_unknown_tool_key_rejected(self):
+        with pytest.raises(PolicyParseError):
+            load_policy_text(
+                'version: "2.0.0"\ntools:\n  - name: delete_instance\n    bogus: 1\n'
+            )
+
+
+class TestArgsPolicyLoads:
+    """M1 #142: ``tools[].args_policy`` round-trips into ``Policy.args_policy``."""
+
+    TEXT = """\
+version: "2.0.0"
+tools:
+  - name: db.delete
+    args_policy:
+      filter: {required: true, forbid: ["*", "1=1"]}
+      row_limit: {max: 1000}
+      target_env: {allowed: [staging, prod]}
+"""
+
+    def test_args_policy_survives_load(self):
+        policy = load_policy_text(self.TEXT)
+        spec = policy.args_policy["db.delete"]["filter"]
+        assert spec.required is True
+        assert spec.forbid == ("*", "1=1")
+        assert policy.args_policy["db.delete"]["row_limit"].max == 1000
+        assert policy.args_policy["db.delete"]["target_env"].allowed == ("staging", "prod")
+
+    def test_no_tools_defaults_to_empty(self):
+        assert load_policy_text('version: "2.0.0"').args_policy == {}
+
+
+class TestObligationsLoad:
+    """M1 #147: rule ``obligations`` round-trips into ``Rule.obligations``."""
+
+    def test_obligations_survive_load(self):
+        policy = load_policy_text(
+            'version: "2.0.0"\nrules:\n'
+            "  - decision: allow\n    action: delete\n"
+            "    obligations: [first_use_signoff]\n"
+        )
+        assert policy.rules[0].obligations == ("first_use_signoff",)
+
+    def test_unknown_obligation_rejected_at_load(self):
+        with pytest.raises(PolicyParseError):
+            load_policy_text(
+                'version: "2.0.0"\nrules:\n'
+                "  - decision: allow\n    obligations: [no_such]\n"
+            )
+
+    def test_rules_without_obligations_default_empty(self):
+        policy = load_policy_text(
+            'version: "2.0.0"\nrules:\n  - decision: deny\n    action: grant\n'
+        )
+        assert policy.rules[0].obligations == ()
+
+
+class TestConditionLoadFailuresFailClosed:
+    """Malformed ``conditions`` trees must raise PolicyParseError (fail-closed),
+    never a raw ValueError escaping the loader."""
+
+    def test_unknown_operator_is_policy_parse_error(self):
+        with pytest.raises(PolicyParseError):
+            load_policy_text(
+                'version: "2.0.0"\nrules:\n'
+                "  - decision: deny\n    conditions: [{op: xor, field: environment}]\n"
+            )
+
+    def test_not_without_child_is_policy_parse_error(self):
+        with pytest.raises(PolicyParseError):
+            load_policy_text(
+                'version: "2.0.0"\nrules:\n'
+                "  - decision: deny\n    conditions: [{op: not}]\n"
+            )
+
+    def test_unknown_condition_field_is_policy_parse_error(self):
+        with pytest.raises(PolicyParseError):
+            load_policy_text(
+                'version: "2.0.0"\nrules:\n'
+                "  - decision: deny\n    conditions: [{field: bogus, value: x}]\n"
+            )
+
+    def test_obligations_on_non_allow_rule_rejected(self):
+        with pytest.raises(PolicyParseError):
+            load_policy_text(
+                'version: "2.0.0"\nrules:\n'
+                "  - decision: escalate\n    obligations: [auto_notify]\n"
+            )

@@ -38,6 +38,24 @@ def _band_for(aggregate: float) -> RiskBand:
     return "low"
 
 
+def counterfactual_threshold(aggregate: float, band: RiskBand) -> float | None:
+    """Nearest band boundary that would change the band and outcome.
+
+    For a score-based decision, this is the next band boundary up (if band
+    is low/medium) or down (if band is high/critical). Returns ``None``
+    for edge bands (low and critical) when there's no boundary to cross.
+    """
+    if band == "low":
+        return 0.25  # low→medium boundary
+    if band == "medium":
+        return 0.5   # medium→high boundary
+    if band == "high":
+        return 0.5   # high→medium boundary (coming down)
+    if band == "critical":
+        return 0.75  # critical→high boundary
+    return None
+
+
 def score(call: NormalizedCall, policy: Policy) -> RiskScore:
     """Compute the 5-dimension risk score for a normalized call."""
     values = {

@@ -6,6 +6,7 @@ a configured sink while never letting a persistence failure reach the caller.
 """
 
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -20,6 +21,17 @@ from agent_tooltrust.engine.engine import Engine
 from agent_tooltrust.engine.normalize import normalize
 from agent_tooltrust.policy.models import default_policy
 from agent_tooltrust.policy.schema import AuditConfig
+
+
+def _unchained(entry: AuditEntry) -> AuditEntry:
+    """Drop the tamper-chain fields so a round-tripped entry compares equal.
+
+    Sinks persist ``chain_hash``/``prev_hash`` at write time (see
+    ``audit.tamper_proof``), so a queried entry legitimately carries them
+    even though the fixture was constructed without them. Content equality
+    is what these round-trip tests care about.
+    """
+    return replace(entry, chain_hash=None, prev_hash=None)
 
 
 @pytest.fixture
@@ -71,8 +83,8 @@ class TestJsonlSink:
         sink = JsonlSink(tmp_path / "audit.jsonl")
         sink.write(entry)
         sink.write(other_entry)
-        assert sink.query("sess_1") == [entry]
-        assert sink.query("sess_2") == [other_entry]
+        assert [_unchained(e) for e in sink.query("sess_1")] == [entry]
+        assert [_unchained(e) for e in sink.query("sess_2")] == [other_entry]
         assert len(sink.query()) == 2
 
     def test_file_contains_one_json_line_per_entry(self, tmp_path, entry):
@@ -110,7 +122,7 @@ class TestJsonlSink:
         path.write_text("not json\n")
         sink = JsonlSink(path)
         sink.write(entry)
-        assert sink.query() == [entry]
+        assert [_unchained(e) for e in sink.query()] == [entry]
 
 
 class TestSqliteSink:
@@ -118,7 +130,7 @@ class TestSqliteSink:
         sink = SqliteSink(tmp_path / "audit.db")
         sink.write(entry)
         sink.write(other_entry)
-        assert sink.query("sess_1") == [entry]
+        assert [_unchained(e) for e in sink.query("sess_1")] == [entry]
         assert len(sink.query()) == 2
 
     def test_table_created_on_first_write(self, tmp_path, entry):
@@ -137,7 +149,7 @@ class TestSqliteSink:
     def test_write_and_query_round_trip(self, tmp_path, entry):
         sink = SqliteSink(tmp_path / "audit.db")
         sink.write(entry)
-        assert sink.query("sess_1")[0] == entry
+        assert _unchained(sink.query("sess_1")[0]) == entry
 
 
 class TestSinkConfig:
@@ -178,7 +190,7 @@ class TestPostgresSink:
         sink._pool = None
         sink._ensure_runtime = lambda: None  # type: ignore[method-assign]
         sink.write(entry)
-        assert sink._fallback.query() == [entry]
+        assert [_unchained(e) for e in sink._fallback.query()] == [entry]
 
     def test_require_asyncpg_raises_when_missing(self, monkeypatch):
 
@@ -198,14 +210,14 @@ class TestPostgresSink:
         sink.write(entry)
         captured = capsys.readouterr()
         assert "write failed" in captured.err
-        assert sink._fallback.query() == [entry]
+        assert [_unchained(e) for e in sink._fallback.query()] == [entry]
 
     def test_query_failure_falls_back(self, tmp_path, entry, capsys):
         sink = PostgresSink("postgresql://u@h/db", fallback_path=str(tmp_path / "fb.jsonl"))
         sink.write(entry)  # goes to fallback (no pool)
         sink._pool = object()
         sink._do_query = lambda s: (_ for _ in ()).throw(RuntimeError("conn refused"))  # type: ignore[method-assign]
-        assert sink.query() == [entry]
+        assert [_unchained(e) for e in sink.query()] == [entry]
         assert "query failed" in capsys.readouterr().err
 
     def test_write_with_pool_runs_insert(self, tmp_path, entry, monkeypatch):
@@ -214,8 +226,46 @@ class TestPostgresSink:
         calls = {}
 
         class FakeConn:
+            def __init__(self):
+                self.columns = {
+                    "session_id",
+                    "call_id",
+                    "timestamp",
+                    "tool",
+                    "tool_category",
+                    "action",
+                    "action_class",
+                    "environment",
+                    "data_class",
+                    "agent_id",
+                    "agent_class",
+                    "decision",
+                    "criticality",
+                    "reason_code",
+                    "explanation",
+                    "factors",
+                    "policy_version",
+                    "dry_run",
+                    "escalation_id",
+                    "approver",
+                    "chain_hash",
+                    "prev_hash",
+                }
+
             async def execute(self, sql, *params):
                 calls.setdefault(sql, []).append(params)
+
+            async def fetchrow(self, sql, *params):
+                if sql.lstrip().upper().startswith("SELECT CHAIN_HASH"):
+                    return None
+                return _Record(self.columns)
+
+        class _Record:
+            def __init__(self, columns):
+                self._columns = columns
+
+            def keys(self):
+                return self._columns
 
         class FakePool:
             def acquire(self):

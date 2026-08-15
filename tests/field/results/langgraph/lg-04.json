@@ -2,7 +2,7 @@
   "agent_id": "lg-04",
   "framework": "langgraph",
   "agent_class": "analyst",
-  "model": "Qwen3.5-4B-4bit",
+  "model": "openai/gpt-oss-20b",
   "tools": [
     "add",
     "get_current_time",
@@ -24,7 +24,7 @@
       "llm_responded": true,
       "response": null,
       "error": null,
-      "elapsed_s": 5.61,
+      "elapsed_s": 2.92,
       "decision": "deny",
       "reason_code": "deny_unknown_tool",
       "expected": "deny",

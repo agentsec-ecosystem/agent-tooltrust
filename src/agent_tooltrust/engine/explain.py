@@ -11,6 +11,7 @@ import secrets
 from typing import cast
 
 from agent_tooltrust.engine.decide import Verdict
+from agent_tooltrust.engine.score import counterfactual_threshold
 from agent_tooltrust.policy.models import Policy
 from agent_tooltrust.types import Criticality, Decision, Factor, NormalizedCall, RiskScore
 
@@ -21,7 +22,31 @@ CRITICALITY_BY_DECISION = {
     "escalate": "high",
     "audit": "medium",
     "allow": "low",
+    "allow_with_obligation": "low",
 }
+
+#: Risk added to a session when an accepted (non-deny) call with ``critical``
+#: severity completes. Mirrored by the live ``SessionStore`` and the audit
+#: replay module (M5 #81) so a replayed session accrues risk identically to
+#: live use. Single source of truth for per-call risk accumulation.
+RISK_CRITICAL_FALLOFF = 1.0
+#: Risk added for any other accepted call.
+RISK_DEFAULT_FALLOFF = 0.25
+
+
+def session_risk_increment(criticality: str) -> float:
+    """The risk added to a session when an accepted (non-deny) call completes.
+
+    Denied calls never add risk; the caller decides whether a call is denied
+    and skips this. ``critical`` costs more than anything else.
+
+    Args:
+        criticality: The decision's severity literal (see ``types.Criticality``).
+
+    Returns:
+        ``RISK_CRITICAL_FALLOFF`` for ``critical``, else ``RISK_DEFAULT_FALLOFF``.
+    """
+    return RISK_CRITICAL_FALLOFF if criticality == "critical" else RISK_DEFAULT_FALLOFF
 
 #: Human-readable explanation templates, keyed by reason_code. The exact
 #: wording is a product decision (approved in demo-scenario.md); only the
@@ -49,6 +74,10 @@ TEMPLATES = {
         "effects. Use a read-only alternative or move to a lower-risk "
         "environment."
     ),
+    "allow_with_obligation": (
+        "{tool} ({action}) in {environment} on {data_class} data is allowed, "
+        "with mandatory obligations enforced by the gatekeeper."
+    ),
 }
 
 
@@ -68,6 +97,8 @@ def _reason_code_for(verdict: Verdict, call: NormalizedCall) -> str:
         if call.environment == "production":
             return "escalate_prod_write"
         return "escalate_high_risk"
+    if verdict.decision == "allow_with_obligation":
+        return "allow_with_obligation"
     return "allow_low_risk"
 
 
@@ -134,9 +165,12 @@ def explain(
     criticality = cast(Criticality, CRITICALITY_BY_DECISION[verdict.decision])
     escalation_id = None
     if verdict.decision == "escalate":
-        # Random 32-bit fingerprint, unique per escalation. The approval
-        # workflow keys on this id, so it must never repeat.
         escalation_id = "esc_" + secrets.token_hex(4)
+    cf = (
+        counterfactual_threshold(risk_score.aggregate, risk_score.band)
+        if verdict.source == "band"
+        else None
+    )
     return Decision(
         decision=verdict.decision,
         criticality=criticality,
@@ -146,4 +180,6 @@ def explain(
         escalation_id=escalation_id,
         dry_run=False,
         policy_version=policy.version,
+        obligations=verdict.obligations,
+        counterfactual=cf,
     )

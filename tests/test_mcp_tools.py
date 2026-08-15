@@ -116,3 +116,56 @@ class TestMCPTools:
         )
         assert result["decision"] == "deny"
         assert "reason_code" in result
+
+    def test_authorize_data_source_returns_decision(
+        self, tools: dict[str, Any], core: ServerCore
+    ) -> None:
+        from agent_tooltrust.mcp_data import register_data_source
+
+        register_data_source("analytics_shard")
+        result = tools["tooltrust.authorize_data_source"](
+            data_source_id="analytics_shard",
+            operation="write",
+            agent_id="data-sci",
+            environment="staging",
+        )
+        assert "decision" in result
+        assert "call_id" in result
+
+    def test_authorize_data_source_unregistered_denies(
+        self, tools: dict[str, Any]
+    ) -> None:
+        result = tools["tooltrust.authorize_data_source"](
+            data_source_id="never_registered_source",
+            operation="write",
+            agent_id="data-sci",
+            environment="staging",
+        )
+        assert result["decision"] == "deny"
+
+    def test_authorize_data_source_consistency(
+        self, tools: dict[str, Any], core: ServerCore
+    ) -> None:
+        from agent_tooltrust.mcp_data import (
+            DataAccessRequest,
+            authorize_data_source,
+            register_data_source,
+        )
+
+        register_data_source("analytics_shard")
+        via_tool = tools["tooltrust.authorize_data_source"](
+            data_source_id="analytics_shard",
+            operation="read",
+            agent_id="data-sci",
+            environment="staging",
+        )
+        via_lib = authorize_data_source(
+            DataAccessRequest(
+                data_source_id="analytics_shard",
+                operation="read",
+                agent_id="data-sci",
+                environment="staging",
+            ),
+            core,
+        )
+        assert via_tool["decision"] == via_lib["decision"]

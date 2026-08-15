@@ -13,6 +13,8 @@ from typing import Any
 from agent_tooltrust.audit.logger import AuditLogger
 from agent_tooltrust.audit.models import AuditEntry
 from agent_tooltrust.engine.engine import Engine
+from agent_tooltrust.engine.escalation import EscalationManager
+from agent_tooltrust.engine.explain import session_risk_increment
 from agent_tooltrust.server.session_store import SessionStore
 
 
@@ -49,6 +51,11 @@ class ServerCore:
     def audit_logger(self) -> AuditLogger:
         """The audit sink."""
         return self._audit_logger
+
+    @property
+    def escalation_manager(self) -> EscalationManager:
+        """The escalation registry for human approval (M3)."""
+        return self._engine.escalation_manager
 
     def evaluate(
         self,
@@ -104,10 +111,9 @@ class ServerCore:
             )
 
             if decision_dict["decision"] not in ("deny",):
-                falloff = 1.0 if decision_dict["criticality"] == "critical" else 0.25
                 self._session_store.update(
                     session_id,
-                    risk_increment=falloff,
+                    risk_increment=session_risk_increment(decision_dict["criticality"]),
                     call_id="pending",
                 )
 

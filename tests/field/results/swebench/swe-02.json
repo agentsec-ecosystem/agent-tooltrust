@@ -2,7 +2,7 @@
   "agent_id": "swe-02",
   "framework": "swebench",
   "agent_class": "engineer",
-  "model": "Qwen3.5-4B-4bit",
+  "model": "openai/gpt-oss-20b",
   "tools": [
     "read_file",
     "write_file"

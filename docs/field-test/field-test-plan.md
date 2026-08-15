@@ -1,6 +1,6 @@
 # M7 Field Test Plan — 10 Frameworks × 10 Agents, Local LLM, Release Gate
 
-> **Milestone:** M7 (Field Tests) — [wbs-v0.1.0-part4-field-ship.md](../../wbs/wbs-v0.1.0-part4-field-ship.md)
+> **Milestone:** M7 (Field Tests) — [wbs-v0.1.0-part4-field-ship.md](../../wbs/v0.1.0/wbs-v0.1.0-part4-field-ship.md)
 > **PRD:** [PRD.md](../../design/PRD.md) (F-75, F-89 P0) | **CUJs:** CUJ 7 (field test), CUJ 11 (adversarial resilience)
 > **Status:** Draft v1 — pending review
 

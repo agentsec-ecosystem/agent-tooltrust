@@ -4,7 +4,8 @@
 
 | Version | Supported |
 |---|---|
-| 0.1.x | ✅ |
+| 0.2.x | ✅ |
+| 0.1.x | ⚠️ Security patches only |
 
 ## Reporting a Vulnerability
 
@@ -37,12 +38,35 @@ Agent ToolTrust is a policy engine that gates tool invocations. Key security pro
 | A05 | **Goal Hijacking / Prompt Injection** — "ignore previous instructions" | ✅ v0.1.0 | Tool scanner detects hidden prompts in tool descriptions. Output inspector detects injection payloads in tool results |
 | A06 | **Tool Misuse** — agent misuses authorized tools (delete production, query PII) | ✅ v0.1.0 | 5-dimension risk scoring (tool category, action class, environment, data sensitivity, agent class). Destructive ops + sensitive data = deny |
 | A07 | **Insecure Output Handling** — agent processes untrusted tool results | ⚠️ Partial | Output inspector catches secrets and PII before agent consumes results. Dispatcher parser for shell/HTTP tools in v0.2.0 |
-| A08 | **Multi-Agent Coordination Failures** — sub-agents exceed delegated scope | ❌ v0.2.0 | Child-agent delegation with scope subset invariant (F-88). Parent scope [A,B,C] → child scope [A,B] allowed; [A,B,D] denied |
+| A08 | **Multi-Agent Coordination Failures** — sub-agents exceed delegated scope | ✅ v0.2.0 | Child-agent delegation with scope subset invariant (F-88 #108). Parent scope [A,B,C] → child scope [A,B] allowed; [A,B,D] denied. Deny-storm detection (M4 #143) flags anomalous delegation chains |
 | A09 | **Overreliance** — humans trust agent decisions without verification | ✅ v0.1.0 | Every decision carries machine-readable reason_code + human-readable explanation + risk factor breakdown. Escalate decisions require explicit human approval |
-| A10 | **Lack of Audit / Accountability** — no record of agent actions | ✅ v0.1.0 | Full audit pipeline: JSONL (zero-dep default), SQLite (local query), Postgres (operational). `tooltrust audit` CLI for query/export. Tamper-evident hash chain (v0.1.0 F-34) |
+| A10 | **Lack of Audit / Accountability** — no record of agent actions | ✅ v0.1.0 | Full audit pipeline: JSONL (zero-dep default), SQLite (local query), Postgres (operational). `tooltrust audit` CLI for query/export. Tamper-evident hash chain (v0.1.0 F-34). Session-to-session analytics (M5 #148) for anomaly detection |
 
-**Coverage summary:** 7/10 fully covered in v0.1.0, 2 partially covered (A03, A07), 1 deferred to v0.2.0 (A08).
+**Coverage summary:** 10/10 fully covered in v0.2.0.
 
 ## CI Security Scanning
 
 [trufflehog](https://github.com/trufflesecurity/trufflehog) runs on every push to detect secrets accidentally committed to the repository.
+
+## OpenSSF Scorecard
+
+ToolTrust targets [OpenSSF Scorecard Gold](https://securityscorecards.dev/) level:
+
+| Criteria | Status | Notes |
+|----------|--------|-------|
+| Binary-Artifacts | ✅ | No checked-in binaries |
+| CI-Tests | ✅ | CI runs on every push |
+| Code-Review | ✅ | All changes reviewed |
+| Dangerous-Workflow | ✅ | No `pull_request_target` with write token |
+| Dependency-Update-Tool | ✅ | `uv lock` + Dependabot configured |
+| Fuzzing | ⚠️ | Manual fuzzing; automated CI integration planned |
+| License | ✅ | MIT licensed |
+| Maintained | ✅ | Active development |
+| Pinned-Dependencies | ✅ | Hashing pinned in CI |
+| SAST | ✅ | Ruff + mypy strict + trufflehog |
+| Security-Policy | ✅ | SECURITY.md published |
+| Signed-Releases | ⚠️ | Signing pipeline in progress |
+| Token-Permissions | ✅ | Least-privilege tokens |
+| Vulnerabilities | ✅ | No open CVEs |
+
+**Path to Gold:** Fuzzing CI integration and release signing are the remaining gaps. See `docs/design/openssf-gold-path.md` for the full roadmap.

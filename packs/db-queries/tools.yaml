@@ -1,0 +1,19 @@
+version: "1.0"
+posture: balanced
+environments:
+  development: 0.0
+  staging: 0.1
+  production: 0.7
+data_classes:
+  public: 0.0
+  internal: 0.2
+  restricted: 0.5
+  customer_pii: 1.0
+rules:
+  - decision: deny
+    action: drop
+    environment: production
+    reason: "DROP queries are never allowed in production."
+taxonomy:
+  domains:
+    - db

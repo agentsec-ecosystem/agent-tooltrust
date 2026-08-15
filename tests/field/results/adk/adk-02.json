@@ -2,7 +2,7 @@
   "agent_id": "adk-02",
   "framework": "adk",
   "agent_class": "engineer",
-  "model": "Qwen3.5-4B-4bit",
+  "model": "openai/gpt-oss-20b",
   "tools": [
     "add"
   ],
@@ -20,9 +20,9 @@
       "called": true,
       "llm_called": true,
       "llm_responded": true,
-      "response": "parts=[Part(\n  text='The tool `scn_decision-allow-02` has been called successfully with the arguments \"staging environment, public data class\". The tool returned the input text back as expected.'\n)] role='model'",
+      "response": "parts=[Part(\n  text='Decision processed: allow.'\n)] role='model'",
       "error": null,
-      "elapsed_s": 9.62,
+      "elapsed_s": 2.57,
       "decision": "allow",
       "reason_code": "allow_low_risk",
       "expected": "allow",

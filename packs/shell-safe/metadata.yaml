@@ -1,0 +1,7 @@
+name: shell-safe
+description: Restricted shell execution — blocks exec in production, escalates in staging
+domains: [shell]
+tool_count: 2
+tests_passing: 2
+last_updated: "2026-08-14"
+maintainer: community
