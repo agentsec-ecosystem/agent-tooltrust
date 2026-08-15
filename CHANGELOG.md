@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-08-15
+
+### Added
+
+- **HTTP PDP endpoint** — `POST /authorize` returns Decision JSON for
+  non-Python hosts and fleet gateways (F-43, #97).
+- **MCP-Data connector** — `tooltrust.authorize_data_source` MCP tool and
+  `mcp_data` module for per-data-source authorization; taxonomy runtime
+  registration (`register_tool`) (#112).
+- **OPAL distributed policy sync** — `Engine.reload_policy()`,
+  `integrations/opal.py` client, and `tooltrust policy rollback --version <v>`
+  (#119).
+- **Policy packs catalog** — `packs/` community catalog (5 seed packs:
+  db-queries, fs-basics, shell-safe, cloud-read, http-crud) with metadata;
+  `tooltrust pack list` / `pack info` (#111).
+- **Session replay from audit** — `tooltrust audit session --replay <id>`
+  reconstructs cumulative risk identically to live use (#81).
+- **Session-to-session analytics** — `tooltrust analytics sessions` +
+  `/api/analytics/sessions`: recurring denials, deny→allow transitions,
+  dead/over-hit rules (#148).
+- **Score calibration & shadow mode** — counterfactual thresholds,
+  `tooltrust calibrate report`, `/api/analytics/calibration` (#162).
+- **Audit argument redaction** — deny-list (`token`, `password`, `apiKey`,
+  …) + per-policy override; `redacted: true` flag; nested dict/list coverage
+  (#158).
+- **Stale-credential audit classification** — `credential_status` on audit
+  entries (#161).
+- **Write-time tamper-evident chain** — JSONL/SQLite/Postgres sinks persist
+  `chain_hash`/`prev_hash`; `audit verify` fails loudly on tampering (#81).
+- **ToolTrust Hardened baseline** — `baseline check hardened` → 15/15 checks
+  (#103); OWASP Agentic AI Top 10 10/10 coverage (#114); OpenSSF assessment
+  (#121).
+- **Fleet deployment guide** (#120).
+- **Deny-storm / probe detection**, URL fetch category guard, external
+  verification sink (M4, #143, #146, #144).
+- **Decision schema** — added `counterfactual` field.
+
+### Changed
+
+- `Decision` and `AuditEntry` gained read-only fields (`counterfactual`,
+  `arguments`, `redacted`, `credential_status`, `chain_hash`/`prev_hash`).
+- Audit sinks persist tamper-evident chain fields at write time; old
+  un-chained logs are flagged as unverifiable by `audit verify`.
+- Audit redaction is on by default for all decision outcomes.
+- Fallback field-test/replan models standardized on OMLX (`Qwen3.5-4B-4bit`).
+
+### Fixed
+
+- smolagents field-test shim: LiteLLM `openrouter/` prefix hang, scenario-tool
+  `_entry` serialization (`KeyError: 'fn'`), and interactive deny retry loop.
+- Field-test framework name handling (`openai-agents`, `tooltrust-mcp`).
+
+### Security
+
+- OWASP Agentic AI Top 10: 10/10 covered (from 5/10 in v0.1.0).
+- ToolTrust baseline: Essential → Hardened; OpenSSF path-to-Gold documented.
+
 ## [0.1.0] - 2026-08-13
 
 ### Added

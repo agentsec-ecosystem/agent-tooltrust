@@ -1,74 +1,95 @@
 # Agent ToolTrust v0.2.0 Release Notes
 
-**Status:** Draft — stub for the v0.2.0 release (on `rel-0.2.0`). Finalize during M8 (release readiness steps 6-7).
-**Package:** `agent-tooltrust` · **Version:** 0.2.0 (planned)
-**Related:** [WBS v0.2.0](../wbs/v0.2.0/wbs-v0.2.0.md) · [decisions-v0.2.0](../design/decisions-v0.2.0.md) · [architecture-v0.2.0](../architecture/architecture-v0.2.0.md)
-
-> **What is this?** This is the release-notes document for v0.2.0. It is seeded with the planned scope; sections are filled in as milestones close. It is NOT the shipped changelog — the authoritative list lives in [CHANGELOG.md](../../CHANGELOG.md).
-
----
-
-## Planned highlights
-
-### M1 — Policy Model & Rule Engine
-
-- **Argument-level policy** — per-tool argument schema (required fields, forbid-list, bounds, env allowlists) evaluated deterministically before allow/deny. Community feedback: #142.
-- **Rule composition** — `and` / `or` / `not` operators and sub-entity grouping (#93).
-- **Tool hiding** — per-agent-class `hidden: true` capability filtering (#88).
-- **Policy pack format** — `tools.yaml` + `tests.yaml` schema, `tooltrust pack validate` / `pack test` (#91).
-- **Permit-with-obligation** — `allow_with_obligation` decision outcome with gatekeeper-enforced side-effects (#147).
-
-### M2 — Resource Scoping & Delegation
-
-- **Resource/environment scoping** — default-deny scope enforcement (staging vs. prod) (#145).
-- **Child-agent delegation** — scope-subset invariant via `engine.delegate()` (#108).
-- **Dispatcher parser** — canonicalize `bash` / `aws` / `http` calls; unparseable → deny (#106).
-
-### M3 — Escalation & Human Approval
-
-- **EscalationManager** — create/track/approve/deny/expire with TTL, bound to action identity (#84).
-- **CLI approve/deny** — `tooltrust approve <id>` / `deny <id> [--reason]` (#85).
-- **Action-identity binding** — replay with different args denied (#86).
-- **Replay-attempt detection** — same escalation_id reused with different call denied (#95).
-
-### M4 — Threat & Anomaly Detection
-
-- **Deny-storm / probe detection** — session-level analyzer; throttle/lock/pause (#143).
-- **URL fetch category guard** — robots.txt, PII stripping, SSRF redirect re-resolution (#146).
-- **External verification sink** — agent-unwritable ground truth vs. self-report (#144).
-
-### M5 — Audit, Verification & Observability
-
-- **Session replay from audit** — `tooltrust audit session --replay <id>` (#81).
-- **Session-to-session policy analytics** — deny→allow drift learning loop (#148).
-- **AgentControlPlane + MCP-Data integration** — fleet PDP + per-data-source authorization (#112).
-
-### M6 — Service & Fleet Access
-
-- **HTTP /authorize** — FastAPI `POST /authorize` for non-Python hosts (#97).
-- **Policy packs catalog** — community packs with metadata + test status (#111).
-- **OPAL distributed policy sync** — <5s propagation, 3-instance fleet, rollback (#119).
-- **Fleet deployment guide** (#120).
-
-### M7 — Compliance & Security Baselines
-
-- **ToolTrust Hardened baseline** (#103), **OWASP 10/10** (#114), **Certified baseline** (#115), **OpenSSF Gold** (#121).
-
-### M8 — Quality Gates, Field Tests & Release
-
-- **6 exit gates** (#83, #89, #100, #107, #110, #113), **v0.2 + v0.3 field test sweeps** (#101, #116), **hardening** (#104), **ship** (#122).
+**Status:** Released ✅
+**Package:** `agent-tooltrust` · **Version:** 0.2.0
+**Released:** 2026-08-15
+**Related:** [WBS v0.2.0](../wbs/v0.2.0/wbs-v0.2.0.md) · [decisions-v0.2.0](../design/decisions-v0.2.0.md) · [Field Test Report](../field-test/FIELD_TEST_REPORT-v0.2.0.md) · [Migration Guide](../design/migration-guide-v0.2.0.md) · [CHANGELOG](../../CHANGELOG.md)
 
 ---
 
-## Security posture (v0.2.0)
+## Highlights
 
-- Argument schema violations, scope mismatches, delegation exceedances, unparseable dispatcher strings, escalation replays, and SSRF redirects all fail closed with distinct reason codes.
-- OWASP Agentic Top 10: 10/10 covered (from 5/10 in v0.1.0).
-- OpenSSF: Gold target (from Silver).
-- ToolTrust baseline: Essential (v0.1) → Hardened + Certified (v0.2).
+Agent ToolTrust v0.2.0 ships a **fleet-ready, auditable, hardened** policy decision point. The core engine is unchanged and battle-tested; everything around it — audit, observability, security posture, and service surfaces — grew substantially.
 
-## Known limitations / deferred
+1. **Fleet & PDP** — HTTP `POST /authorize` for non-Python hosts, MCP-Data connector for per-data-source authorization, OPAL distributed policy sync, and a community policy-pack catalog.
+2. **Audit & observability** — session replay, session-to-session analytics, score calibration, argument redaction, stale-credential tagging, and write-time tamper-evident hash chaining.
+3. **Security & compliance** — OWASP Agentic AI Top 10 **10/10**, ToolTrust Hardened baseline **15/15 checks**, OpenSSF path-to-Gold documented.
+4. **Quality gate** — 1068+ tests, 91% coverage, ruff + mypy --strict clean, field test Plan A **83/83 (100%)**, deterministic engine matrix **2490/2490 (100%)**.
 
-- Deny-storm thresholds and verification-sink adapters finalized in M4.
+---
+
+## What's new
+
+### Fleet & PDP (M6)
+
+- **HTTP `/authorize` endpoint** — language-agnostic PDP: post a JSON tool call and get a Decision back (F-43). Ideal for Go/JS/Java callers and gateways.
+- **MCP-Data connector** — `tooltrust.authorize_data_source` MCP tool and `mcp_data` module authorize per data source (`mcp_data.<source_id>` taxonomy registration).
+- **OPAL distributed policy sync** — `Engine.reload_policy()`, `integrations/opal.py` client, and `tooltrust policy rollback --version <v>`.
+- **Policy packs catalog** — `packs/` catalog with 5 seed packs (`db-queries`, `fs-basics`, `shell-safe`, `cloud-read`, `http-crud`); `tool pack list` / `pack info`.
+- **Fleet deployment guide** — topology, nginx LB, docker compose, OPAL sync, rollback, monitoring.
+
+### Audit & Observability (M5)
+
+- **Session replay from audit** — `audit session --replay <id>` reconstructs cumulative risk identically to live use (shared `session_risk_increment`).
+- **Session-to-session analytics** — recurring benign denials, deny→allow transitions, dead/over-hit rules (`analytics sessions` + `/api/analytics/sessions`).
+- **Score calibration & shadow mode** — counterfactual thresholds, false-allow/escalate rates by tool/env/data-class (`calibrate report` + `/api/analytics/calibration`).
+- **Audit argument redaction** — `token`, `password`, `apiKey`, `authorization`, `secret`, … redacted by default; `redacted: true` flag; nested dict/list coverage.
+- **Stale-credential classification** — `credential_status` tag distinguishes engine-allow-but-credential-rejected calls from `not-available`.
+- **Write-time tamper-evident chain** — JSONL/SQLite/Postgres persist `chain_hash`/`prev_hash`; `audit verify` fails loudly on tampered/missing entries.
+
+### Security & Compliance (M7)
+
+- **ToolTrust Hardened baseline** — `baseline check hardened` → **15/15 PASS** (fail-closed, adversarial normalization, deny rules, tamper chain, redaction, session analytics, delegation, escalation, output inspector, OTel, deny-storm detection, argument policy).
+- **OWASP Agentic AI Top 10** — **10/10** covered (up from 5/10 in v0.1.0).
+- **OpenSSF Scorecard** — 12/14 Gold criteria met, path to Gold documented.
+
+### Threat & Anomaly (M4)
+
+- **Deny-storm / probe detection** — session-level analyzer; throttle/lock/pause.
+- **URL fetch category guard** — robots.txt, PII strip, SSRF redirect re-resolution.
+- **External verification sink** — agent-unwritable ground truth vs self-report.
+
+---
+
+## Breaking changes & migration
+
+**No breaking API changes.** The in-process `Engine.evaluate()` API, adapters, and policy format are unchanged. See [Migration Guide](../design/migration-guide-v0.2.0.md) for:
+- `Decision` and `AuditEntry` gained read-only fields (`counterfactual`, `arguments`, `redacted`, `credential_status`, `chain_hash`/`prev_hash`).
+- Audit sinks now persist tamper-evident chain fields at write time.
+- Audit redaction is on by default (sensitive arg keys → `***REDACTED***`).
+
+---
+
+## Quality gates
+
+| Gate | Result |
+|------|--------|
+| Unit + integration tests | **1068+ passed** |
+| Test coverage | **91%** (threshold 90%) |
+| Ruff (strict) | **clean** |
+| mypy --strict | **clean** (100 source files) |
+| Field test — Plan A | **83/83 (100%)** across 10 frameworks |
+| Field test — Plan B | **116/123 (94%)** (tier-1 LLM tool-selection limit, accepted — see report) |
+| Replan sweep | **8/8 live, 8/8 scripted** |
+| Deterministic engine matrix | **2490/2490 (100%)** |
+| Docker console | `docker compose up --wait` green |
+
+---
+
+## Field test summary
+
+Plan A (one scenario per agent) passes **100%** for all 10 frameworks. Plan B proves every framework surfaces allow/audit/escalate/deny; the only misses are 7 tier-1 rows where the LLM picked the wrong tool when 5 tools share near-identical names — an LLM tool-selection limit, not an engine defect. Full findings, model comparison (gpt-oss-20b vs deepseek-v4-flash vs glm-5 vs local Qwen), observations, and lessons in the [Field Test Report](../field-test/FIELD_TEST_REPORT-v0.2.0.md).
+
+---
+
+## Known limitations / deferred (post-0.2)
+
+- Tier-1 multi-tool field-test pattern is unreliable with current LLMs; recommended to drop or convert to Plan A style.
+- Deny-storm active enforcement and verification-sink adapters finalized.
 - Policy-analytics auto-mutation deferred (human approves suggestions).
 - Fleet-scale performance validated only to the 3-instance OPAL test.
+- smolagents cloud (OpenRouter) interop caveat documented; local OMLX path verified.
+
+---
+
+**Thanks for using Agent ToolTrust.**

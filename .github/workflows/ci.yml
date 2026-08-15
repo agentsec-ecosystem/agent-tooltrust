@@ -26,6 +26,11 @@ jobs:
 
       - run: rm -f ~/.tooltrust/audit.jsonl && uv run pytest --tb=short
 
+      - name: Secret scan (trufflehog) — no tokens in the tree
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+
   docker:
     runs-on: ubuntu-latest
     steps:
