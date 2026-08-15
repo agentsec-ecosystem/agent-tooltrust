@@ -138,7 +138,8 @@ def register_tools(
         environment: str,
         session_id: str | None = None,
     ) -> dict[str, Any]:
-        from agent_tooltrust.mcp_data import DataAccessRequest, authorize_data_source as _authorize
+        from agent_tooltrust.mcp_data import DataAccessRequest
+        from agent_tooltrust.mcp_data import authorize_data_source as _authorize
 
         return _authorize(
             DataAccessRequest(

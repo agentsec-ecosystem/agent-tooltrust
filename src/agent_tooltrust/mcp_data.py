@@ -55,7 +55,7 @@ def authorize_data_source(request: DataAccessRequest, core: Any) -> dict[str, An
         ``session_risk_score`` and ``call_id``.
     """
     source_id = request.data_source_id.strip()
-    return core.evaluate(
+    return core.evaluate(  # type: ignore[no-any-return]
         tool_name=f"mcp_data.{source_id}",
         action=request.operation,
         environment=request.environment,

@@ -81,6 +81,11 @@ Three new components plus one registered MCP tool. Each has one job:
    existing policy dimensions so per-source rules work with no schema
    changes.
 
+   **Registering data sources:** each source's `mcp_data.<id>` tool must be
+   registered at startup via `mcp_data.register_data_source(source_id)` (a
+   taxonomy entry), or all calls to it fail closed (deny). Per-source policy
+   declares sensitivity through the `data_classes` map keyed on the source id.
+
 3. **`server/mcp_tools.py`** — adds a `tooltrust.authorize_data_source` MCP
    tool that wires `mcp_data.authorize_data_source` to the running server.
 

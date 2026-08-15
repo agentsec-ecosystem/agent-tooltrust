@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import uuid
-from typing import Any
-
 import pytest
 
 from agent_tooltrust.audit.logger import AuditLogger

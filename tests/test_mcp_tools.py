@@ -117,7 +117,9 @@ class TestMCPTools:
         assert result["decision"] == "deny"
         assert "reason_code" in result
 
-    def test_authorize_data_source_returns_decision(self, tools: dict[str, Any], core: ServerCore) -> None:
+    def test_authorize_data_source_returns_decision(
+        self, tools: dict[str, Any], core: ServerCore
+    ) -> None:
         from agent_tooltrust.mcp_data import register_data_source
 
         register_data_source("analytics_shard")
@@ -144,7 +146,11 @@ class TestMCPTools:
     def test_authorize_data_source_consistency(
         self, tools: dict[str, Any], core: ServerCore
     ) -> None:
-        from agent_tooltrust.mcp_data import DataAccessRequest, authorize_data_source, register_data_source
+        from agent_tooltrust.mcp_data import (
+            DataAccessRequest,
+            authorize_data_source,
+            register_data_source,
+        )
 
         register_data_source("analytics_shard")
         via_tool = tools["tooltrust.authorize_data_source"](
