@@ -245,6 +245,83 @@ class TestAuditSessionReplay:
         assert payload["call_count"] == 1
 
 
+class TestAuditTamperDetection:
+    """M5 #81 tamper requirement: replay and verify fail loudly on a
+    tampered or missing entry instead of reporting invented state."""
+
+    def _tamper(self, path, index: int, field: str = "decision") -> None:
+        lines = path.read_text().splitlines()
+        record = json.loads(lines[index])
+        record[field] = "deny"
+        lines[index] = json.dumps(record, sort_keys=True)
+        path.write_text("\n".join(lines) + "\n")
+
+    def test_replay_aborts_on_tampered_entry(self, tmp_path, capsys):
+        path = tmp_path / "audit.jsonl"
+        _seed_jsonl(path)
+        self._tamper(path, 0)
+        args = ["audit", "session", "--replay", "sess_1", "--path", str(path)]
+        code, out = _run_code(args, capsys)
+        assert code == 1
+        assert "tampered or missing entry" in out
+
+    def test_replay_aborts_on_deleted_entry(self, tmp_path, capsys):
+        path = tmp_path / "audit.jsonl"
+        _seed_jsonl(path)
+        lines = path.read_text().splitlines()
+        # Drop the first (linked) line; sess_2 now has an orphan prev_hash.
+        path.write_text(lines[1] + "\n")
+        args = ["audit", "session", "--replay", "sess_1", "--path", str(path)]
+        code, _ = _run_code(args, capsys)
+        assert code == 1
+
+    def test_replay_aborts_on_unchained_legacy_log(self, tmp_path, capsys):
+        path = tmp_path / "audit.jsonl"
+        _seed_jsonl(path)
+        # Strip chain metadata the way a pre-v0.2 log would look.
+        lines = [
+            json.dumps(
+                {k: v for k, v in json.loads(ln).items()
+                 if k not in ("chain_hash", "prev_hash")},
+                sort_keys=True,
+            )
+            for ln in path.read_text().splitlines()
+        ]
+        path.write_text("\n".join(lines) + "\n")
+        args = ["audit", "session", "--replay", "sess_1", "--path", str(path)]
+        code, _ = _run_code(args, capsys)
+        assert code == 1
+
+    def test_verify_detects_tampered_jsonl(self, tmp_path, capsys):
+        path = tmp_path / "audit.jsonl"
+        _seed_jsonl(path)
+        self._tamper(path, 1)
+        code, out = _run_code(["audit", "verify", "--path", str(path)], capsys)
+        assert code == 1
+        assert "Tampering detected" in out
+
+    def test_verify_passes_for_clean_jsonl(self, tmp_path, capsys):
+        path = tmp_path / "audit.jsonl"
+        _seed_jsonl(path)
+        code, out = _run_code(["audit", "verify", "--path", str(path)], capsys)
+        assert code == 0
+        assert "intact" in out
+
+
+def _run_code(args, capsys):
+    """Run the wrapped argv like ``_run`` but return ``(exit_code, stdout)``."""
+    import argparse
+
+    from agent_tooltrust.cli.audit import add_parser
+
+    parser = argparse.ArgumentParser()
+    sub = parser.add_subparsers()
+    add_parser(sub)
+    ns = parser.parse_args(args)
+    code = ns.func(ns)
+    return code, capsys.readouterr().out
+
+
 def argparse_namespace(sink, path, url):
     import argparse
 

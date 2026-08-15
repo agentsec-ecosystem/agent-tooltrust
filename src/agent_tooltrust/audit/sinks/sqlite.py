@@ -4,6 +4,10 @@ Stores entries in ``~/.tooltrust/audit.db`` (or a caller-supplied path),
 creating the ``audit_entries`` table on first write (schema matches
 ``docs/architecture/db-schema-sketch.md`` §Local). Serves ``query`` for the
 ``tooltrust audit`` CLI and session replay.
+
+Each row records the entry's ``chain_hash``/``prev_hash`` (from
+``audit.tamper_proof``) so the table stays a tamper-evident chain that
+``audit verify``/``audit session --replay`` can check link-by-link.
 """
 
 from __future__ import annotations
@@ -16,6 +20,7 @@ from pathlib import Path
 
 from agent_tooltrust.audit.models import AuditEntry
 from agent_tooltrust.audit.sink import AuditSink
+from agent_tooltrust.audit.tamper_proof import chain_entry
 
 _COLUMNS = (
     "session_id",
@@ -37,6 +42,8 @@ _COLUMNS = (
     "policy_version",
     "dry_run",
     "escalation_id",
+    "chain_hash",
+    "prev_hash",
 )
 
 _CREATE = (
@@ -50,6 +57,7 @@ _PLACEHOLDERS_SQL = ", ".join("?" for _ in _COLUMNS)
 _INSERT_SQL = f"INSERT INTO audit_entries ({_COLUMNS_SQL}) VALUES ({_PLACEHOLDERS_SQL})"  # noqa: S608
 _SELECT_ALL_SQL = f"SELECT {_COLUMNS_SQL} FROM audit_entries"  # noqa: S608
 _SELECT_SESSION_SQL = f"SELECT {_COLUMNS_SQL} FROM audit_entries WHERE session_id = ?"  # noqa: S608
+_SELECT_CHAIN_SQL = "SELECT chain_hash FROM audit_entries ORDER BY id DESC LIMIT 1"
 
 
 def _default_path() -> Path:
@@ -71,31 +79,53 @@ class SqliteSink(AuditSink):
         self._path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(self._path)
         conn.execute(_CREATE)
+        self._migrate(conn)
         return conn
+
+    def _migrate(self, conn: sqlite3.Connection) -> None:
+        """Add the tamper-chain columns to databases created before v0.2.
+
+        Older audit_entries tables lack ``chain_hash``/``prev_hash``; those
+        rows pre-date chaining and cannot be retro-verified, so they read
+        back with ``NULL`` chain fields (an entry with no chain metadata is
+        reported as unverifiable, not silently assumed valid).
+        """
+        existing = {
+            row[1]
+            for row in conn.execute("PRAGMA table_info(audit_entries)").fetchall()
+        }
+        for column in ("chain_hash", "prev_hash"):
+            if column not in existing:
+                conn.execute(f"ALTER TABLE audit_entries ADD COLUMN {column} TEXT")
 
     def write(self, entry: AuditEntry) -> None:
         try:
             with self._connect() as conn:
+                prev_row = conn.execute(_SELECT_CHAIN_SQL).fetchone()
+                prev_hash = prev_row[0] if prev_row else None
+                chained = chain_entry(entry, prev_hash)
                 params = [
-                    entry.session_id,
-                    entry.call_id,
-                    entry.timestamp,
-                    entry.tool,
-                    entry.tool_category,
-                    entry.action,
-                    entry.action_class,
-                    entry.environment,
-                    entry.data_class,
-                    entry.agent_id,
-                    entry.agent_class,
-                    entry.decision,
-                    entry.criticality,
-                    entry.reason_code,
-                    entry.explanation,
-                    json.dumps([f.to_dict() for f in entry.factors], sort_keys=True),
-                    entry.policy_version,
-                    int(entry.dry_run),
-                    entry.escalation_id,
+                    chained.session_id,
+                    chained.call_id,
+                    chained.timestamp,
+                    chained.tool,
+                    chained.tool_category,
+                    chained.action,
+                    chained.action_class,
+                    chained.environment,
+                    chained.data_class,
+                    chained.agent_id,
+                    chained.agent_class,
+                    chained.decision,
+                    chained.criticality,
+                    chained.reason_code,
+                    chained.explanation,
+                    json.dumps([f.to_dict() for f in chained.factors], sort_keys=True),
+                    chained.policy_version,
+                    int(chained.dry_run),
+                    chained.escalation_id,
+                    chained.chain_hash,
+                    chained.prev_hash,
                 ]
                 conn.execute(_INSERT_SQL, params)
         except sqlite3.Error as exc:

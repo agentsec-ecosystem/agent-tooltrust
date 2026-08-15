@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import replace
 from typing import Any
 
 from cryptography.hazmat.primitives import serialization
@@ -16,9 +17,17 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 
 from agent_tooltrust.audit.models import AuditEntry
 
+#: Keys excluded from the content hash so a persisted chain's own bookkeeping
+#: fields can never be folded into (and thus "hide inside") the content digest.
+_CHAIN_KEYS = ("chain_hash", "prev_hash", "signature", "public_key", "root_hash")
+
 
 def _hash_entry(entry: AuditEntry) -> str:
     """Compute a SHA-256 hash of an audit entry's serializable fields.
+
+    Chain-bookkeeping fields (``chain_hash``/``prev_hash``/signature) are
+    excluded from the digest so chaining is not circular: the hash covers
+    exactly what a forensic investigator would need to verify was unmodified.
 
     Args:
         entry: The audit entry to hash.
@@ -26,8 +35,32 @@ def _hash_entry(entry: AuditEntry) -> str:
     Returns:
         Hex-encoded SHA-256 digest.
     """
-    data = json.dumps(entry.to_dict(), sort_keys=True)
-    return hashlib.sha256(data.encode()).hexdigest()
+    data = {
+        k: v for k, v in entry.to_dict().items() if k not in _CHAIN_KEYS
+    }
+    return hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
+
+
+def chain_entry(entry: AuditEntry, prev_hash: str | None) -> AuditEntry:
+    """Attach ``prev_hash`` + a freshly computed ``chain_hash`` to a copy.
+
+    Returns a new entry (the input is untouched) so the persisted record and
+    any in-memory copy stay independent. The computed ``chain_hash`` matches
+    what :func:`build_hash_chain` would assign for the same position.
+
+    Args:
+        entry: The entry to link.
+        prev_hash: The previous entry's ``chain_hash`` (``None`` for root).
+
+    Returns:
+        A copy of *entry* with ``prev_hash``/``chain_hash`` set.
+    """
+    entry_hash = _hash_entry(entry)
+    chain_input = json.dumps(
+        {"prev_hash": prev_hash, "entry_hash": entry_hash}, sort_keys=True
+    )
+    chain_hash = hashlib.sha256(chain_input.encode()).hexdigest()
+    return replace(entry, prev_hash=prev_hash, chain_hash=chain_hash)
 
 
 def build_hash_chain(entries: list[AuditEntry]) -> list[dict[str, Any]]:
@@ -162,3 +195,33 @@ def verify_chain(chained: list[dict[str, Any]]) -> dict[str, Any]:
         "tampered_index": None,
         "signature_valid": sig_valid,
     }
+
+
+def verify_entries(entries: list[AuditEntry]) -> dict[str, Any]:
+    """Verify the integrity of a persisted hash chain carried on entries.
+
+    Each ``AuditEntry`` records the ``chain_hash`` it was written with and the
+    ``prev_hash`` it linked against. Walking the log in write order, this
+    recomputes every link: a mismatch means either the content was modified in
+    place (chain_hash no longer matches) or an entry was inserted/removed
+    (prev_hash no longer matches the predecessor's chain_hash).
+
+    Args:
+        entries: Audit entries in write order, carrying ``chain_hash`` and
+            ``prev_hash`` from their sinks.
+
+    Returns:
+        A dict with ``valid`` (bool) and ``tampered_index`` (int | None).
+        ``valid`` is False when any entry is missing chain bookkeeping
+        (asserting integrity of an un-chained log is impossible by design) or
+        when a recomputed link disagrees with the persisted one.
+    """
+    prev_chain: str | None = None
+    for i, entry in enumerate(entries):
+        if entry.chain_hash is None or entry.prev_hash != prev_chain:
+            return {"valid": False, "tampered_index": i, "signature_valid": None}
+        recomputed = chain_entry(entry, prev_chain).chain_hash
+        if recomputed != entry.chain_hash:
+            return {"valid": False, "tampered_index": i, "signature_valid": None}
+        prev_chain = entry.chain_hash
+    return {"valid": True, "tampered_index": None, "signature_valid": None}

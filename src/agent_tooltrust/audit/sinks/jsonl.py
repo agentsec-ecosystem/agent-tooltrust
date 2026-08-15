@@ -4,6 +4,11 @@ Appends one ``AuditEntry`` per line to a log file (default
 ``~/.tooltrust/audit.jsonl``). Rotates to ``<path>.1`` when the file crosses
 ``max_bytes``. Writes are fire-and-forget: any ``OSError`` is reported to
 stderr instead of raising, so a full disk never breaks a decision.
+
+Each appended line carries the entry's ``chain_hash``/``prev_hash`` (see
+``audit.tamper_proof``), so the on-disk log is a tamper-evident hash chain:
+``audit verify`` and ``audit session --replay`` can recompute the links and
+fail loudly if any line was modified, inserted, or deleted.
 """
 
 from __future__ import annotations
@@ -15,6 +20,7 @@ from pathlib import Path
 
 from agent_tooltrust.audit.models import AuditEntry
 from agent_tooltrust.audit.sink import AuditSink
+from agent_tooltrust.audit.tamper_proof import chain_entry
 
 
 class JsonlSink(AuditSink):
@@ -31,7 +37,8 @@ class JsonlSink(AuditSink):
         return self._path
 
     def write(self, entry: AuditEntry) -> None:
-        line = json.dumps(entry.to_dict(), sort_keys=True) + "\n"
+        chained = chain_entry(entry, self._last_chain_hash())
+        line = json.dumps(chained.to_dict(), sort_keys=True) + "\n"
         try:
             self._maybe_rotate()
             self._path.parent.mkdir(parents=True, exist_ok=True)
@@ -39,6 +46,23 @@ class JsonlSink(AuditSink):
                 handle.write(line)
         except OSError as exc:
             print(f"tooltrust audit: jsonl write failed: {exc}", file=sys.stderr)
+
+    def _last_chain_hash(self) -> str | None:
+        """The ``chain_hash`` of the newest persisted line, if any."""
+        if not self._path.exists():
+            return None
+        try:
+            lines = [
+                ln.strip()
+                for ln in self._path.read_text(encoding="utf-8").splitlines()
+                if ln.strip()
+            ]
+            if not lines:
+                return None
+            value = json.loads(lines[-1]).get("chain_hash")
+            return value if isinstance(value, str) else None
+        except (OSError, ValueError, KeyError):
+            return None
 
     def _maybe_rotate(self) -> None:
         if self._max_bytes is None or not self._path.exists():

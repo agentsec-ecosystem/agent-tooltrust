@@ -28,7 +28,7 @@ from agent_tooltrust.audit.sinks.sqlite import SqliteSink
 from agent_tooltrust.audit.tamper_proof import (
     build_hash_chain,
     sign_root,
-    verify_chain,
+    verify_entries,
     verify_signature,
 )
 from agent_tooltrust.cli.errors import CliError
@@ -149,14 +149,24 @@ def _run_export(args: argparse.Namespace) -> int:
 def _run_session(args: argparse.Namespace) -> int:
     """Replay one session's cumulative state from the audit trail.
 
+    The whole log's hash chain is verified first, because a session's entries
+    are only trustworthy if every entry linking into them survived unmodified.
+    A tampered, missing, or un-chained entry aborts with exit code 1 — replay
+    of a corrupted log would silently report invented risk.
+
     Args:
         args: Parsed arguments (requires ``--replay <session_id>``).
 
     Returns:
-        Exit code 0 on success; a session with no recorded entries replays as
-        an empty timeline (call_count 0), not an error.
+        Exit code 0 on success; exit code 1 if the log fails integrity
+        checking; a session with no recorded entries replays as an empty
+        timeline (call_count 0), not an error.
     """
     logger = AuditLogger(_build_sink(args))
+    integrity = verify_entries(logger.query())
+    if not integrity["valid"]:
+        print(f"✗ Replay aborted: tampered or missing entry at index {integrity['tampered_index']}")
+        return 1
     entries = logger.query(args.replay)
     replay = replay_session(entries, session_id=args.replay)
     print(json.dumps(replay.to_dict(), indent=2))
@@ -164,13 +174,13 @@ def _run_session(args: argparse.Namespace) -> int:
 
 
 def _run_verify(args: argparse.Namespace) -> int:
-    """Verify audit log integrity via hash chain.
+    """Verify audit log integrity via the persisted hash chain.
 
     Args:
         args: Parsed arguments.
 
     Returns:
-        Exit code 0 if valid, 1 if tampered.
+        Exit code 0 if valid, 1 if tampered or unverifiable.
     """
     logger = AuditLogger(_build_sink(args))
     entries = logger.query()
@@ -179,8 +189,7 @@ def _run_verify(args: argparse.Namespace) -> int:
         print("No audit entries to verify.")
         return 0
 
-    chained = build_hash_chain(entries)
-    result = verify_chain(chained)
+    result = verify_entries(entries)
     if result["valid"]:
         print(f"✓ Audit log is intact ({len(entries)} entries)")
     else:
@@ -188,6 +197,7 @@ def _run_verify(args: argparse.Namespace) -> int:
         return 1
 
     if args.sign:
+        chained = build_hash_chain(entries)
         signed = sign_root(chained)
         valid = verify_signature(signed)
         if valid:

@@ -4,7 +4,7 @@
 > **PRD:** [PRD.md](../design/PRD.md) | **Architecture:** [architecture-v0.1.0.md](../architecture/architecture-v0.1.0.md) (v0.2 architecture to follow)
 > **Issue tracking:** All 52 v0.2.0 issues live in GitHub Milestones [M1-M8](../../../issues?q=is%3Aissue+milestone%3A%22M1+%E2%80%94+Policy+Model+%26+Rule+Engine%22) and [M7.5 — Operator Console & Web Dashboard](../../../issues?q=is%3Aissue+milestone%3A%22M7.5+%E2%80%94+Operator+Console+%26+Web+Dashboard%22) and the [v0.2.0 release milestone](../../../issues?q=is%3Aissue+milestone%3A%22v0.2.0%22).
 > **Source of features:** v0.1.0 pull-forward backlog + 7 dev.to community feedback features (#142-#148) + operator console web UI (M7.5, #149-#157) + 7 dev.to follow-up feedback issues (#158-#164).
-> **Status:** M1-M3 tasks complete ✅ · **M4 complete ✅** (deny-storm #143, fetch guard #146, verification sink #144 — all closed, 100% module coverage, repo-wide 91.08%) · M5 in progress · M7.5 complete ✅
+> **Status:** M1-M3 tasks complete ✅ · **M4 complete ✅** (deny-storm #143, fetch guard #146, verification sink #144 — all closed, 100% module coverage, repo-wide 91.08%) · M5 in progress (Task 1 of 6 done ✅ — session replay #81) · M7.5 complete ✅
 
 ---
 
@@ -158,7 +158,7 @@ Every milestone — before it is declared complete — must pass ALL of the foll
 
 | # | Task | Feature ID | Issue | Verification |
 |---|------|------------|-------|--------------|
-| 1 | **Session replay from audit:** `tooltrust audit session --replay <id>` reconstructs session state from audit entries | F-08d | #81 | Replay produces identical cumulative risk at each call |
+| 1 | **Session replay from audit:** `tooltrust audit session --replay <id>` reconstructs session state from audit entries | F-08d | #81 | ✅ Replays cumulative risk identical to live `SessionStore` (shared `session_risk_increment` in `engine/explain`); empty session → zero risk; ordering stable across sinks (`tests/test_audit_replay.py`; `audit/replay.py`). Integrity: sinks persist `chain_hash`/`prev_hash` at write time; `audit verify` + `audit session` recompute links and fail loudly (exit 1) on modified/missing/unchained entries (`tests/test_governance.py`, `tests/test_audit_cli.py`, `audit/tamper_proof.py`) |
 | 2 | **AgentControlPlane + MCP-Data integration:** ToolTrust PDP service for fleet manager + MCP-Data connector for per-data-source authorization | — | #112 | Integration tests pass end-to-end |
 | 3 | **Session-to-session policy analytics:** batch analyzer over audit + traces — correlate deny patterns, flag deny→allow transitions, surface dead/over-hit rules | dev.to (Igor) | #148 | Recurring benign needs surfaced; suspicious transitions flagged |
 | 4 | **Audit redaction:** sink-level redaction of PII/secrets in audit-mode (and all) decisions; default deny-list + `args.redact` override; `redacted: true` flag | dev.to (mansio) | #158 | Secrets never appear in persisted log; nested args covered (`tests/test_audit_redaction.py`) |

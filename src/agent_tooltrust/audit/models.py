@@ -51,6 +51,8 @@ class AuditEntry:
     dry_run: bool = False
     escalation_id: str | None = None
     approver: str | None = None
+    chain_hash: str | None = None
+    prev_hash: str | None = None
 
     @classmethod
     def from_decision(
@@ -127,6 +129,8 @@ class AuditEntry:
             dry_run=bool(data.get("dry_run", False)),
             escalation_id=data.get("escalation_id"),
             approver=data.get("approver"),
+            chain_hash=data.get("chain_hash"),
+            prev_hash=data.get("prev_hash"),
         )
         if "call_id" in data:
             kwargs["call_id"] = data["call_id"]
