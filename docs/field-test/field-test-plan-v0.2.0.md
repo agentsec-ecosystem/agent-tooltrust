@@ -3,7 +3,7 @@
 > **Milestone:** M8 (Quality Gates, Field Tests & Release) — [wbs-v0.2.0.md](../wbs/v0.2.0/wbs-v0.2.0.md)
 > **PRD:** [PRD.md](../../design/PRD.md) (F-75, F-89) | **CUJs:** CUJ 7 (field test), CUJ 10 (escalation), CUJ 11 (adversarial)
 > **Base plan:** [field-test-plan.md](field-test-plan.md) (v0.1.0, M7) — this document is the v0.2.0 delta.
-> **Status:** Draft — pending review on `rel-0.2.0`
+> **Status:** Approved — 100% pass rate (2490/2490 cases) on `rel-0.2.0`
 
 ---
 

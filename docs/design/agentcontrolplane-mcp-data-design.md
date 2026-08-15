@@ -2,7 +2,7 @@
 
 **Version:** 1.0 (Draft for review)
 **Date:** 2026-08-14
-**Status:** Pending approval
+**Status:** Approved
 **Issue:** [agent-tooltrust #112](https://github.com/anomalyco/agent-tooltrust/issues/112)
 
 ## Problem
