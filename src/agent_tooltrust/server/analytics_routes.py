@@ -30,6 +30,53 @@ def _register_analytics(mcp: Any, core: Any) -> None:
         entries = core.audit_logger.query(None)
         return JSONResponse(_aggregate(entries))
 
+    @mcp.custom_route("/api/analytics/sessions", methods=["GET"])  # type: ignore[untyped-decorator]
+    async def analytics_sessions(request: Request) -> JSONResponse:
+        from agent_tooltrust.analytics.session_analyzer import analyze
+
+        entries = core.audit_logger.query(None)
+        raw_min = request.query_params.get("min_denials")
+        min_denials = int(raw_min) if raw_min and raw_min.isdigit() else 3
+        findings = analyze(entries, min_denials=min_denials)
+        return JSONResponse({
+            "recurring_denials": [
+                {
+                    "context": list(r.context),
+                    "deny_count": r.deny_count,
+                    "sample_reason": r.sample_reason,
+                }
+                for r in findings.recurring_denials
+            ],
+            "deny_to_allow_transitions": [
+                {
+                    "context": list(t.context),
+                    "first_deny_at": t.first_deny_at,
+                    "first_allow_at": t.first_allow_at,
+                }
+                for t in findings.deny_to_allow_transitions
+            ],
+            "dead_rules": [
+                {
+                    "rule_index": r.rule_index,
+                    "decision": r.decision,
+                    "tool": r.tool,
+                    "action": r.action,
+                    "environment": r.environment,
+                    "data_class": r.data_class,
+                    "reason": r.reason,
+                }
+                for r in findings.dead_rules
+            ],
+            "over_hit_rules": [
+                {
+                    "reason_code": r.reason_code,
+                    "match_count": r.match_count,
+                    "percentile": r.percentile,
+                }
+                for r in findings.over_hit_rules
+            ],
+        })
+
 
 def _aggregate(entries: list[Any]) -> dict[str, Any]:
     """Compute the analytics payload from a list of audit entries.
