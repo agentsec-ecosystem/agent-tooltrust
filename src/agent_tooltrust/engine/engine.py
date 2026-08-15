@@ -12,6 +12,7 @@ from agent_tooltrust.audit.logger import AuditLogger
 from agent_tooltrust.engine.argument_policy import check_arguments
 from agent_tooltrust.engine.decide import decide
 from agent_tooltrust.engine.delegation import DelegationManager, DelegationResult
+from agent_tooltrust.engine.deny_storm import DenyStormAnalyzer
 from agent_tooltrust.engine.escalation import EscalationManager
 from agent_tooltrust.engine.explain import explain
 from agent_tooltrust.engine.fail_closed import deny, fail_closed
@@ -22,6 +23,7 @@ from agent_tooltrust.engine.scoping import SessionScope, scoping_violation
 from agent_tooltrust.engine.score import score
 from agent_tooltrust.errors import (
     DENY_ARGUMENT_POLICY,
+    DENY_DENY_STORM,
     DENY_OBLIGATION_FAILED,
     DENY_OUT_OF_SCOPE,
 )
@@ -49,6 +51,8 @@ class Engine:
         audit_logger: AuditLogger | None = None,
         obligation_store: ObligationStore | None = None,
         escalation_manager: EscalationManager | None = None,
+        deny_storm_analyzer: DenyStormAnalyzer | None = None,
+        enforce_deny_storm: bool = False,
     ):
         #: The declarative policy in force for every evaluation. Immutable for
         #: the Engine's lifetime; swap engines to change policy.
@@ -74,6 +78,15 @@ class Engine:
         #: escalations and their approvals/denials, bound to the action
         #: identity, so a human approval can be enforced by the engine.
         self._escalation_manager = escalation_manager or EscalationManager()
+        #: Deny-storm / policy-probe detector (M4 #143). Observed on every
+        #: decision; never raises. Defaults to a live analyzer so deny storms
+        #: are detected even when the caller does not wire one explicitly.
+        self._deny_storm = deny_storm_analyzer or DenyStormAnalyzer()
+        #: When ``True``, a session whose deny-storm status is lock/throttle/
+        #: pause has new calls denied with ``DENY_DENY_STORM`` before any
+        #: scoring. Off by default so the detector is a pure observer unless
+        #: an operator opts in to active defense.
+        self._enforce_deny_storm = enforce_deny_storm
 
     @property
     def obligation_store(self) -> ObligationStore:
@@ -89,6 +102,11 @@ class Engine:
     def escalation_manager(self) -> EscalationManager:
         """The escalation registry tracking approvals bound to action identity."""
         return self._escalation_manager
+
+    @property
+    def deny_storm_analyzer(self) -> DenyStormAnalyzer:
+        """The deny-storm / probe detector fed by every decision (M4 #143)."""
+        return self._deny_storm
 
     def delegate(
         self,
@@ -187,6 +205,22 @@ class Engine:
             context=context,
             resource_tag=resource_tag,
         )
+        # 0. Active deny-storm defense (M4 #143). When enforcement is enabled
+        #    and this agent/session has already tripped a storm threshold,
+        #    deny the call outright with a dedicated reason code. Reading the
+        #    status here (rather than at the end) means a flagged session
+        #    cannot keep scoring while locked.
+        if self._enforce_deny_storm:
+            storm = self._deny_storm.status(call.session_id or call.agent_id)
+            if storm.action is not None:
+                return self._finalize(
+                    deny(
+                        DENY_DENY_STORM,
+                        f"deny-storm active: {storm.reason}",
+                        policy_version=self._policy.version,
+                    ),
+                    call,
+                )
         # 1a. Resource/environment scoping (M2 #145, DD-18). Default-deny: an
         #     identity or session scope restricts which environments/resources
         #     a call may touch. Identity scope comes from the policy profile;
@@ -275,6 +309,10 @@ class Engine:
             The audited decision, with the dry-run override applied when
             shadow mode is active.
         """
+        # 5a. Deny-storm / probe detection (M4 #143). Feed the *real*
+        #     decision (pre dry-run) so a probe in shadow mode is still
+        #     flagged; the analyzer never raises.
+        self._deny_storm.observe(decision, call)
         # 5b. Audit. Record the *real* (pre-dry-run) decision so the audit
         #     trail shows what would have been enforced in shadow mode. The
         #     logger swallows its own failures, so this never raises.

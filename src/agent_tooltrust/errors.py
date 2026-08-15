@@ -59,6 +59,20 @@ DENY_ESCALATION_UNKNOWN = "deny_escalation_unknown"
 DENY_ACTION_IDENTITY_MISMATCH = "deny_action_identity_mismatch"
 #: Decision: deny. Same escalation id reused for a different call (replay).
 DENY_ESCALATION_REPLAY = "deny_escalation_replay"
+#: Decision: deny. Session tripped the deny-storm detector (probe/fatigue).
+DENY_DENY_STORM = "deny_deny_storm"
+#: Decision: deny. URL fetch used a disallowed scheme or had no host.
+DENY_URL_SCHEME = "deny_url_scheme"
+#: Decision: deny. URL fetch blocked by the site's robots.txt.
+DENY_URL_BLOCKED_BY_ROBOTS = "deny_url_blocked_by_robots"
+#: Decision: deny. URL fetch resolved (or redirected) to an internal address.
+DENY_URL_INTERNAL_ADDRESS = "deny_url_internal_address"
+#: Decision: deny. URL fetch host could not be resolved.
+DENY_URL_INVALID = "deny_url_invalid"
+#: Decision: allow. Agent self-report matched the external verification sink.
+ALLOW_VERIFIED = "allow_verified"
+#: Decision: deny. Agent self-report contradicted external ground truth.
+DENY_VERIFICATION_CONTRADICTED = "deny_verification_contradicted"
 
 
 class ToolTrustError(Exception):

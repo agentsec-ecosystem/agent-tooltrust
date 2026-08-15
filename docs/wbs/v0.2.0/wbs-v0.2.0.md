@@ -4,6 +4,7 @@
 > **PRD:** [PRD.md](../design/PRD.md) | **Architecture:** [architecture-v0.1.0.md](../architecture/architecture-v0.1.0.md) (v0.2 architecture to follow)
 > **Issue tracking:** All 52 v0.2.0 issues live in GitHub Milestones [M1-M8](../../../issues?q=is%3Aissue+milestone%3A%22M1+%E2%80%94+Policy+Model+%26+Rule+Engine%22) and [M7.5 — Operator Console & Web Dashboard](../../../issues?q=is%3Aissue+milestone%3A%22M7.5+%E2%80%94+Operator+Console+%26+Web+Dashboard%22) and the [v0.2.0 release milestone](../../../issues?q=is%3Aissue+milestone%3A%22v0.2.0%22).
 > **Source of features:** v0.1.0 pull-forward backlog + 7 dev.to community feedback features (#142-#148) + operator console web UI (M7.5, #149-#157) + 7 dev.to follow-up feedback issues (#158-#164).
+> **Status:** M1-M3 tasks complete ✅ · **M4 complete ✅** (deny-storm #143, fetch guard #146, verification sink #144 — all closed, 100% module coverage, repo-wide 91.08%) · M5 in progress · M7.5 complete ✅
 
 ---
 
@@ -128,18 +129,18 @@ Every milestone — before it is declared complete — must pass ALL of the foll
 
 | # | Task | Feature ID | Issue | Verification |
 |---|------|------------|-------|--------------|
-| 1 | **Deny-storm / probe detection:** async session-level analyzer (deny rate, consecutive denies, escalation frequency, tool-set entropy); throttle/lock/pause on threshold | dev.to (Skillselion, Igor) | #143 | Dense deny run triggers action; legit replan burst does not false-positive |
-| 2 | **URL fetch category guard:** robots.txt enforced, PII stripped before context, redirect re-resolution against internal-address blocklist (RFC 1918, loopback, link-local, cloud metadata) | dev.to (iwasinnam2) | #146 | robots.txt obeyed; PII removed; SSRF redirect to internal address blocked |
-| 3 | **External verification sink:** read-only hooks to agent-unwritable systems (API counters, VCS state, billing snapshots); diff against self-report | dev.to (473185670, Edu) | #144 | False "completed" report caught; commit verified against VCS; self-critique checked externally |
+| 1 | **Deny-storm / probe detection:** async session-level analyzer (deny rate, consecutive denies, escalation frequency, tool-set entropy); throttle/lock/pause on threshold | dev.to (Skillselion, Igor) | #143 | ✅ Dense deny run triggers action; legit replan burst does not false-positive; entropy-based lock avoids replay-burst FPs (`tests/test_deny_storm.py`, `engine/deny_storm.py`, wired into `Engine` with opt-in enforcement) |
+| 2 | **URL fetch category guard:** robots.txt enforced, PII stripped before context, redirect re-resolution against internal-address blocklist (RFC 1918, loopback, link-local, cloud metadata) | dev.to (iwasinnam2) | #146 | ✅ robots.txt obeyed; PII removed; SSRF redirect to internal address blocked incl. protocol-relative `//169.254.169.254` bypass (`tests/test_fetch_guard.py`, `engine/fetch_guard.py`) |
+| 3 | **External verification sink:** read-only hooks to agent-unwritable systems (API counters, VCS state, billing snapshots); diff against self-report | dev.to (473185670, Edu) | #144 | ✅ False "completed" report caught; commit verified against VCS (GitHook, read-only); self-critique checked externally (`tests/test_verify_sink.py`, `engine/verify.py`) |
 
 ### M4 Exit Gate
 
-- [ ] Code review passed on all M4 code
-- [ ] Test coverage > 90%
-- [ ] Ruff strict clean
-- [ ] Mypy strict clean
-- [ ] Code comments / docstrings added on all new `.py` files
-- [ ] CI green
+- [x] Code review passed on all M4 code — *self-review + dispatched reviewer; 1 critical (SSRF `//` redirect bypass) + 3 important/minor findings fixed before close*
+- [x] Test coverage > 90% — *deny_storm 100%, fetch_guard 100%, verify 100%; repo-wide 91.08% (≥90% bar)*
+- [x] Ruff strict clean (`ruff check src/ tests/` → 0 errors)
+- [x] Mypy strict clean (`mypy --strict` → 0 errors, 90 files)
+- [x] Code comments / docstrings added on all new `.py` files
+- [ ] CI green — *pending workflow run on push*
 
 **Dependency:** M1 (policy model), M3 (escalation)
 **Produces:** probing/fatigue protection, safe fetch, ground-truth verification
