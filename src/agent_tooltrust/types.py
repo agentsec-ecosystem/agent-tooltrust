@@ -133,6 +133,7 @@ class Decision:
     policy_version: str = "0.0.0"
     dry_run: bool = False
     obligations: tuple[str, ...] = field(default_factory=tuple)
+    counterfactual: float | None = None
 
     def __post_init__(self) -> None:
         if self.decision not in _VALID_DECISIONS:

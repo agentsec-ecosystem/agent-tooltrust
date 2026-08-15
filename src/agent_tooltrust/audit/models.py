@@ -56,6 +56,7 @@ class AuditEntry:
     arguments: dict[str, Any] | None = None
     redacted: bool = False
     credential_status: str | None = None
+    counterfactual: float | None = None
 
     @classmethod
     def from_decision(
@@ -111,6 +112,7 @@ class AuditEntry:
             arguments=arguments if arguments is not None else call.arguments,
             redacted=redacted,
             credential_status=credential_status,
+            counterfactual=decision.counterfactual,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -148,6 +150,7 @@ class AuditEntry:
             arguments=data.get("arguments"),
             redacted=bool(data.get("redacted", False)),
             credential_status=data.get("credential_status"),
+            counterfactual=data.get("counterfactual"),
         )
         if "call_id" in data:
             kwargs["call_id"] = data["call_id"]

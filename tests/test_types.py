@@ -194,6 +194,7 @@ class TestDecision:
             "policy_version",
             "dry_run",
             "obligations",
+            "counterfactual",
         }
 
     def test_decision_to_dict_matches_asdict(self):

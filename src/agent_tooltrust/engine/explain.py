@@ -11,6 +11,7 @@ import secrets
 from typing import cast
 
 from agent_tooltrust.engine.decide import Verdict
+from agent_tooltrust.engine.score import counterfactual_threshold
 from agent_tooltrust.policy.models import Policy
 from agent_tooltrust.types import Criticality, Decision, Factor, NormalizedCall, RiskScore
 
@@ -164,9 +165,12 @@ def explain(
     criticality = cast(Criticality, CRITICALITY_BY_DECISION[verdict.decision])
     escalation_id = None
     if verdict.decision == "escalate":
-        # Random 32-bit fingerprint, unique per escalation. The approval
-        # workflow keys on this id, so it must never repeat.
         escalation_id = "esc_" + secrets.token_hex(4)
+    cf = (
+        counterfactual_threshold(risk_score.aggregate, risk_score.band)
+        if verdict.source == "band"
+        else None
+    )
     return Decision(
         decision=verdict.decision,
         criticality=criticality,
@@ -177,4 +181,5 @@ def explain(
         dry_run=False,
         policy_version=policy.version,
         obligations=verdict.obligations,
+        counterfactual=cf,
     )

@@ -18,6 +18,7 @@ from agent_tooltrust.cli import (
     analytics,
     audit,
     baseline,
+    calibrate,
     check,
     diff,
     escalation,
@@ -49,6 +50,7 @@ def _build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
     init.add_parser(subparsers)
     analytics.add_parser(subparsers)
+    calibrate.add_parser(subparsers)
     check.add_parser(subparsers)
     baseline.add_parser(subparsers)
     diff.add_parser(subparsers)

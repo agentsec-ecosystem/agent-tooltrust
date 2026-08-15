@@ -77,6 +77,38 @@ def _register_analytics(mcp: Any, core: Any) -> None:
             ],
         })
 
+    @mcp.custom_route("/api/analytics/calibration", methods=["GET"])  # type: ignore[untyped-decorator]
+    async def analytics_calibration(request: Request) -> JSONResponse:
+        from collections import defaultdict
+
+        entries = core.audit_logger.query(None)
+        by_tool: defaultdict[str, list[str]] = defaultdict(list)
+        by_env: defaultdict[str, list[str]] = defaultdict(list)
+        by_data: defaultdict[str, list[str]] = defaultdict(list)
+
+        for entry in entries:
+            by_tool[entry.tool].append(entry.decision)
+            by_env[entry.environment].append(entry.decision)
+            by_data[entry.data_class].append(entry.decision)
+
+        def _bucket(data: dict[str, list[str]]) -> list[dict[str, object]]:
+            return [
+                {
+                    "key": k,
+                    "total": len(v),
+                    "allow_audit": sum(1 for d in v if d in ("allow", "audit")),
+                    "escalate": sum(1 for d in v if d == "escalate"),
+                    "deny": sum(1 for d in v if d == "deny"),
+                }
+                for k, v in sorted(data.items())
+            ]
+
+        return JSONResponse({
+            "by_tool": _bucket(by_tool),
+            "by_environment": _bucket(by_env),
+            "by_data_class": _bucket(by_data),
+        })
+
 
 def _aggregate(entries: list[Any]) -> dict[str, Any]:
     """Compute the analytics payload from a list of audit entries.
