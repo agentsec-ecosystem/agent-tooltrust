@@ -182,6 +182,7 @@ See [SECURITY.md](SECURITY.md) for the full OWASP mapping and [SECURITY_BASELINE
 | [Design Decisions](docs/design/design-decisions.md) | 14 recorded design decisions with rationale |
 | [API Reference](docs/reference/api.md) | Engine API, CLI, MCP tools, framework adapters, SWE-bench integration, error codes |
 | [Release Notes v0.2.0](docs/reference/release-notes-v0.2.0.md) | What shipped in v0.2.0, quality gates, known limitations, roadmap |
+| [Migration Guide v0.1→v0.2](docs/design/migration-guide-v0.2.0.md) | Upgrading from 0.1.x: no breaking changes, what's new, redaction notes |
 | [CHANGELOG](CHANGELOG.md) | Keep a Changelog–formatted history of all releases |
 | [Demo Scenario](docs/design/demo-scenario.md) | 5-call narrative: allow→audit→escalate→deny→replan |
 | [Demo Agent Example](examples/demo-agent/README.md) | Runnable demo agent + adversarial variant, with captured output |
