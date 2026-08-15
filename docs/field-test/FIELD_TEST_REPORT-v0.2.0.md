@@ -34,8 +34,8 @@
 | swebench | 9 | 9 | self-test (instant) |
 | tooltrust-mcp | 14 | 14 | self-test (instant) |
 | crewai | 11 | 14 | Qwen3.5-4B-4bit (crew-01 tier-1 2/5) |
-| smolagents | — | — | pending re-run |
-| **Total** | **106** | **109** | **97%** |
+| smolagents | 10 | 14 | Qwen3.5-4B-4bit (sm-01 tier-1 1/5) |
+| **Total** | **116** | **123** | **94%** |
 
 ## Replan sweep — deny→replan→allow
 
@@ -54,16 +54,16 @@
 
 ### crewai Plan B crew-01 tier-1 — 5-tool multi-tool selection (ACCEPTED)
 
-crew-01 registers 5 scenario tools on one agent. The LLM picks the wrong tool across all models tested:
+crew-01 (crewai) and sm-01 (smolagents) tier-1 agents register 5 scenario tools on one agent. The LLM picks the wrong tool across all models tested:
 
-| Model | crew-01 tier-1 | Single-tool agents |
-|-------|----------------|--------------------|
-| gpt-oss-20b | 2/5 | 100% |
-| deepseek-v4-flash | 2/5 | 100% |
-| glm-5 (z-ai) | 4/5 (best) | 100% |
-| Qwen3.5-4B-4bit (local) | 2/5 | 100% |
+| Model | crew-01 tier-1 | sm-01 tier-1 | Single-tool agents |
+|-------|----------------|--------------|--------------------|
+| gpt-oss-20b | 2/5 | — | 100% |
+| deepseek-v4-flash | 2/5 | — | 100% |
+| glm-5 (z-ai) | 4/5 (best) | — | 100% |
+| Qwen3.5-4B-4bit (local) | 2/5 | 1/5 | 100% |
 
-glm-5 is the most reliable (4/5), but no model reaches 5/5. Prompt strengthening ("call ONLY the tool, do not call any other tool") made it *worse* (2/5), confirming it's a model tool-selection limit, not a prompt issue.
+glm-5 is the most reliable on crewai tier-1 (4/5), but no model reaches 5/5. Prompt strengthening ("call ONLY the tool, do not call any other tool") made crew-01 *worse* (2/5), confirming it's a model tool-selection limit, not a prompt issue.
 
 **Root cause:** 5 tools with near-identical names (`scn_decision-allow-01`, `scn_decision-audit-01`, `scn_decision-escalate-01`, `scn_decision-deny-01`, `scn_adversarial-injection-01`) confuse the LLM. v0.1.1 documented: "one scenario per agent (Plan A) is the reliability sweet spot."
 
