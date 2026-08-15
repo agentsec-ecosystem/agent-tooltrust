@@ -209,6 +209,7 @@ module = [
     "smolagents.*",
     "llama_index.*",
     "google.adk.*",
+    "opal_client.*",
 ]
 ignore_missing_imports = true
 

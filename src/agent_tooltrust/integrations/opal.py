@@ -46,9 +46,7 @@ class OpalClient:
     def start(self) -> None:
         """Connect to the OPAL server and begin listening for policy updates."""
         try:
-            from opal_client.client import (
-                OpalClient as _OpalClient,  # type: ignore[import-not-found,import-untyped]
-            )
+            from opal_client.client import OpalClient as _OpalClient
         except ImportError:
             raise RuntimeError(
                 "opal-client is not installed. Run: pip install agent-tooltrust[opal]"
@@ -57,11 +55,12 @@ class OpalClient:
         async def _on_policy_update(data: dict[str, Any]) -> None:
             self._apply_update(data)
 
-        self._opal = _OpalClient(
+        client = _OpalClient(
             server_url=self._server_url,
             callback=_on_policy_update,
         )
-        self._opal.start()  # type: ignore[union-attr,attr-defined]
+        self._opal = client
+        client.start()
 
     def stop(self) -> None:
         """Disconnect from the OPAL server."""
