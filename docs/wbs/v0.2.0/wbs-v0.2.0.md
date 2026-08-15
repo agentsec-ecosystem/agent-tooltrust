@@ -1,9 +1,9 @@
 # WBS — Agent ToolTrust v0.2.0
 
-> **Milestones covered:** v0.2.0 (M1-M8) — full plan re-baselined on `rel-0.2.0` branch.
+> **Milestones covered:** v0.2.0 (M1-M8 + parallel M7.5) — full plan re-baselined on `rel-0.2.0` branch.
 > **PRD:** [PRD.md](../design/PRD.md) | **Architecture:** [architecture-v0.1.0.md](../architecture/architecture-v0.1.0.md) (v0.2 architecture to follow)
-> **Issue tracking:** All 36 v0.2.0 issues live in GitHub Milestones [M1-M8](../../../issues?q=is%3Aissue+milestone%3A%22M1+%E2%80%94+Policy+Model+%26+Rule+Engine%22).
-> **Source of features:** v0.1.0 pull-forward backlog + 7 dev.to community feedback features (#142-#148).
+> **Issue tracking:** All 52 v0.2.0 issues live in GitHub Milestones [M1-M8](../../../issues?q=is%3Aissue+milestone%3A%22M1+%E2%80%94+Policy+Model+%26+Rule+Engine%22) and [M7.5 — Operator Console & Web Dashboard](../../../issues?q=is%3Aissue+milestone%3A%22M7.5+%E2%80%94+Operator+Console+%26+Web+Dashboard%22) and the [v0.2.0 release milestone](../../../issues?q=is%3Aissue+milestone%3A%22v0.2.0%22).
+> **Source of features:** v0.1.0 pull-forward backlog + 7 dev.to community feedback features (#142-#148) + operator console web UI (M7.5, #149-#157) + 7 dev.to follow-up feedback issues (#158-#164).
 
 ---
 
@@ -27,10 +27,10 @@ Every milestone — before it is declared complete — must pass ALL of the foll
 
 ## M1 — Policy Model & Rule Engine
 
-**Objective:** Harden and extend the core policy layer. Ship argument-level validation (dev.to feedback), boolean rule composition, tool hiding per agent class, a shareable policy pack format, and permit-with-obligation decisions (dev.to feedback).
+**Objective:** Harden and extend the core policy layer. Ship argument-level validation (dev.to feedback), boolean rule composition, tool hiding per agent class, a shareable policy pack format, permit-with-obligation decisions (dev.to feedback), and hardened deny-explanation + premise-validation controls (dev.to follow-up feedback).
 
 **GitHub milestone:** [M1 — Policy Model & Rule Engine](https://github.com/deghosal-2026/agent-tooltrust/milestone/5)
-**Issues:** #88, #91, #93, #142, #147
+**Issues:** #88, #91, #93, #142, #147, #159, #160
 
 ### M1 Task Checklist
 
@@ -41,6 +41,8 @@ Every milestone — before it is declared complete — must pass ALL of the foll
 | 3 | **Policy pack format:** `tools.yaml` + `tests.yaml` schema; `tooltrust pack validate` + `tooltrust pack test` | F-61 | #91 | ✅ One-page contribution guide (`packs/README.md`); `pack validate`/`pack test` pass (`tests/test_pack.py`) |
 | 4 | **Argument-level policy:** per-tool args schema (required fields, forbid-list, row limits, env allowlists) evaluated before allow/deny | dev.to (Kartik) | #142 | ✅ Delete with no/empty filter denied; disallowed env denied; unbounded row limit denied (`tests/test_argument_policy.py`) |
 | 5 | **Permit-with-obligation:** extend decision outcome to `{allow, deny, allow_with_obligation}`; obligations enforced by the gatekeeper | dev.to (Skillselion) | #147 | ✅ First-use sign-off, auto-notify, signed audit entry fire even if agent does not cooperate (`tests/test_obligations.py`)
+| 6 | **Configurable deny-reason exposure:** three tiers (`none`/`reason-only`/`detail`) for the deny/explain response; default `reason-only` so agents can replan without reverse-engineering the rule set | dev.to (suraj09) | #160 | ✅ Each tier returns expected rationale depth; `reason-only` omits rule IDs/thresholds/match tree (`tests/test_deny_exposure.py`) |
+| 7 | **Premise/staleness validation:** catch schema-valid + permission-valid but semantically wrong calls (moved paths, wrong-tool-with-plausible-args); gate-side signal or audit-side tag | dev.to (mansio, tom_jones) | #159 | ✅ Canonical `read_file(path=<moved>)` case flagged/tagged; design doc captures schema-vs-correctness boundary (`tests/test_premise_validation.py`) |
 
 ### M1 Exit Gate
 
@@ -146,10 +148,10 @@ Every milestone — before it is declared complete — must pass ALL of the foll
 
 ## M5 — Audit, Verification & Observability
 
-**Objective:** Make the audit log trustworthy and usable: replayable session state, cross-session policy analytics (dev.to feedback), and fleet/control-plane integration for observability.
+**Objective:** Make the audit log trustworthy and usable: replayable session state, cross-session policy analytics (dev.to feedback), fleet/control-plane integration for observability, and audit redaction + calibration + credential-freshness hardening (dev.to follow-up feedback).
 
 **GitHub milestone:** [M5 — Audit, Verification & Observability](https://github.com/deghosal-2026/agent-tooltrust/milestone/9)
-**Issues:** #81, #112, #148
+**Issues:** #81, #112, #148, #158, #161, #162
 
 ### M5 Task Checklist
 
@@ -158,6 +160,9 @@ Every milestone — before it is declared complete — must pass ALL of the foll
 | 1 | **Session replay from audit:** `tooltrust audit session --replay <id>` reconstructs session state from audit entries | F-08d | #81 | Replay produces identical cumulative risk at each call |
 | 2 | **AgentControlPlane + MCP-Data integration:** ToolTrust PDP service for fleet manager + MCP-Data connector for per-data-source authorization | — | #112 | Integration tests pass end-to-end |
 | 3 | **Session-to-session policy analytics:** batch analyzer over audit + traces — correlate deny patterns, flag deny→allow transitions, surface dead/over-hit rules | dev.to (Igor) | #148 | Recurring benign needs surfaced; suspicious transitions flagged |
+| 4 | **Audit redaction:** sink-level redaction of PII/secrets in audit-mode (and all) decisions; default deny-list + `args.redact` override; `redacted: true` flag | dev.to (mansio) | #158 | Secrets never appear in persisted log; nested args covered (`tests/test_audit_redaction.py`) |
+| 5 | **Stale-credential classification:** distinct audit tag for allowed-but-credential-rejected calls, separate from `not-available`; design note on call-time credential resolution | dev.to (cailab) | #161 | Stale-credential failure classified distinctly and queryable (`tests/test_stale_credential.py`) |
+| 6 | **Score calibration + shadow mode:** counterfactual threshold logging, human-reversal capture, false-allow/false-escalate rates by tool/env/data class, shadow-mode replay against production distribution | dev.to (russlanramdowar) | #162 | Calibration report/API surfaces rates; counterfactual logged per decision |
 
 ### M5 Exit Gate
 
@@ -234,12 +239,75 @@ Every milestone — before it is declared complete — must pass ALL of the foll
 
 ---
 
+## M7.5 — Operator Console & Web Dashboard
+
+> **Milestones covered:** M7.5 — a parallel milestone (GH #13) that surfaces the
+> operator console web UI across v0.2.0. It is *not* a phase of M1-M8; it runs
+> alongside them, mounting pages that read the features M1-M7 already produce.
+> **Status: Complete ✅** (all 9 issues #149-#157 closed; suites + UI E2E + docker green)
+> **UI test plan:** [docs/test/web-ui-test-plan.md](../../../docs/test/web-ui-test-plan.md)
+
+**Objective:** Every decision ToolTrust makes is machine-auditable; M7.5 makes it
+*humanly* inspectable. The operator console is a single-page web app mounted on
+ServerCore that lets a human reviewer see pending escalations and respond, browse
+the audit trail, drill into a session's decision chain, and read policy/compliance
+analytics — without touching a terminal.
+
+The UI is a **read-plus-one-action** surface: it reads what the engine records
+(everything) and performs exactly one write action per surface (approve/deny an
+escalation). It never re-authorizes or bypasses policy; the engine remains the
+single enforcement point. The UI is a release gate: no green Playwright sweep,
+no committed screenshots, no v0.2.0 ship.
+
+### M7.5 Cross-Milestone Quality Bar
+
+| # | Gate item | Command / Evidence | Failure action |
+|---|-----------|--------------------|----------------|
+| 1 | **API contract tests pass** | `pytest` on `tests/test_ui_api*.py` (A1-A7) | Fix before exit |
+| 2 | **Playwright E2E green** | `playwright test` (C1-C5, E1-E4, J1-J6) | Fix before exit |
+| 3 | **Screenshots committed** | `docs/reference/ui-*.png` regenerated + committed | Regenerate before exit |
+| 4 | **Backend suite green** | `pytest` + `ruff` + `mypy --strict` still pass | Reconcile before exit |
+| 5 | **No console errors / axe clean** | Playwright collects page errors + a11y smoke | Fix before exit |
+
+### M7.5 Task Checklist
+
+| # | Task | Issue | API surface | UI plan ref | Verification |
+|---|------|-------|-------------|-------------|--------------|
+| 1 | **Operator console shell & nav** — SPA shell on ServerCore, nav across Escalations/Audit/Sessions/Analytics/Baselines, decision-colored badges, tables, filter bar, loading/empty/error states | #149 | mounts the other pages | C1, E1-E4 | Nav reaches every surface; empty/loading/backend-down states render without JS errors |
+| 2 | **Escalation approval page** — list pending escalations; approve (action-identity bound) / deny (with reason); expired shown as deny | #150 | `GET /api/escalations`, `POST /api/escalations/<id>/approve`, `POST .../deny` | C2, J1-J4 | Approve executes only for matching action_identity; deny recorded; expired → deny |
+| 3 | **Audit event viewer page** — filterable/searchable audit entries with decision badges | #151 | `GET /api/audit` | C3, A4 | Filter by decision/session/agent; empty → `[]`; badges rendered per contract |
+| 4 | **Session inspection page** — replay a session's decision chain (cumulative risk at each call); surface delegations/approvals | #152 | `GET /api/sessions/<id>` | C4, J5 | Timeline reproduces identical cumulative risk at each call (F-08d) |
+| 5 | **Policy analytics page** — M5 session analytics (#148) + M4 deny-storm/probe alerts (#143) | #153 | `GET /api/analytics` | analytics tiles | Deny patterns, deny→allow transitions, dead/over-hit rules, alerts surfaced |
+| 6 | **Compliance & baseline page** — ToolTrust tiers, OWASP 10/10 map, OpenSSF status | #155 | `GET /api/baselines` | C5, A6 | Tier/status reflect `tooltrust baseline check` |
+| 7 | **Playwright E2E + screenshots** — suite over `docs/test/web-ui-test-plan.md`; capture `docs/reference/ui-*.png` into guides; `ui` CI job | #154 | — | full plan | Release gate: green sweep + committed screenshots for v0.2.0 |
+| 8 | **Docker hosting for the operator console** — one image serving server + `/audit` + `/api/escalations` + dashboard; persisted `~/.tooltrust` volume; healthcheck covers `/audit/health` + `/api/escalations`; documented `docker compose` | #156 | mounts escalation + audit + dashboard | A1-A7 | `docker compose up --wait` serves console; state survives restart; healthcheck green |
+| 9 | **Containerized test execution** — build the image, start it, run the API contract + smoke suite against the live container (`test_escalation_routes.py`, `test_audit_routes.py`); `docker` CI job | #157 | — | A1-A7 | `/api/escalations` + `/audit` return correct JSON through the network; approve/deny round-trip works in-container; CI docker job green |
+
+### M7.5 Exit Gate
+
+- [x] All 9 tasks implemented and their verifications pass
+- [x] API contract tests (A1-A7) green — `test_escalation_routes.py`, `test_audit_routes.py`, `test_console_api.py`
+- [x] Playwright component + journey tests (C1-C5, J1-J6) green — `tests/ui/test_dashboard_e2e.py`
+- [x] Empty/loading/error states (E1-E4) pass, no console errors, a11y smoke clean
+- [x] Screenshots S1-S5 committed and referenced in `docs/reference/` guides — `ui-dashboard.png`, `ui-audit.png`
+- [x] Backend suite (`pytest`, `ruff`, `mypy --strict`) remains green
+- [x] Docker console builds and serves; `~/.tooltrust` volume persists state
+- [x] Containerized API + smoke tests pass in the `docker` CI job
+- [x] `ui` CI job added and green
+- [x] Issues #149-#157 closed with commit/screenshot references — **all 9 closed ✅**
+
+**Dependency:** M1-M7 engine/audit/policy surfaces (read-only), M3 escalation
+(#84-#86, #95)
+**Produces:** a human-reviewable operator console + a Playwright release gate
+
+---
+
 ## M8 — Quality Gates, Field Tests & Release
 
 **Objective:** Prove the whole release. Run every per-milestone exit gate review, complete full field test sweeps (v0.1+v0.2+v0.3 scenarios on all 10 agents), harden to >95% coverage, and ship v0.2.0 to PyPI + GitHub.
 
 **GitHub milestone:** [M8 — Quality Gates, Field Tests & Release](https://github.com/deghosal-2026/agent-tooltrust/milestone/12)
-**Issues:** #83, #89, #100, #101, #104, #107, #110, #113, #116, #122
+**Issues:** #83, #89, #100, #101, #104, #107, #110, #113, #116, #122, #163, #164
 
 ### M8 Task Checklist — Exit Gates
 
@@ -260,10 +328,13 @@ Every milestone — before it is declared complete — must pass ALL of the foll
 | 8 | **v0.3 full regression:** all v0.1+v0.2+v0.3 scenarios on all 10 agents | F-75 | #116 | Full regression green |
 | 9 | **v0.2.0 hardening:** code review, >95% coverage, ruff strict, mypy strict, CHANGELOG | — | #104 | Coverage >95%; lint clean; changelog committed |
 | 10 | **v0.2.0 field test sweep + ship:** full regression on 10 agents, CHANGELOG v0.2.0, PyPI publish, GitHub release | — | #122 | Release live on PyPI + GitHub |
+| 11 | **Adversarial field-test sweep:** adversarial parameter payloads + retry sequences added to the 10-agent matrix | dev.to (russlanramdowar) | #163 | Adversarial scenario pack committed; CI gate green |
+| 12 | **Discriminative-power field tests:** scenarios the gate cannot pass by construction, measured against realized outcomes | dev.to (473185670) | #164 | >=1 pending-discriminative scenario committed + green |
 
 ### M8 Exit Gate (Release Gate)
 
 - [ ] All six per-milestone exit gates (#83, #89, #100, #107, #110, #113) closed
+- [x] M7.5 exit gate closed — Playwright E2E green, screenshots committed, docker console serving (#149-#157)
 - [ ] Code review passed on all code merged since v0.1.0
 - [ ] Test coverage **> 95%** (final release bar)
 - [ ] Ruff strict clean (0 errors on `--select ALL`)
@@ -275,7 +346,7 @@ Every milestone — before it is declared complete — must pass ALL of the foll
 - [ ] PyPI publish succeeds
 - [ ] GitHub release created with tag `v0.2.0`
 
-**Dependency:** M1-M7 (all prior milestones)
+**Dependency:** M1-M7 (all prior milestones), M7.5 (operator console release gate)
 **Produces:** Shipped v0.2.0 — hardenable, verifiable, fleet-ready, OWASP 10/10, OpenSSF Gold
 
 ---
@@ -298,7 +369,7 @@ Run **after** M8's Release Gate, immediately before and after the tag `v0.2.0`.
 | 10 | **GitHub release:** tag `v0.2.0` + release notes + wheel artifact | Maintainer | Release visible on GitHub |
 | 11 | **Branch merge:** merge `rel-0.2.0` → `main` | Maintainer | PR merged; main green |
 | 12 | **Post-release verification:** smoke-install in clean venv, run `tooltrust` CLI, run one demo scenario | Maintainer | Smoke test passes |
-| 13 | **Community feedback loop:** reply to all dev.to comments; link shipped issues #142-#148 in replies | Maintainer | Threads closed/acknowledged |
+| 13 | **Community feedback loop:** reply to all dev.to comments; link shipped issues #142-#148 and #158-#164 in replies | Maintainer | Threads closed/acknowledged |
 
 ---
 
@@ -306,7 +377,7 @@ Run **after** M8's Release Gate, immediately before and after the tag `v0.2.0`.
 
 | Metric | v0.1 Target | v0.2 Target |
 |--------|-------------|-------------|
-| PRD features shipped | 35+ P0 + 13 enhancements | All M1-M8 tasks (#81-#122) + 7 dev.to features (#142-#148) |
+| PRD features shipped | 35+ P0 + 13 enhancements | All M1-M8 tasks (#81-#122) + 7 dev.to features (#142-#148) + operator console M7.5 (#149-#157) + 7 dev.to follow-ups (#158-#164) |
 | CUJs covered | 1-9, 11 (10 CUJs) | + CUJ 10 (escalation round-trip) |
 | Test coverage | >95% (release) | >90% per milestone, >95% at release |
 | Ruff / Mypy | strict clean | strict clean every milestone |
@@ -314,4 +385,5 @@ Run **after** M8's Release Gate, immediately before and after the tag `v0.2.0`.
 | OpenSSF Badge | Silver | Gold |
 | ToolTrust Baseline | Essential | Hardened + Certified |
 | Fleet support | — | OPAL sync, fleet guide, HTTP /authorize |
-| Field test | Plan A 83/83, Plan B 116/123 | All v0.1+v0.2+v0.3 scenarios green on 10 agents |
+| Operator console | — | M7.5 web dashboard (#149-#157): escalations, audit, sessions, analytics, baselines; Docker + `ui`/`docker` CI jobs |
+| Field test | Plan A 83/83, Plan B 116/123 | All v0.1+v0.2+v0.3 scenarios + adversarial (#163) + discriminative-power (#164) green on 10 agents |

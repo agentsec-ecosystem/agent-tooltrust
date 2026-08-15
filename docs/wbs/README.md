@@ -12,8 +12,7 @@ Work Breakdown Structure — milestone plans and task breakdowns for all version
 | [v0.1.0/wbs-v0.1.0-part4-field-ship.md](v0.1.0/wbs-v0.1.0-part4-field-ship.md) | M7-M8 (Field + Ship) | v0.1.0 | #58-76 | **M7 Complete ✅** (Plan A 83/83, replan 8/8, CI gate; Plan B 116/123 w/ 7 doc'd no-call). **M8 in progress** — demo done, hardening/lint/coverage done, CHANGELOG+release+PyPI (v0.1.0/v0.1.1) done, full sweep green. Remaining: OpenSSF Silver (#67), OWASP 5/10 (#68), Essential baseline (#69), Ruff/Mypy closeout (#72), repo public (#75), exit gate (#76) |
 | [v0.1.0/wbs-v0.1.0-enhancements.md](v0.1.0/wbs-v0.1.0-enhancements.md) | M19-M23 (Security, OTel, Extensibility, Governance, SWE-bench) | v0.1.0 | #123-136 | **Complete ✅** |
 | [v0.1.0/wbs-v0.1.0-docker.md](v0.1.0/wbs-v0.1.0-docker.md) | M24 (Docker + Container Tests) | v0.1.0 | #137-141 | **Complete ✅** |
-| [v0.2.0/wbs-v0.2.0.md](v0.2.0/wbs-v0.2.0.md) | M1-M8 (Policy, Scoping, Escalation, Threat, Audit, Service, Compliance, Release) | v0.2.0 | #81, #83-86, #88-89, #91, #93, #95, #97, #100-101, #103-104, #106-108, #110-117, #119-122, #142-148 | In progress (`rel-0.2.0`) — **M1 complete ✅**, **M2 complete ✅** (scoping, delegation, dispatcher; gates: ruff/mypy/review done, coverage lift + CI pending) |
-| [v0.2.0/wbs-v0.2.0-m7_5.md](v0.2.0/wbs-v0.2.0-m7_5.md) | M7.5 (Operator Console & Web Dashboard) | v0.2.0 | #149-157 | **Complete ✅** — 5-tab dashboard (escalations/audit/sessions/analytics/baselines) + health, 3 new APIs, Playwright E2E + screenshots, Docker hosting + containerized tests; all 9 issues closed |
+| [v0.2.0/wbs-v0.2.0.md](v0.2.0/wbs-v0.2.0.md) | M1-M8 (Policy, Scoping, Escalation, Threat, Audit, Service, Compliance, Release) + M7.5 (Operator Console) | v0.2.0 | #81, #83-86, #88-89, #91, #93, #95, #97, #100-101, #103-104, #106-108, #110-117, #119-122, #142-157 | In progress (`rel-0.2.0`) — **M1 complete ✅**, **M2 complete ✅** (scoping, delegation, dispatcher; gates: ruff/mypy/review done, coverage lift + CI pending), **M7.5 complete ✅** (5-tab dashboard, Playwright E2E + screenshots, Docker hosting + containerized tests; all 9 issues closed) |
 
 ## Issue Summary
 
@@ -30,7 +29,8 @@ Work Breakdown Structure — milestone plans and task breakdowns for all version
 | M24 | v0.1.0 Docker + Tests | 5 | 5 | #137-141 |
 | M9-M18 | v0.2.0 (old scheme) | 44 | 17 | #77-122 |
 | M1-M8 | v0.2.0 (re-baselined) | 36 | 0 | #81-122, #142-148 |
-| **Total** | | **142** | **92** | #1-141 |
+| M7.5 | v0.2.0 (Operator Console) | 9 | 9 | #149-157 |
+| **Total** | | **151** | **101** | #1-141 |
 
 ## v0.1.0 Milestone Summary
 
