@@ -19,9 +19,9 @@
 | 12 | Update release notes + CHANGELOG | ✅ | `release-notes-v0.2.0.md` final, CHANGELOG `[0.2.0]` entry |
 | 13 | Publish to PyPI | ✅ | `uv build` + twine upload → https://pypi.org/project/agent-tooltrust/0.2.0/ |
 | 14 | Tag release (`git tag v0.2.0`) and push | ✅ | `v0.2.0` tag created and pushed |
-| 15 | Create GitHub Release with release notes | ❌ | Link to CHANGELOG |
-| 16 | Update WBS status to released | ❌ | Mark `rel-0.2.0` as shipped |
-| 17 | Create dev.to article on v0.2.0 release | ❌ | New features, issues fixed, reference to v0.1.0 article |
+| 15 | Create GitHub Release with release notes | ✅ | `gh release` created with notes + CHANGELOG link |
+| 16 | Update WBS status to released | ✅ | Mark `rel-0.2.0` as shipped |
+| 17 | Create dev.to article on v0.2.0 release | ⏳ | Deferred — will do after |
 
 ---
 
