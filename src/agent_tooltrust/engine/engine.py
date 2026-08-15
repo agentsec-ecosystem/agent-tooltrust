@@ -139,8 +139,16 @@ class Engine:
 
     @property
     def policy(self) -> Policy:
-        """The policy in force for this engine."""
+        """The policy in force for this engine (read-only; use reload_policy)."""
         return self._policy
+
+    def reload_policy(self, policy: Policy) -> None:
+        """Hot-reload a new policy without recreating the engine.
+
+        Args:
+            policy: The new policy to apply to all subsequent evaluations.
+        """
+        self._policy = policy
 
     def capabilities(self, agent_id: str) -> tuple[str, ...]:
         """Return the discovery-time capability list for an agent class.
