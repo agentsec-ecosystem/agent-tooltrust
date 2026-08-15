@@ -208,6 +208,43 @@ class TestAuditSinkOptions:
         assert type(sink).__name__ == "PostgresSink"
 
 
+class TestAuditSessionReplay:
+    def test_session_replay_json_jsonl(self, tmp_path, capsys):
+        path = str(tmp_path / "audit.jsonl")
+        _seed_jsonl(path)
+        out = _run(["audit", "session", "--replay", "sess_1", "--path", path], capsys).out
+        payload = json.loads(out)
+        assert payload["session_id"] == "sess_1"
+        assert payload["call_count"] == 1
+        assert payload["deny_count"] == 0
+        assert len(payload["points"]) == 1
+        assert payload["points"][0]["tool"] == "deploy_service"
+
+    def test_session_replay_unknown_session(self, tmp_path, capsys):
+        path = str(tmp_path / "audit.jsonl")
+        _seed_jsonl(path)
+        out = _run(["audit", "session", "--replay", "nope", "--path", path], capsys).out
+        payload = json.loads(out)
+        assert payload["session_id"] == "nope"
+        assert payload["call_count"] == 0
+        assert payload["points"] == []
+
+    def test_session_replay_requires_replay(self, tmp_path, capsys):
+        path = str(tmp_path / "audit.jsonl")
+        _run(["audit", "session", "--path", path], capsys, exit_code=2)
+
+    def test_session_replay_sqlite(self, tmp_path, capsys):
+        path = str(tmp_path / "audit.db")
+        _seed_sqlite(path)
+        out = _run(
+            ["audit", "session", "--replay", "sess_1", "--sink", "sqlite", "--path", path],
+            capsys,
+        ).out
+        payload = json.loads(out)
+        assert payload["session_id"] == "sess_1"
+        assert payload["call_count"] == 1
+
+
 def argparse_namespace(sink, path, url):
     import argparse
 

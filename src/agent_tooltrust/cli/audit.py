@@ -4,6 +4,8 @@ Subcommands:
 * ``show`` — print every entry for a session (JSON or CSV).
 * ``query`` — filter by decision/agent/since and print matching entries.
 * ``export`` — write entries (per session, or all) as CSV or JSON to stdout.
+* ``session`` — replay a session's cumulative state from its audit entries.
+* ``verify`` — check the audit log's hash-chain integrity.
 
 The sink defaults to the JSONL file ``~/.tooltrust/audit.jsonl``; pass
 ``--sink sqlite`` or ``--sink postgres`` to read another backend, and
@@ -19,6 +21,7 @@ import sys
 from typing import Any
 
 from agent_tooltrust.audit.logger import AuditLogger
+from agent_tooltrust.audit.replay import replay_session
 from agent_tooltrust.audit.sinks.jsonl import JsonlSink
 from agent_tooltrust.audit.sinks.postgres import PostgresSink
 from agent_tooltrust.audit.sinks.sqlite import SqliteSink
@@ -82,6 +85,16 @@ def add_parser(subparsers: Any) -> None:
     export.add_argument("--format", choices=["json", "csv"], default="csv")
     export.set_defaults(func=_run_export)
 
+    session = sub.add_parser("session", help="replay a session from the audit trail")
+    _add_sink_args(session)
+    session.add_argument(
+        "--replay",
+        required=True,
+        metavar="SESSION_ID",
+        help="session id to replay (reconstructs cumulative risk at each call)",
+    )
+    session.set_defaults(func=_run_session)
+
     verify = sub.add_parser("verify", help="verify audit log integrity")
     _add_sink_args(verify)
     verify.add_argument("--sign", action="store_true", help="Sign root entry with ed25519")
@@ -130,6 +143,23 @@ def _run_export(args: argparse.Namespace) -> int:
     logger = AuditLogger(_build_sink(args))
     entries = logger.query(args.session)
     _emit(entries, args.format)
+    return 0
+
+
+def _run_session(args: argparse.Namespace) -> int:
+    """Replay one session's cumulative state from the audit trail.
+
+    Args:
+        args: Parsed arguments (requires ``--replay <session_id>``).
+
+    Returns:
+        Exit code 0 on success; a session with no recorded entries replays as
+        an empty timeline (call_count 0), not an error.
+    """
+    logger = AuditLogger(_build_sink(args))
+    entries = logger.query(args.replay)
+    replay = replay_session(entries, session_id=args.replay)
+    print(json.dumps(replay.to_dict(), indent=2))
     return 0
 
 

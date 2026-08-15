@@ -24,6 +24,29 @@ CRITICALITY_BY_DECISION = {
     "allow_with_obligation": "low",
 }
 
+#: Risk added to a session when an accepted (non-deny) call with ``critical``
+#: severity completes. Mirrored by the live ``SessionStore`` and the audit
+#: replay module (M5 #81) so a replayed session accrues risk identically to
+#: live use. Single source of truth for per-call risk accumulation.
+RISK_CRITICAL_FALLOFF = 1.0
+#: Risk added for any other accepted call.
+RISK_DEFAULT_FALLOFF = 0.25
+
+
+def session_risk_increment(criticality: str) -> float:
+    """The risk added to a session when an accepted (non-deny) call completes.
+
+    Denied calls never add risk; the caller decides whether a call is denied
+    and skips this. ``critical`` costs more than anything else.
+
+    Args:
+        criticality: The decision's severity literal (see ``types.Criticality``).
+
+    Returns:
+        ``RISK_CRITICAL_FALLOFF`` for ``critical``, else ``RISK_DEFAULT_FALLOFF``.
+    """
+    return RISK_CRITICAL_FALLOFF if criticality == "critical" else RISK_DEFAULT_FALLOFF
+
 #: Human-readable explanation templates, keyed by reason_code. The exact
 #: wording is a product decision (approved in demo-scenario.md); only the
 #: ``{placeholders}`` vary per call.

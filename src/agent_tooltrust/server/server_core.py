@@ -14,6 +14,7 @@ from agent_tooltrust.audit.logger import AuditLogger
 from agent_tooltrust.audit.models import AuditEntry
 from agent_tooltrust.engine.engine import Engine
 from agent_tooltrust.engine.escalation import EscalationManager
+from agent_tooltrust.engine.explain import session_risk_increment
 from agent_tooltrust.server.session_store import SessionStore
 
 
@@ -110,10 +111,9 @@ class ServerCore:
             )
 
             if decision_dict["decision"] not in ("deny",):
-                falloff = 1.0 if decision_dict["criticality"] == "critical" else 0.25
                 self._session_store.update(
                     session_id,
-                    risk_increment=falloff,
+                    risk_increment=session_risk_increment(decision_dict["criticality"]),
                     call_id="pending",
                 )
 
