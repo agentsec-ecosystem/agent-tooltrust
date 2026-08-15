@@ -101,14 +101,17 @@ def _print_text(findings: AnalyticsFindings) -> None:
 
     if findings.dead_rules:
         print("\n=== Dead Rules (never matched) ===")
-        for r in findings.dead_rules:
-            print(f"  #{r.rule_index} {r.decision}: tool={r.tool} action={r.action} env={r.environment} data={r.data_class}")
-            print(f"    reason: {r.reason}")
+        for dr in findings.dead_rules:
+            print(
+                f"  #{dr.rule_index} {dr.decision}: tool={dr.tool} action={dr.action} "
+                f"env={dr.environment} data={dr.data_class}"
+            )
+            print(f"    reason: {dr.reason}")
 
     if findings.over_hit_rules:
         print("\n=== Over-Hit Rules ===")
-        for r in findings.over_hit_rules:
-            print(f"  {r.reason_code}: {r.match_count}x (p{r.percentile})")
+        for oh in findings.over_hit_rules:
+            print(f"  {oh.reason_code}: {oh.match_count}x (p{oh.percentile})")
 
     if not any([findings.recurring_denials, findings.deny_to_allow_transitions,
                 findings.dead_rules, findings.over_hit_rules]):

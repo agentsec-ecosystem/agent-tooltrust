@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from agent_tooltrust.analytics.session_analyzer import (
-    AnalyticsFindings,
     analyze,
 )
 from agent_tooltrust.audit.models import AuditEntry

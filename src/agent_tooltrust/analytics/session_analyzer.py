@@ -9,11 +9,10 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
-from typing import Any
 
 # Using TYPE_CHECKING for Policy/Rule to avoid circular imports at runtime
 from agent_tooltrust.audit.models import AuditEntry
-from agent_tooltrust.policy.models import Policy, Rule
+from agent_tooltrust.policy.models import Policy
 
 IdentityContext = tuple[str, str, str, str, str]
 
@@ -71,13 +70,24 @@ def _find_recurring_denials(
         deny_count = sum(1 for e in entries if e.decision == "deny")
         has_allow = any(e.decision == "allow" for e in entries)
         if deny_count >= min_denials and not has_allow:
-            deny_reasons = [e.reason_code for e in entries if e.decision == "deny" and e.reason_code]
-            sample_reason = Counter(deny_reasons).most_common(1)[0][0] if deny_reasons else ""
-            result.append(RecurringDenial(context=context, deny_count=deny_count, sample_reason=sample_reason))
+            deny_reasons = [
+                e.reason_code for e in entries
+                if e.decision == "deny" and e.reason_code
+            ]
+            sample_reason = (
+                Counter(deny_reasons).most_common(1)[0][0]
+                if deny_reasons else ""
+            )
+            result.append(RecurringDenial(
+                context=context, deny_count=deny_count,
+                sample_reason=sample_reason,
+            ))
     return sorted(result, key=lambda r: -r.deny_count)
 
 
-def _find_transitions(groups: dict[IdentityContext, list[AuditEntry]]) -> list[DenyToAllowTransition]:
+def _find_transitions(
+    groups: dict[IdentityContext, list[AuditEntry]],
+) -> list[DenyToAllowTransition]:
     result: list[DenyToAllowTransition] = []
     for context, entries in groups.items():
         sorted_entries = sorted(entries, key=lambda e: e.timestamp)
