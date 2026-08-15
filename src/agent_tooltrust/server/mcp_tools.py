@@ -123,8 +123,37 @@ def register_tools(
             "last_updated": state.last_updated,
         }
 
+    @mcp.tool(  # type: ignore[untyped-decorator]
+        name="tooltrust.authorize_data_source",
+        description=(
+            "Authorize access to a named data source (read/write/delete) for a "
+            "given agent and environment. Returns the ToolTrust Decision with "
+            "risk factors and reason code. Unregistered sources are denied."
+        ),
+    )
+    def authorize_data_source(
+        data_source_id: str,
+        operation: str,
+        agent_id: str,
+        environment: str,
+        session_id: str | None = None,
+    ) -> dict[str, Any]:
+        from agent_tooltrust.mcp_data import DataAccessRequest, authorize_data_source as _authorize
+
+        return _authorize(
+            DataAccessRequest(
+                data_source_id=data_source_id,
+                operation=operation,  # type: ignore[arg-type]
+                agent_id=agent_id,
+                environment=environment,
+                session_id=session_id,
+            ),
+            core,
+        )
+
     return {
         "tooltrust.evaluate": evaluate,
         "tooltrust.explain": explain,
         "tooltrust.session_status": session_status,
+        "tooltrust.authorize_data_source": authorize_data_source,
     }
