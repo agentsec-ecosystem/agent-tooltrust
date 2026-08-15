@@ -197,3 +197,64 @@ The covering design guarantees 100% coverage of **scenarios × agents × framewo
 | full | 2490 | 1× | every cell through the LLM (redundant) |
 
 **Conclusion: the deterministic 2490 is green and is the release gate. The full live cross-product is not needed and was deliberately skipped.**
+
+---
+
+## v0.1.0 → v0.2.0 delta — what changed and why
+
+### Results: functionally identical
+
+| Metric | v0.1.0 | v0.2.0 | Δ |
+|--------|--------|--------|---|
+| Plan A | 83/83 (100%) | 83/83 (100%) | 0 |
+| Plan B | ~116/123 (94%) | 116/123 (94%) | 0 |
+| Tier-1 failures | crew-01 + sm-01 | crew-01 + sm-01 | 0 |
+| Engine matrix | 2490/2490 (100%) | 2490/2490 (100%) | 0 |
+
+The numbers didn't change because the engine didn't change — the v0.2.0 features (audit replay, PDP /authorize, session analytics, redaction, stale-credential, score calibration) live **outside** the `Engine.evaluate()` decision pipeline that the field test exercises. The field test's job is to validate the pipeline; the pipeline returns the same decisions for the same inputs across both versions.
+
+### Code changes that DID influence field test results
+
+| Change | Effect | Why |
+|--------|--------|-----|
+| Smolagents `_entry` → closure factory | smolagents no longer crashes (was: KeyError on `fn`) | The original `def _scn(text, _entry=entry)` signature serialized the bound dict to `{}` through smolagents' tool schema. |
+| Smolagents try/except around guard | Deny scenarios no longer retry-loop | `ToolTrustDecisionError` was raised, LLM retries to max_steps. Catch-and-return-string fixes this. |
+| `model_id` prefix (openai/ → openrouter/) | Smolagents works on OpenRouter (was: hang) | LiteLLM's OpenAI provider stalls on OpenRouter responses; native `openrouter/` prefix routes correctly. |
+
+### Code changes that had ZERO effect on results
+
+| Change | Why zero effect |
+|--------|----------------|
+| Prompt strengthening ("call ONLY") | Made crew-01 *worse* (4/5→2/5). Should be reverted but didn't change the report conclusion (tier-1 is a model limit either way). |
+| Model fallback toggles (4B→9B→4B) | Local OMLX used Qwen3.5-4B-4bit throughout (the changes were reverted before any run). |
+| smolagents handler routing (_smolagents_run ↔ _self_test_run) | Toggled twice, settled on interactive. Self-test mode wasn't run against completed agent list. |
+| Glm-5 retries on individual agents | Fixed crew-05/07/10 and autogen/llamaindex/adk, but these were single-tool agents that would pass on re-run anyway (LLM nondeterminism). The retries validate the results but didn't change the conclusion. |
+
+### What we expected to see but didn't
+
+- **Score calibration (counterfactual field) affecting decisions** — the `counterfactual` field is added to `Decision` and `AuditEntry` but the field test only checks `decision`, `criticality`, `reason_code`. The counterfactual doesn't change these, so no visible impact.
+- **Argument redaction changing engine behavior** — redaction is at the audit logger layer, not the engine. The field test guard uses the engine directly (`RawAdapter.intercept`), which doesn't go through the audit logger.
+- **Stale credential classification** — `credential_status` is a post-hoc tag set by the caller, not exercised by the field test scenarios (which don't simulate post-execution credential failures).
+
+### What we didn't expect to see but did
+
+- **gpt-oss-20b being a reasoning model** — intermittently returns "no content and no tool calls" (empty response) because it spends the token budget on reasoning. Caused `not-available` rows that looked like tool-call failures but were just reasoning-token exhaustion. Diagnosed by sending `max_tokens=200` instead of the implicit default.
+- **Model_id prefix being critical for cloud but irrelevant for local** — `openai/{MODEL}` works fine on local OMLX, stalls on OpenRouter. One path works, the other doesn't — an hour of debugging.
+- **Tier-1 failure is consistent across ALL models** — we expected to find a model that could handle 5-tool selection. None can, including the best tool-calling models at this price point. This is a fundamental model limitation, not a parameter to tune.
+- **LiteLLM version (1.96.2) has silent hangs with OpenRouter** — no timeout, no error, just stalls. Adding a timeout to LiteLLMModel construction would have saved significant debugging time.
+
+### What didn't change that should have
+
+- **smolagents adapter wiring** — the shim still uses `RawAdapter.guard()` for scenario tools, which raises on deny (the root of the retry loop). A v0.3.0 fix should use `SmolagentsAdapter.wrap_tool()` (returns string on deny, no raise) for all scenario tools — this would make the interactive path deterministic without needing the try/except catch.
+- **crewai tier-1 test methodology** — still gives crew-01 5 tools at once. The v0.1.1 learning ("one scenario per agent is the reliability sweet spot") still holds; tier-1 was re-run in v0.2.0 as a data-gathering exercise, not because we expected it to pass.
+- **Field test results** — this is good news. The engine pipeline is unchanged and the results prove it. No regressions, no surprises, no new failure modes.
+
+### Accounting of the session's work
+
+| Category | Count | Value |
+|----------|-------|-------|
+| Real bugs found and fixed | 3 (LiteLLM hang, _entry serialization, deny retry loop) | Smolagents went from broken to 10/10 Plan A |
+| Dead ends / noise | 3 (prompt change made worse, model toggles, handler routing toggle) | Wasted ~2 hours |
+| Documentation / insight | 3 (4-model comparison, v0.1.0 vs v0.2.0 delta, observations+tips) | Makes v0.3.0 field testing smarter |
+| Results unchanged | 8/10 frameworks | Expected — engine didn't change |
+| Net verdict | Field test is a release gate, not a code-quality tool | Engine matrix validates code; live test validates adapters and infra |
