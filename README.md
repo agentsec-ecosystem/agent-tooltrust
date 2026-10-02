@@ -1,3 +1,7 @@
+> [!WARNING]
+> **Deprecated — superseded.** This repository is archived and no longer maintained.
+> Its work is being absorbed into [agentpolicy](https://github.com/agentsec-ecosystem/agentpolicy) / [agentgate](https://github.com/agentsec-ecosystem/agentgate) as part of the [agentsec-ecosystem](https://github.com/agentsec-ecosystem).
+
 <div align="center">
 
 # Agent ToolTrust
